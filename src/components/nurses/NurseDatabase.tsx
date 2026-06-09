@@ -6,6 +6,7 @@ import { useNurseStore } from "@/store/nurse-store";
 import { calculateCvScore } from "@/lib/nurse-utils";
 import { ViewControls } from "./ViewControls";
 import { GalleryView } from "./GalleryView";
+import { PipelineView } from "./PipelineView";
 import { FilterPanel } from "./FilterPanel";
 
 interface NurseDatabaseProps {
@@ -113,11 +114,7 @@ export function NurseDatabase({ nurses }: NurseDatabaseProps) {
       <ViewControls onOpenFilter={() => setFilterOpen(true)} />
 
       {viewMode === "gallery" && <GalleryView nurses={filteredNurses} />}
-      {viewMode === "pipeline" && (
-        <div className="rounded-lg border p-8 text-center text-gray-500">
-          Pipeline view coming soon
-        </div>
-      )}
+      {viewMode === "pipeline" && <PipelineView nurses={filteredNurses} />}
       {viewMode === "table" && (
         <div className="rounded-lg border p-8 text-center text-gray-500">
           Table view coming soon
