@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Pipeline Kanban View - draggable cards between pipeline stages with two separate funnels (Application Funnel and Cohort Pipeline) plus Exit/Hold states.",
+  "status": "pending",
+  "steps": [
+    "Create src/components/nurses/PipelineView.tsx - the main Kanban board component using @hello-pangea/dnd (React DnD alternative that works with React 18). Displays columns for each pipeline stage with nurse cards that can be dragged between columns.",
+    "Implement two funnel sections displayed as separate groups of columns: Application Funnel (Applied, CV Submitted, CV + English Submitted, Under Review, Shortlisted Yes, Shortlisted Maybe, Not Selected, Didn't Qualify) and Cohort Pipeline (Selected for Cohort, Reserve, Cohort Confirmed, Training Active, OET Registered, OET Passed, OET Failed, Placement Ready, Placed). Plus Exit/Hold states (Deferred, Dropped Out, Recommended Pathway, Not Selected) shown separately at the bottom or side.",
+    "Create src/components/nurses/KanbanCard.tsx - a compact card for the kanban columns showing: initials avatar (small), name, Next Action badge (color-coded, prominent), readiness badge, specialty. Card should be visually compact but scannable.",
+    "Create src/components/nurses/KanbanColumn.tsx - a single column with: stage name header, nurse count badge, droppable area for cards, visual feedback when dragging over (highlight border/background)",
+    "Implement drag-and-drop handler that: updates the nurse's pipelineStage when dropped in a new column, calls a server action to persist the change to the database, shows optimistic UI update, auto-recalculates readinessStatus based on new pipeline stage",
+    "Create src/app/nurses/actions.ts with server actions: updateNursePipelineStage(nurseId, newStage) - updates stage and recalculates readiness status",
+    "Add horizontal scrolling for the kanban board so all columns are accessible",
+    "Color-code column headers: Deferred columns get yellow (#FEF9C3) background, Dropped Out gets red (#FEE2E2) background, Placed gets green tint, other stages get subtle purple tint",
+    "Integrate PipelineView into the NurseDatabase component and connect to the view toggle (Pipeline button)"
+  ],
+  "acceptance_criteria": [
+    "Pipeline view shows columns for all pipeline stages organized into Application Funnel and Cohort Pipeline sections",
+    "Nurse cards appear in the correct column based on their pipelineStage",
+    "Cards can be dragged from one column to another",
+    "Dropping a card in a new column updates the nurse's pipeline stage in the database",
+    "Readiness status auto-recalculates when pipeline stage changes",
+    "Column headers show the stage name and nurse count",
+    "Exit/Hold states (Deferred, Dropped Out) have distinct background colors",
+    "Kanban board scrolls horizontally to access all columns",
+    "View toggle switches between Gallery and Pipeline views",
+    "pnpm build passes without errors"
+  ],
+  "verification": [
+    "Run pnpm build and confirm it exits with code 0"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

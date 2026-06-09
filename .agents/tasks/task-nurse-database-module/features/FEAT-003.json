@@ -1,0 +1,38 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Nurse Database Gallery View - photo-first Airtable-style card grid with search, filter, sort, and view toggle controls. This is the default view at /nurses.",
+  "status": "pending",
+  "steps": [
+    "Create src/app/nurses/page.tsx as a server component that fetches all nurses from the database and renders the NurseDatabase client component",
+    "Create src/app/nurses/layout.tsx with the page structure (header with title, controls bar, content area)",
+    "Create src/components/nurses/NurseDatabase.tsx as the main client component that manages view state (gallery/pipeline/table) and renders the appropriate view. Gallery is the DEFAULT view.",
+    "Create src/components/nurses/GalleryView.tsx - renders a responsive grid of NurseCard components. Grid should be 4 columns on large screens, 3 on medium, 2 on small, 1 on mobile.",
+    "Create src/components/nurses/NurseGalleryCard.tsx - the individual gallery card showing: circular photo (or Propela purple initials avatar if no photo URL), full name (bold), CV score as 1-5 stars (half-stars supported using a StarRating component), years experience badge, primary clinical specialty, province/city location, readiness status badge (color-coded per PRD), Next Action badge (MOST PROMINENT element - large, color-coded: Overdue=#EF4444, Due Today=#F59E0B, Upcoming=#0D9488, No action=#9CA3AF), flag indicator (red dot with count if flagCount > 0)",
+    "Create src/components/nurses/StarRating.tsx - renders 1-5 stars with half-star support. Full star = filled, half star = half-filled, empty star = outline. Uses Propela purple color for filled portions.",
+    "Create src/components/nurses/ViewControls.tsx - toolbar with: Search input (magnifying glass icon, searches by name), Group By dropdown, Filter panel button (opens a sheet/drawer with filter options for pipeline stage, readiness status, specialty, location), Sort dropdown (by name, CV score, years experience, submitted date), View toggle buttons (Gallery active by default, Pipeline, Table)",
+    "Create src/components/nurses/FilterPanel.tsx - a sheet/drawer that opens from the right with filter checkboxes for: Pipeline Stage (all stages), Readiness Status (all statuses), Specialty (dynamic from data), Location/Province (dynamic from data). Include Apply and Reset buttons.",
+    "Create src/lib/nurse-utils.ts with helper functions: getReadinessColor(status) returns the correct color code, getNextActionColor(action) returns urgency color, calculateCvScore(nurse) implements the formula (Hospital Exp x3 + SANC Status x3 + Qualifications x2 + Specialisation x1) / 9 * 5, calculateFinalScore(nurse) implements sum of all weighted scores / 15, getTier(finalScore) returns tier label, getReadinessFromStage(pipelineStage) auto-calculates readiness status from pipeline stage",
+    "Create src/store/nurse-store.ts using Zustand - manages: viewMode (gallery/pipeline/table), searchQuery, activeFilters, sortField, sortDirection, groupBy. Include actions for updating each.",
+    "Wire up the search functionality to filter nurses by name (case-insensitive contains)",
+    "Wire up the sort functionality to sort by name, cvScore, yearsExperience, or submittedAt",
+    "Ensure the gallery cards are clickable and navigate to /nurses/[id] (the nurse card detail view)"
+  ],
+  "acceptance_criteria": [
+    "/nurses route renders the Gallery View by default showing all seeded nurses",
+    "Each gallery card displays: photo/initials avatar, name, star rating, years badge, specialty, location, readiness badge, Next Action badge (most prominent), flag indicator",
+    "Next Action badge is the most visually prominent element on each card with correct color coding",
+    "Readiness status badges have correct color coding per PRD",
+    "Stars render correctly with half-star support",
+    "Search filters nurses by name in real-time",
+    "Sort changes the order of displayed cards",
+    "View toggle buttons are present (Gallery highlighted as active)",
+    "Clicking a card navigates to /nurses/[id]",
+    "pnpm build passes without errors"
+  ],
+  "verification": [
+    "Run pnpm build and confirm it exits with code 0"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

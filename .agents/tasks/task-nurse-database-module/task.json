@@ -1,0 +1,7 @@
+{
+  "task_id": "task-nurse-database-module",
+  "task_description": "Build the Propela Ops platform Nurse Database module with Gallery View, Pipeline Kanban View, and Nurse Card detail. Includes project scaffolding with Next.js 14, Tailwind CSS, shadcn/ui, Prisma with SQLite, and seed data for 12 nurses.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004", "FEAT-005"],
+  "blocked_reason": null
+}

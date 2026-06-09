@@ -1,0 +1,43 @@
+{
+  "id": "FEAT-005",
+  "type": "feat",
+  "description": "Nurse Card detail view - full detail page at /nurses/[id] showing all fields from PRD section 7.7 organized in collapsible sections, with editable fields and the scorecard auto-calculations.",
+  "status": "pending",
+  "steps": [
+    "Create src/app/nurses/[id]/page.tsx as a server component that fetches the nurse by ID and renders the NurseCard client component. Include a back button to return to /nurses.",
+    "Create src/components/nurses/NurseCard.tsx - the full detail view organized in sections matching PRD section 7.7. Layout: Left column (2/3 width) with scrollable sections, Right column (1/3 width) with header info and scorecard always visible.",
+    "Implement HEADER section at top of right column: large circular profile photo (or purple initials avatar), full name (large, bold), preferred name (subtitle), pipeline stage badge, Next Action as LARGE color-coded badge (most prominent), readiness status badge, flag count (red if > 0), last contacted date, cohort label, submitted at date.",
+    "Implement PERSONAL section (collapsible): email (mailto link), contact number (tel link), gender, age group, province/city. Use a two-column grid layout for field pairs.",
+    "Implement PROFESSIONAL section (collapsible): SANC registered (Yes/No badge), RN in SA (Yes/No), SANC Number, SANC APC Expiry date, SANC APC Status, Highest Qualification, Institution, Years Experience, Primary Clinical Specialty, Additional Certifications, Employment Status, Current Employer, Valid Passport (Yes/No badge), Passport Expiry date.",
+    "Implement ENGLISH (EF SET) section (collapsible): Previously Taken Test (Yes/No), EF SET Score (with visual bar), EF SET Level, English Pts, Proficiency Level badge.",
+    "Implement ENGLISH (OET) section (collapsible): OET Status, Exam Date, Exam Centre, Writing/Speaking/Listening/Reading scores (each with visual indicator), Overall Result badge, Retake Required (Yes/No), Retake Components list.",
+    "Implement SCORECARD section in right column (always visible): Display each scoring dimension with its weight and score value. Hospital Exp (x3), SANC Status (x3), English Proficiency (x2), Qualifications (x2), Specialisation (x1), Valid Passport (x1), Financial Readiness (x1), Motivation (x2). Show CV Score auto-calculated: (Hospital Exp x3 + SANC Status x3 + Qualifications x2 + Specialisation x1) / 9 * 5. Show Final Score: sum of all weighted scores / 15. Show Tier auto-assigned: 4.0-5.0 = Tier 1 Priority, 3.0-3.9 = Tier 1 Standard, 2.0-2.9 = Tier 2 Development, 1.0-1.9 = Tier 3, Below 1.0 = Not Suitable. Display tier with appropriate color badge.",
+    "Implement SELECTION section (collapsible): Shortlist Decision, First Interview Date, Non-Selection Reason, Recommended Pathway.",
+    "Implement COHORT section (collapsible): Cohort Assigned, Agreement Sent (Yes/No + date), Agreement Signed (Yes/No + date), Commitment Fee Status + date.",
+    "Implement PLACEMENT section (collapsible): Placement Status, Destination Country, Employer, Placement Date, Placement Fee Invoiced (Yes/No), Placement Fee Received (Yes/No).",
+    "Implement NOTES section (collapsible): Motivations (text area), Questions (text area), Notes/Flags (text area), Source, Source Record, Communication Log (text area).",
+    "Create src/components/nurses/CollapsibleSection.tsx - a reusable section wrapper with: section title, collapse/expand toggle (chevron icon), smooth animation. Sections start expanded by default.",
+    "Create src/components/nurses/FieldDisplay.tsx - a reusable component for displaying label-value pairs in the detail view. Support variants: text, badge, date, link, boolean (Yes/No badges).",
+    "Create src/components/nurses/NextActionDropdown.tsx - dropdown for changing the Next Action value. Options from PRD: 'Needs: Chase CV, then scoring', 'Needs: Chase EF SET, then shortlist email', 'Needs: Shortlist email (writing task)', 'Needs: Non-selection email', 'Needs: Non-selection email (English pathway)', 'Needs: Review', 'Needs: Send agreement', 'Needs: Chase commitment fee', 'Needs: OET registration', 'Needs: Chase OET results', 'Needs: Placement outreach', 'No action required', plus a custom free-text option. Selecting a value calls a server action to update.",
+    "Add server action in src/app/nurses/actions.ts: updateNurseNextAction(nurseId, nextAction) - persists the change",
+    "Style the entire card with the Propela brand aesthetic: purple accents, rounded corners, subtle shadows, Poppins font throughout"
+  ],
+  "acceptance_criteria": [
+    "/nurses/[id] route renders the full nurse detail view",
+    "All PRD section 7.7 fields are displayed in their correct sections",
+    "Scorecard displays with correct auto-calculations (CV Score, Final Score, Tier)",
+    "Next Action is displayed as the most prominent element with correct color coding",
+    "Next Action dropdown allows changing the value and persists to database",
+    "Pipeline stage badge is color-coded",
+    "Readiness status badge is color-coded per PRD rules",
+    "Sections are collapsible with smooth animation",
+    "Back button navigates to /nurses",
+    "All sections match PRD organization (Header, Personal, Professional, English EF SET, English OET, Scorecard, Selection, Cohort, Placement, Notes)",
+    "pnpm build passes without errors"
+  ],
+  "verification": [
+    "Run pnpm build and confirm it exits with code 0"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

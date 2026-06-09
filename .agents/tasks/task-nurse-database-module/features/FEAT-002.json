@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Prisma schema for Nurse Database with all fields from PRD section 7.7, plus seed data for 10-15 nurses to demonstrate views.",
+  "status": "pending",
+  "steps": [
+    "Create the full Prisma schema in prisma/schema.prisma with a Nurse model containing ALL fields specified in the PRD section 7.7. Fields grouped by section: HEADER (id, profilePhoto, fullName, preferredName, pipelineStage enum, nextAction, readinessStatus enum, flagCount, lastContacted DateTime, cohort, submittedAt DateTime), PERSONAL (email, contactNumber, gender, ageGroup, provinceCity), PROFESSIONAL (sancRegistered Boolean, rnInSA Boolean, sancNumber, sancApcExpiry DateTime, sancApcStatus, highestQualification, institution, yearsExperience Int, primaryClinicalSpecialty, additionalCertifications, employmentStatus, currentEmployer, validPassport Boolean, passportExpiry DateTime), ENGLISH_EFSET (previouslyTakenTest Boolean, efSetScore Float, efSetLevel, englishPts Float, proficiencyLevel), ENGLISH_OET (oetStatus, oetExamDate DateTime, oetExamCentre, oetWriting Float, oetSpeaking Float, oetListening Float, oetReading Float, oetOverallResult, oetRetakeRequired Boolean, oetRetakeComponents), SCORECARD (hospitalExp Int, sancStatus Int, englishProficiency Int, qualifications Int, specialisation Int, validPassportScore Int, financialReadiness Int, motivation Int, cvScore Float auto-calculated, finalScore Float auto-calculated, tier), SELECTION (shortlistDecision, firstInterviewDate DateTime, nonSelectionReason, recommendedPathway), COHORT_TRACKING (cohortAssigned, agreementSent Boolean, agreementSentDate DateTime, agreementSigned Boolean, agreementSignedDate DateTime, commitmentFeeStatus, commitmentFeeDate DateTime), PLACEMENT (placementStatus, destinationCountry, employer, placementDate DateTime, placementFeeInvoiced Boolean, placementFeeReceived Boolean), NOTES (motivations Text, questions Text, notesFlags Text, source, sourceRecord, communicationLog Text). Use enums for PipelineStage and ReadinessStatus.",
+    "Create enum PipelineStage with values: APPLIED, CV_SUBMITTED, CV_ENGLISH_SUBMITTED, UNDER_REVIEW, SHORTLISTED_YES, SHORTLISTED_MAYBE, NOT_SELECTED, DIDNT_QUALIFY, SELECTED_FOR_COHORT, RESERVE, COHORT_CONFIRMED, TRAINING_ACTIVE, OET_REGISTERED, OET_PASSED, OET_FAILED, PLACEMENT_READY, PLACED, DEFERRED, DROPPED_OUT, RECOMMENDED_PATHWAY",
+    "Create enum ReadinessStatus with values: NOT_READY, PLACEMENT_READY, PLACED, DROPPED_OUT, DEFERRED, NOT_SELECTED, RECOMMENDED_PATHWAY",
+    "Create prisma/seed.ts with 12 diverse nurse records that cover: various pipeline stages, different readiness statuses, a mix of specialties (ICU, Paediatrics, Maternity, Emergency, General, Oncology), different provinces (Gauteng, Western Cape, KwaZulu-Natal, Eastern Cape, Limpopo, Free State), some with photos (use placeholder URLs like https://api.dicebear.com/7.x/avataaars/svg?seed=NurseName), varied CV scores and tiers, at least 2 flagged nurses, at least 1 dropped out, at least 1 deferred, nurses at different pipeline stages to fill the kanban board",
+    "Add seed script to package.json: prisma.seed = ts-node --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} prisma/seed.ts",
+    "Install ts-node as a dev dependency for seed script",
+    "Run npx prisma db push to create the database, then npx prisma db seed to populate it",
+    "Create a src/lib/prisma.ts file with a singleton PrismaClient instance for use in the app"
+  ],
+  "acceptance_criteria": [
+    "prisma/schema.prisma contains Nurse model with all PRD section 7.7 fields",
+    "PipelineStage and ReadinessStatus enums are defined with all specified values",
+    "prisma/seed.ts creates 12 diverse nurse records covering various stages and statuses",
+    "npx prisma db push succeeds and creates prisma/dev.db",
+    "npx prisma db seed succeeds and populates the database",
+    "src/lib/prisma.ts exports a working PrismaClient singleton",
+    "pnpm build still passes after schema changes"
+  ],
+  "verification": [
+    "Run npx prisma db push and confirm it exits with code 0",
+    "Run npx prisma db seed and confirm it exits with code 0",
+    "Run pnpm build and confirm it exits with code 0"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

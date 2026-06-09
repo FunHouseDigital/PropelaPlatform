@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-001",
+  "type": "chore",
+  "description": "Project scaffolding - Initialize Next.js 14 App Router project with TypeScript, Tailwind CSS, shadcn/ui, Prisma with SQLite, Zustand, Recharts, Lucide React, and Poppins font. Configure brand colors and theming.",
+  "status": "in_progress",
+  "steps": [
+    "Initialize Next.js 14 project with TypeScript and App Router using create-next-app in the /projects/sandbox/PropelaPlatform directory (use --use-pnpm flag, app router, tailwind, src directory, import alias @/*)",
+    "Install additional dependencies: prisma, @prisma/client, zustand, recharts, lucide-react, @hello-pangea/dnd (for drag-and-drop kanban)",
+    "Initialize shadcn/ui with pnpm dlx shadcn@latest init (use default style, zinc as base color, CSS variables enabled)",
+    "Add shadcn/ui components needed: button, card, badge, input, select, dialog, tabs, avatar, dropdown-menu, sheet, separator, scroll-area, tooltip",
+    "Configure Tailwind CSS with Propela brand colors in tailwind.config.ts: propela-purple (#5B2D8E), propela-purple-dark (#3D1D5E), propela-purple-light (#F3EDF9), propela-purple-mid (#7B4BAE). Add action colors: overdue (#EF4444), due-today (#F59E0B), upcoming (#0D9488), no-action (#9CA3AF). Add readiness colors: not-ready (#6B7280), placement-ready (#10B981), placed (#5B2D8E), dropped-out-bg (#FEE2E2), deferred-bg (#FEF9C3), flag-red (#DC2626).",
+    "Configure Poppins font via next/font/google in the root layout (weights 400, 500, 600, 700)",
+    "Set up Prisma with SQLite provider - create prisma/schema.prisma with datasource pointing to file:./dev.db",
+    "Create a basic app layout in src/app/layout.tsx with the Poppins font applied globally and a sidebar navigation shell",
+    "Create src/app/page.tsx that redirects to /nurses (the Nurse Database module)"
+  ],
+  "acceptance_criteria": [
+    "pnpm build completes without errors",
+    "pnpm dev starts the development server",
+    "Tailwind CSS is working with custom Propela brand colors available",
+    "Poppins font is loaded and applied globally",
+    "Prisma schema exists with SQLite provider configured",
+    "shadcn/ui components are initialized and importable",
+    "Root page redirects to /nurses route"
+  ],
+  "verification": [
+    "Run pnpm build and confirm it exits with code 0",
+    "Run pnpm lint and confirm no errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
