@@ -70,7 +70,11 @@ export function TemplateLibrary({ templates }: TemplateLibraryProps) {
             Manage your reusable message and document templates.
           </p>
         </div>
-        <button className="flex items-center gap-2 rounded-lg bg-propela-purple px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-propela-purple-dark">
+        <button
+          disabled
+          className="flex items-center gap-2 rounded-lg bg-propela-purple px-4 py-2 text-sm font-medium text-white opacity-50 cursor-not-allowed"
+          title="Coming soon"
+        >
           <Plus className="h-4 w-4" />
           Create Template
         </button>

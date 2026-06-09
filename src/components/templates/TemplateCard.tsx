@@ -5,6 +5,7 @@ import { Mail, MessageCircle, FileText, MessageSquare, File, Clock, BarChart3 } 
 import { Badge } from "@/components/ui/badge";
 import { Template, TemplateCategory } from "@/types/template";
 import { cn } from "@/lib/utils";
+import { getCategoryColor, getTemplateStatusColor } from "@/lib/badge-colors";
 
 interface TemplateCardProps {
   template: Template;
@@ -22,34 +23,6 @@ function getCategoryIcon(category: TemplateCategory) {
       return MessageSquare;
     case "Document":
       return File;
-  }
-}
-
-function getCategoryColor(category: TemplateCategory): string {
-  switch (category) {
-    case "Email":
-      return "bg-blue-100 text-blue-700";
-    case "WhatsApp":
-      return "bg-green-100 text-green-700";
-    case "Letter":
-      return "bg-propela-purple-light text-propela-purple";
-    case "SMS":
-      return "bg-amber-100 text-amber-700";
-    case "Document":
-      return "bg-gray-100 text-gray-700";
-  }
-}
-
-function getStatusColor(status: string): string {
-  switch (status) {
-    case "Active":
-      return "bg-green-100 text-green-700";
-    case "Draft":
-      return "bg-amber-100 text-amber-700";
-    case "Archived":
-      return "bg-gray-100 text-gray-500";
-    default:
-      return "bg-gray-100 text-gray-700";
   }
 }
 
@@ -75,7 +48,7 @@ export function TemplateCard({ template }: TemplateCardProps) {
           </div>
           <Badge
             variant="secondary"
-            className={cn("text-[10px] font-medium shrink-0", getStatusColor(template.status))}
+            className={cn("text-[10px] font-medium shrink-0", getTemplateStatusColor(template.status))}
           >
             {template.status}
           </Badge>

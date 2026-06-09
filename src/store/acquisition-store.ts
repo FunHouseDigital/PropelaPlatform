@@ -16,7 +16,7 @@ export const useAcquisitionStore = create<AcquisitionStoreState>((set) => ({
   activeTab: 'organisations',
   searchQuery: '',
   statusFilter: '',
-  setActiveTab: (tab) => set({ activeTab: tab }),
+  setActiveTab: (tab) => set({ activeTab: tab, searchQuery: '', statusFilter: '' }),
   setSearchQuery: (query) => set({ searchQuery: query }),
   setStatusFilter: (filter) => set({ statusFilter: filter }),
 }));

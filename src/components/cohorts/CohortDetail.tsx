@@ -6,24 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Cohort } from "@/types/cohort";
 import { NurseProgressTable } from "./NurseProgressTable";
 import { cn } from "@/lib/utils";
+import { getCohortStatusColor } from "@/lib/badge-colors";
 
 interface CohortDetailProps {
   cohort: Cohort;
-}
-
-function getStatusColor(status: string): string {
-  switch (status) {
-    case "Active":
-      return "bg-green-100 text-green-700 border-green-200";
-    case "Planned":
-      return "bg-propela-purple-light text-propela-purple border-propela-purple/20";
-    case "Completed":
-      return "bg-blue-100 text-blue-700 border-blue-200";
-    case "Archived":
-      return "bg-gray-100 text-gray-600 border-gray-200";
-    default:
-      return "bg-gray-100 text-gray-600 border-gray-200";
-  }
 }
 
 function formatDate(dateStr: string): string {
@@ -67,7 +53,7 @@ export function CohortDetail({ cohort }: CohortDetailProps) {
               <h1 className="text-xl font-bold text-gray-900">{cohort.name}</h1>
               <Badge
                 variant="secondary"
-                className={cn("text-xs font-medium", getStatusColor(cohort.status))}
+                className={cn("text-xs font-medium", getCohortStatusColor(cohort.status))}
               >
                 {cohort.status}
               </Badge>
