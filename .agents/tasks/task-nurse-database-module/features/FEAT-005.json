@@ -2,7 +2,7 @@
   "id": "FEAT-005",
   "type": "feat",
   "description": "Nurse Card detail view - full detail page at /nurses/[id] showing all fields from PRD section 7.7 organized in collapsible sections, with editable fields and the scorecard auto-calculations.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create src/app/nurses/[id]/page.tsx as a server component that fetches the nurse by ID and renders the NurseCard client component. Include a back button to return to /nurses.",
     "Create src/components/nurses/NurseCard.tsx - the full detail view organized in sections matching PRD section 7.7. Layout: Left column (2/3 width) with scrollable sections, Right column (1/3 width) with header info and scorecard always visible.",
