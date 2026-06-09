@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "feat",
   "description": "Module 5: Template Library - A /templates route for managing reusable message/document templates (emails, WhatsApp messages, letters). Includes template cards with categories, preview, and a detail/edit view.",
-  "status": "pending",
+  "status": "completed",
   "steps": [
     "Create src/types/template.ts with a Template interface: id, name, category (Email|WhatsApp|Letter|SMS|Document), subject (for emails), body (template content with {{placeholders}}), tags (string array), status (Active|Draft|Archived), lastModified, usageCount",
     "Create src/lib/mock-templates.ts with 8-10 mock templates covering the categories: welcome email, OET reminder WhatsApp, agreement letter, interview confirmation, non-selection email, placement confirmation, cohort welcome, follow-up SMS. Include realistic template body text with placeholders like {{nurse_name}}, {{cohort_name}}, {{date}}.",
@@ -30,5 +30,5 @@
     "Run pnpm lint and confirm zero errors or only warnings"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Build and lint pass cleanly. Templates route renders at /templates (static) and /templates/[id] (dynamic). Added 10 mock templates covering all categories. Category badge colors follow the prescribed pattern. Placeholder highlighting uses propela-purple styling."
 }
