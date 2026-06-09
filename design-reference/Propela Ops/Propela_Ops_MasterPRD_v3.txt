@@ -1,0 +1,968 @@
+PROPELA HEALTH
+Propela Ops
+Master Product Requirements Document
+VERSION 3.0 | FINAL APPROVED FOR BUILD
+AUTHOR
+Ayabulela Yokwana
+Co-Founder & COO, Propela Health
+DATE
+June 2026
+CLASSIFICATION
+Internal | Strictly Confidential
+Championing the careers of African nurses.
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 1
+Master Product Requirements Document -- Version 3.0
+(Final)
+Document Version: 3.0 -- Approved for Build
+Date: June 2026
+Author: Ayabulela Yokwana, Co-Founder & COO, Propela Health
+Platform Name: Propela Ops
+Status: Airtight. Hand to Claude Code.
+Decision Log (v2 -> v3 changes)
+Change Decision Source
+Institution Tracker renamed -> Nurse Acquisition Hub (4
+tracks)
+Aya confirmed
+Hospital outreach reframed Partnership Track -- info sessions,
+not recruitment
+Aya confirmed direction
+Nurse card status badge Readiness Status: Not Ready /
+Placement Ready / Placed
+Aya confirmed
+Photos in Phase 1 Photo URL field (paste Google
+Drive / WhatsApp link)
+Aya confirmed
+Acquisition Hub tracks 4 tracks: Organisations, Referral
+Network, Community Channels,
+Events
+Aya confirmed
+Dashboard Splash screen + 1-page summary
+with Actions Needed count
+Aya confirmed
+Nurse card visual design Airtable-style gallery (photo,
+stars, badges, location)
+Aya's screenshot
+Motivations + Questions fields Imported from Cohort 1 CSV on
+first load, no manual re-entry
+Resolved
+Lightfield CRM Phase 3 migration target --
+Propela Ops eventually replaces
+it
+Aya confirmed
+Open question: Cohort 2 provider Remains open -- post Cohort 1
+learnings document
+Stays open
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 2
+1. Executive Summary
+Propela Ops is Aya Yokwana's single operating environment as COO of Propela Health. It replaces
+Notion for nurse tracking, extends into territory no current tool covers (institutional outreach
+memory, nurse acquisition tracking, cohort delivery management), and is designed to eventually
+replace Lightfield CRM in Phase 3.
+The platform is built around four principles confirmed by real Propela data:
+First, a nurse's record is not just a pipeline stage -- it is a combination of pipeline stage, readiness
+status, next action, scorecard, and internal flags, all of which must be visible without scrolling.
+Second, nurse acquisition happens across four distinct channels (organisations, referrals,
+communities, events), each with a different relationship logic. Tracking them in one unified hub with
+filters is more powerful than separate trackers.
+Third, hospital partnerships are approached as information-sharing arrangements, not recruitment
+outreach. Propela does not recruit nurses from hospitals directly -- it hosts information sessions for
+nurses who are already interested in going international.
+Fourth, nothing is deleted. Every nurse record, every outreach log, every flag stays in the system
+permanently, with clear visual exit states.
+2. Problem Statement
+2.1 What is broken today
+Nurse tracking has no single home. Notion holds the Cohort 1 pipeline. Spreadsheets hold scores.
+Lightfield holds follow-ups. Gmail holds the communication history. Getting a complete picture of one
+nurse requires switching between four tools.
+The most critical operational field is buried. What does this nurse need from me right now is a text
+field in a Notion row. It should be the first thing Aya sees on every nurse card, in large type, in colour.
+Nurse acquisition has no memory. There is no record of which nursing schools, hospitals, WhatsApp
+groups, or career fairs were engaged, what happened, what worked, and what to try again next
+cohort. This knowledge resets every cycle.
+Cohort delivery has no dashboard. Tracking 10 nurses through training, OET prep, results, and
+placement happens manually. There is no view of cohort health, budget consumed, or upcoming
+milestones.
+Dropped and rejected nurses disappear. When a nurse is rejected or drops out, their record becomes
+inaccessible. This loses relationship history, potential for future cohorts, and data on why the funnel
+shaped the way it did.
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 3
+3. Goals and Success Metrics
+Goal Metric Target (3 months
+post-launch)
+Replace Notion for nurse tracking Tools used for nurse
+management
+1 (Propela Ops only)
+Make Next Action impossible to
+miss
+Time to identify what a nurse
+needs
+Under 30 seconds
+Build acquisition memory Institutions / channels with active
+records
+80+
+Keep follow-ups on time Institution follow-up overdue rate Under 10%
+Real-time cohort visibility Manual update frequency needed Zero
+Retain all nurse records Nurse records retained after
+rejection/dropout
+100%
+4. Primary User Profile
+Ayabulela Yokwana -- Co-Founder and COO, Propela Health
+Sole user in Phase 1. Every view, interaction, and default is designed for her workflow.
+What Aya needs to be able to do
+• Open the platform and see, on one screen, what needs her attention today
+• Know exactly what to do next for every nurse in the system
+• Log an outreach attempt to an institution in under 30 seconds
+• Move a nurse through the pipeline with one action
+• See the current cohort's health without opening a spreadsheet
+• Review a nurse's full profile (flags, scores, notes, OET status) before making a call
+• Find a template that worked last time and use it again
+• Never lose a record, even if the nurse dropped out in week one
+Tools Propela Ops complements (Phase 1)
+Tool Purpose Relationship
+Lightfield CRM Employer tracking (demand side) Stays separate in Phase 1; Phase
+3 migration target
+Mailchimp / Mailmeteor Bulk email sending Propela Ops logs what was sent;
+does not send
+Typeform Application intake CSV import on load; future direct
+import in Phase 2
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 4
+Tool Purpose Relationship
+Gmail Actual email sending Propela Ops logs the
+communication; Gmail sends it
+5. Product Architecture
+PROPELA OPS
+│
+├── DASHBOARD
+│ Splash screen → 1-page summary: Actions Needed, Cohort Pulse,
+│ Acquisition Hub follow-ups, Red Flags, Recent Activity
+│
+├── NURSE DATABASE
+│ Master record for every nurse Propela has ever engaged
+│ ├── Gallery View Photo cards, grouped by specialty or stage
+│ ├── Pipeline View Kanban across all stages
+│ ├── Cohort View Filtered to active cohort, OET focus
+│ └── Nurse Card Full record — all fields, Next Action prominent
+│
+├── NURSE ACQUISITION HUB
+│ Four tracks, one platform, universal filter
+│ ├── Track 1: Organisations NEIs + Hospitals (Partnership approach)
+│ ├── Track 2: Referral Network Placed nurses and active referrers
+│ ├── Track 3: Community Channels WhatsApp groups, Facebook, DENOSA
+│ └── Track 4: Events Career fairs, info sessions, roadshows
+│
+├── COHORT MANAGER
+│ One card per cohort, live nurse progress table, budget tracker
+│
+└── OUTREACH LOG + TEMPLATE LIBRARY
+Aggregated log across all acquisition tracks, template store
+6. Module 1 -- Dashboard
+6.1 Splash Screen
+Displayed on first open each session. Auto-transitions after 1.5 seconds or on click.
+• Full screen, Propela purple (#5B2D8E) background
+• Propela logo centred, with "Ops" as a secondary label
+• Aya's name below the logo
+• Subtle fade-in animation
+• One tap anywhere skips to dashboard
+6.2 Main Dashboard (1 page, no scroll required on desktop)
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 5
+Top bar:
+Propela Ops logo (small, left) + "Good morning, Aya" with today's date + Quick-add button (+ New
+Nurse, + Log Outreach)
+Row 1: Action Metrics (4 tiles)
+Tile Content Colour logic
+Actions Needed Total nurse cards with an
+overdue or due-today Next Action
+Red if > 0, green if clear
+Active Nurses Nurses in the pipeline (excluding
+Placed and exited)
+Propela purple
+Cohort Status Active cohort name + status
+badge
+Status colour
+Hub Follow-ups Institutions / channels with a
+follow-up due today or overdue
+Amber if > 0
+The Actions Needed tile is the most visually dominant. Largest number on the page.
+Row 2: Two-column layout
+Left column (60%) -- Actions Panel
+"Nurses needing action" -- a prioritised list grouped into three sections:
+• OVERDUE (red) -- nurses whose Next Action has passed the follow-up date
+• DUE TODAY (amber) -- nurses with Next Action due today
+• UPCOMING (grey) -- next 3 days
+Each row shows: nurse photo (small circle), name, Next Action label, days since last contact. Click
+opens nurse card directly.
+Right column (40%) -- Cohort Pulse
+Active cohort card showing:
+• Cohort name + status badge
+• Enrolled vs. target (e.g., 9/10)
+• OET status bar: Not Started / Studying / Registered / Passed / Failed (colour blocks)
+• Commitment fees: Paid / Pending / Overdue (colour blocks)
+• Next milestone + days remaining
+• Budget: amount spent vs. total (progress bar)
+Row 3: Two-column layout
+Left column -- Red Flags
+All nurse cards with one or more unresolved [FLAG] flags. Name, flag count, last contacted. Click
+opens nurse card. Empty state: "No active flags."
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 6
+Right column -- Recent Activity
+Last 10 logged actions across all modules. Timestamped. Icons for type (nurse update, outreach
+sent, cohort change, template used).
+7. Module 2 -- Nurse Database
+7.1 Purpose
+Single source of truth for every nurse Propela has engaged -- from first application to placement or
+permanent exit. Replaces Notion entirely.
+Capacity: 500 nurses
+7.2 Nurse Pipeline Stages
+Application Funnel (pre-cohort selection)
+Stage Description
+Applied Typeform submitted. Basic details only.
+CV Submitted CV received. Awaiting EF SET result.
+CV + English Submitted Both CV and EF SET received. Ready for scoring.
+Under Review Scoring in progress. Shortlist decision pending.
+Shortlisted -- Yes YES ✓ confirmed. Awaiting interview.
+Shortlisted -- Maybe MAYBE. Requires further review or follow-up.
+Not Selected NO ✗. Non-selection email required.
+Didn't Qualify Failed minimum criteria at intake.
+Cohort Pipeline (post-selection)
+Stage Description
+Selected for Cohort Offered a place. Agreement not yet signed.
+Reserve On waitlist. First contact if a place opens.
+Cohort Confirmed Agreement signed. Commitment fee received.
+Active member.
+Training Active Currently attending OET Fast Track.
+OET Registered Exam date confirmed and booked.
+OET Passed All four components passed.
+OET Failed One or more components failed. Retake track.
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 7
+Stage Description
+Placement Ready OET passed, documents complete, available for
+matching.
+Placed Matched to employer. Placement confirmed.
+Exit and Hold States
+Stage Visual Description
+Deferred Yellow card Agreed to join a future cohort.
+Relationship active.
+Dropped Out Red card + [FLAG] Withdrew. Record retained
+permanently. Never hidden.
+Recommended Pathway Grey card Directed to English training, RN
+qualification, or future cohort.
+Not Selected Muted card Funnel rejection. Retained for
+future cohort consideration.
+7.3 Readiness Status Badge
+Displayed prominently on every nurse card in gallery and pipeline view. Auto-calculated from
+pipeline stage.
+Status Colour Triggered by stage
+Not Ready Grey Applied through OET Registered
+Placement Ready Green OET Passed, Placement Ready
+Placed Propela Purple Placed
+Exit states (Dropped Out, Deferred, Recommended Pathway) show their own stage label as the
+badge, not a Readiness Status.
+7.4 Gallery View (default -- Airtable-style)
+Nurse cards displayed as a photo gallery. Default grouping: by Primary Clinical Specialty. Alternative
+groupings: Pipeline Stage, Cohort, Readiness Status.
+Each gallery card displays:
+┌─────────────────────────────┐
+│ [PHOTO — circular crop] │
+│ Full Name │
+│ 􀀀􀀀􀀀􀀀 (CV Score stars) │
+│ [Yrs badge] [Specialty] │
+│ 􀀀 City, Province │
+│ [Readiness Status badge] │
+│ [Next Action badge] │
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 8
+│ 􀀀 x2 (if flags exist) │
+└─────────────────────────────┘
+• Photo: loaded from Photo URL field. If no URL, initials avatar with Propela purple background.
+• CV Score: 1-5 star display (half-stars supported)
+• Years badge: number in a coloured circle (matches Airtable style)
+• Next Action badge: colour-coded -- red if overdue, amber if due today, teal if no urgency, grey if
+no action required
+• Flag indicator: only shown if [FLAG] count > 0. Red icon with count number.
+Gallery controls:
+• Group by (dropdown)
+• Filter (panel: Cohort / Stage / Specialty / Readiness Status / Next Action / Flag present / EF SET
+Level / OET Status / Province)
+• Search (name, email, SANC number)
+• Sort (Name / CV Score / Years Experience / Last Contacted / Submitted Date)
+• View toggle: Gallery / Pipeline Kanban / Table
+7.5 Pipeline Kanban View
+Same data as gallery, displayed as a Kanban. One column per stage. Cards are draggable between
+stages. Card drag updates the pipeline stage field and prompts Next Action update.
+Kanban card (compact):
+• Circular photo (small)
+• Name
+• Next Action badge
+• Readiness Status badge
+• [FLAG] count (if > 0)
+7.6 Cohort View
+Filtered view of the nurse database showing only nurses assigned to the selected cohort. OET and
+commitment fee status are the primary columns.
+Column Type
+Photo + Name Link to full card
+Pipeline Stage Badge
+Next Action Colour badge
+OET Status Badge
+OET Scores W / S / L / R (4 numbers, colour-coded pass/fail)
+Commitment Fee Badge (Paid / Pending / Overdue)
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 9
+Column Type
+Agreement Signed Checkbox display
+[FLAG] Flags Count
+Last Contacted Date
+7.7 Nurse Card -- Complete Field Specification
+CARD HEADER (always visible, no scroll)
+Field Type Display
+Profile Photo URL (Google Drive / WhatsApp
+link)
+Circular crop, top of card
+Full Name Text Large, prominent
+Preferred Name Text Smaller, in brackets
+Pipeline Stage Dropdown Badge below name
+Next Action Dropdown (see values) Large colour badge -- most
+prominent element
+Readiness Status Auto-calculated Colour badge
+[FLAG] Flag Count Auto (from Notes / Flags) Red icon, count number
+Last Contacted Date Auto-updated
+Cohort Link to Cohort record Tag
+Submitted At DateTime Small, below name
+Next Action dropdown values:
+Needs: Chase CV, then scoring
+Needs: Chase EF SET, then shortlist email
+Needs: Shortlist email (writing task)
+Needs: Non-selection email
+Needs: Non-selection email (English pathway)
+Needs: Review
+Needs: Send agreement
+Needs: Chase commitment fee
+Needs: OET registration
+Needs: Chase OET results
+Needs: Placement outreach
+No action required
+[Custom — free text]
+PERSONAL INFORMATION
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 10
+Field Type
+Email Address Email
+Contact Number Phone (WhatsApp-first)
+Gender Dropdown: Female / Male / Non-binary / Prefer not
+to say
+Age Group Dropdown: 25-29 / 30-35 / 35-40 / 40+
+Province / City Text
+PROFESSIONAL PROFILE
+Field Type Notes
+Registered with SANC Yes / No
+Registered Nurse in South Africa Yes / No
+SANC Registration Number Text e.g., 16081978
+SANC APC Expiry Date Date
+SANC APC Status Dropdown: Active / Lapsed /
+Unverified
+Highest Qualification Dropdown: Diploma / Bachelor's
+Degree / Postgraduate /
+Bachelor's + Postgrad / Other
+Qualification Institution Text + optional link to Org record
+Years of Clinical Experience Dropdown: Less than 1 year / 1-2
+years / 3-5 years / 5+ years
+Displayed as years badge on card
+Primary Clinical Specialty Dropdown: Medical/Surgical / ICU
+/ Theatre / Paediatrics / Midwifery
+/ Mental Health / Emergency /
+Oncology / PHC-Community /
+Maternity / Renal / Other
+Used for gallery grouping
+Additional Certifications Multi-text ACLS, PALS, BLS, etc.
+Employment Status Dropdown: Employed /
+Unemployed / Freelancing /
+Prefer not to say
+Current Employer Text + optional link to
+Organisation record
+Valid Passport Yes / No
+Passport Expiry Date Date
+ENGLISH PROFICIENCY -- SCREENING (EF SET)
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 11
+Field Type
+Previously Taken English Test Yes / No
+EF SET Score Number (0-100)
+EF SET Level Dropdown: A1 / A2 / B1 / B2 / C1 / C2
+English Pts (0-3) Number (feeds scorecard automatically)
+English Proficiency Level (CEFR) Dropdown (overall summary level)
+ENGLISH PROFICIENCY -- QUALIFICATION (OET)
+Field Type
+OET Status Dropdown: Not Started / Studying / Registered / Sat
+/ Passed / Failed / Exemption Pending
+OET Exam Date Date
+OET Exam Centre Text
+OET Writing Score Number
+OET Speaking Score Number
+OET Listening Score Number
+OET Reading Score Number
+OET Overall Result Dropdown: Pass / Fail / Partial
+Retake Required Yes / No
+Retake Components Multi-select: Writing / Speaking / Listening / Reading
+SCORECARD
+Scores are entered manually. Final Score and Tier are auto-calculated.
+Criterion Weight Input
+Hospital Experience x3 1-5
+SANC Registration Status x3 1-5
+English Proficiency x2 Auto from English Pts field
+Qualifications x2 1-5
+Specialisation x1 1-5
+Valid Passport x1 1-5
+Financial Readiness x1 1-5
+Motivation x2 1-5 (entered post-interview)
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 12
+CV Score: Auto-calculated from Hospital Exp, SANC, Qualifications, Specialisation only (pre-interview
+components). Displayed as stars on gallery card.
+Final Score: Sum of all weighted scores ÷ 15 = out of 5.0
+Tier (auto-assigned):
+Score Tier
+4.0 - 5.0 Tier 1 Priority
+3.0 - 3.9 Tier 1 Standard
+2.0 - 2.9 Tier 2 Development
+1.0 - 1.9 Tier 3
+Below 1.0 Not Suitable
+SELECTION AND PATHWAY
+Field Type
+Shortlist Decision Dropdown: YES ✓ / MAYBE / NO ✗
+First Interview Date Date
+Non-Selection Reason Text
+Recommended Pathway Dropdown: Obtain RN qualification, reapply /
+Self-funded English training, reapply at B2+ /
+Waitlisted for future cohort / Included in current
+cohort / Other
+COHORT AND COMMITMENT
+Field Type
+Cohort Assigned Link to Cohort record
+Agreement Sent Yes / No
+Agreement Sent Date Date
+Agreement Signed Yes / No
+Agreement Signed Date Date
+Commitment Fee Status Dropdown: Not Due / Invoiced / Paid / Refunded /
+Waived / Overdue
+Commitment Fee Date Paid Date
+PLACEMENT
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 13
+Field Type
+Placement Status Dropdown: Not Ready / Ready / In Process / Placed /
+Declined
+Destination Country Dropdown: UK / Ireland / Other
+Employer Text
+Placement Date Date
+Placement Fee Invoiced Yes / No
+Placement Fee Received Yes / No
+NOTES, FLAGS, SOURCE, AND COMMS
+Field Type Notes
+Motivations Long text From application. Imported from
+CSV.
+Questions (from applicant) Long text From application. Imported from
+CSV.
+Notes / Flags Rich text Aya's internal notes. [FLAG]
+typed manually creates a
+counted flag in the card header.
+Source Dropdown: Direct application /
+Organisation referral /
+Community channel / Referral
+from placed nurse / Event /
+LinkedIn / WhatsApp / Word of
+mouth / Other
+Source Record Link to Acquisition Hub record
+(any track)
+Communication Log Chronological entries Date, channel, summary, next
+action set
+7.8 Data Seed -- Cohort 1 CSV Import
+On first load, the Cohort 1 Notion Merged CSV is imported automatically. Field mapping:
+CSV Column Propela Ops Field
+Name Full Name
+Email Address Email Address
+Contact Number Contact Number
+Gender Gender
+Age Group Age Group
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 14
+CSV Column Propela Ops Field
+Registered with SANC Registered with SANC
+Registered Nurse in South Africa Registered Nurse in SA
+Highest Qualification Highest Qualification
+Years of Clinical Experience Years of Clinical Experience
+Primary Clinical Specialty Primary Clinical Specialty
+Employment Status Employment Status
+Valid passport Valid Passport
+Previously Taken English Test Previously Taken English Test
+Application Stage Pipeline Stage (mapped -- see below)
+English Proficiency Level English Proficiency Level (CEFR)
+Submitted At Submitted At
+EF SET Score EF SET Score
+EF SET Level EF SET Level
+English Pts (0-3) English Pts (0-3)
+Hospital Exp *(x3) Hospital Experience (scorecard)
+SANC Status *(x3) SANC Status (scorecard)
+Qualifications *(x2) Qualifications (scorecard)
+Specialisation *(x1) Specialisation (scorecard)
+CV Score CV Score (auto-recalculated on load)
+Shortlist Decision Shortlist Decision
+Motivation *(x2) Motivation (scorecard)
+Financial *(x1) Financial Readiness (scorecard)
+Passport *(x1) Valid Passport (scorecard)
+Final Score Final Score (auto-recalculated)
+Tier Tier (auto-recalculated)
+Motivations Motivations
+Questions Questions (from applicant)
+Notes / Flags Notes / Flags
+Comms Status Next Action
+Non-Selection Reason Non-Selection Reason
+Recommended Pathway Recommended Pathway
+-- Cohort Assigned = "Cohort 1"
+-- Photo URL = blank (Aya adds per nurse)
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 15
+Application Stage -> Pipeline Stage mapping on import:
+CSV: Application Stage CSV: Shortlist Decision -> Propela Ops Pipeline Stage
+Application Submitted -- Applied
+CV Submitted -- CV Submitted
+CV & English Submitted YES ✓ Shortlisted -- Yes
+CV & English Submitted MAYBE Shortlisted -- Maybe
+CV & English Submitted NO ✗ Not Selected
+CV & English Submitted (blank) CV + English Submitted
+Didn't Qualify -- Didn't Qualify
+8. Module 3 -- Nurse Acquisition Hub
+8.1 Purpose
+Track every channel through which Propela finds nurses. Four tracks, one platform, universal filter
+and shared outreach log. Builds acquisition memory that compounds across cohort cycles.
+Capacity: 300 records across all tracks
+Important framing for hospital outreach: Propela does not contact hospital HR departments to recruit
+nurses. The approach is a Partnership Track -- Propela partners with a nursing manager or matron to
+host a voluntary information session for nurses already curious about international careers. The
+nurses opt in. The outreach message to the hospital contact is: "We'd love to host a 30-minute
+information session for any of your nurses interested in working abroad."
+8.2 Shared Outreach Pipeline (all 4 tracks)
+Stage Description
+Identified In the database, no outreach yet
+Outreach Sent First contact made
+Follow-Up Pending Sent, no response, follow-up date set
+Responded Contact replied
+Engaged / Meeting Set Call, session, or visit confirmed
+Active Ongoing relationship generating nurse leads
+Dormant Previously engaged, no current activity
+Closed Not viable -- do not re-engage
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 16
+8.3 Track 1 -- Organisations
+Covers both Type A (Nursing Education Institutions) and Type B (Health Facilities / Hospitals). Filtered
+by subtype within the track.
+Shared organisation fields:
+Field Type
+Organisation Name Text (required)
+Organisation Type Dropdown: NEI / Health Facility
+Province Dropdown (all 9 SA provinces)
+City / Town Text
+Physical Address Text
+Primary Contact Name Text
+Contact Email Email
+Contact Phone Phone
+LinkedIn / Website URL URL
+Current Stage Auto (from pipeline)
+Last Contact Date Date (auto-updated on outreach log)
+Next Follow-Up Date Date (triggers Dashboard alert)
+Preferred Channel Dropdown: Email / LinkedIn / Phone / WhatsApp /
+In-person
+Nurses Sourced (count) Auto (linked nurse records where Source = this org)
+Internal Rating 1-5 stars
+Notes Rich text
+Tags Multi-select
+Type A -- NEI only:
+Field Type
+SANC Accreditation Type Dropdown: University / Public College / Private NEI
+Programmes Offered Multi-select: Auxiliary (NQF5) / Diploma (NQF6) /
+Bachelor's (NQF8) / Postgrad
+Approximate Annual Graduates Number
+SANC Reference Number Text
+Type B -- Health Facility only:
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 17
+Field Type
+Healthcare Group Dropdown: Life Healthcare / Mediclinic / Netcare /
+Public / Independent / Other
+Facility Type Dropdown: Private / Public
+Overview / Description Long text
+Outreach Approach Dropdown: Info Session Partnership / Job Fair
+Presence / Nurse Referral Agreement / Other
+Info Session Held Yes / No
+Info Session Date Date
+Nurses Attending Info Session Number
+Nurses Converted to Applicants Number (auto-linked)
+Data seed on load: All 108 records from Health Facilities CSV are imported as Type B organisations in
+Track 1.
+8.4 Track 2 -- Referral Network
+Individual people who refer nurses to Propela. Primary source: nurses from previous cohorts who
+have been placed.
+Field Type
+Referrer Name Text
+Referrer Type Dropdown: Placed Nurse / Nursing Colleague /
+Healthcare Professional / Community Leader / Other
+Link to Nurse Record Link (if they are also in the nurse database)
+Contact Email Email
+Contact WhatsApp Phone
+Province / Location Text
+Current Relationship Stage Dropdown (shared pipeline)
+Nurses Referred (count) Auto (linked nurse records where Source = this
+referrer)
+Nurses Converted (count) Auto (linked nurses who reached Cohort Confirmed
+stage or beyond)
+Conversion Rate Auto-calculated
+Last Referral Date Date
+Notes Text
+Tags Multi-select
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 18
+8.5 Track 3 -- Community Channels
+WhatsApp groups, Facebook groups, nursing associations, LinkedIn groups, forums.
+Field Type
+Channel Name Text (e.g., "SA Nurses Abroad Facebook Group")
+Channel Type Dropdown: Facebook Group / WhatsApp Group /
+Professional Association / LinkedIn Group / Online
+Forum / Other
+Platform Dropdown: Facebook / WhatsApp / LinkedIn /
+Website / In-person / Other
+URL / Link URL
+Estimated Reach (members) Number
+Admin / Moderator Name Text
+Admin Contact Text
+Access Status Dropdown: Member / Pending / Not Joined
+Post Permission Dropdown: Open / Admin approval / No posting
+allowed
+Current Stage Dropdown (shared pipeline)
+Last Posted Date Date
+Last Post Outcome Dropdown: No response / Some engagement / Good
+response / Nurse leads generated
+Nurses Sourced (count) Auto
+Notes Text
+8.6 Track 4 -- Events
+Career fairs, Propela-hosted information sessions, nursing conferences, roadshows, online webinars.
+Field Type
+Event Name Text
+Event Type Dropdown: Career Fair / Info Session
+(Propela-hosted) / Info Session (at hospital) /
+Nursing Conference / Roadshow / Online Webinar /
+Other
+Organiser Text
+Event Date Date
+Location Text (City, Province or Online)
+Status Dropdown: Planned / Registered / Attended / Hosted
+/ Completed / Missed
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 19
+Field Type
+Nurses Met Number
+Nurse Cards / Materials Distributed Yes / No
+Leads Generated (count) Number
+Nurses Converted to Applicants Auto-linked
+Notes / Outcome Long text
+Budget (if Propela hosting) Currency (ZAR)
+Follow-Up Required Yes / No
+Follow-Up Date Date
+8.7 Shared Outreach Log (all tracks)
+Every contact attempt is logged chronologically per record.
+Field Type
+Date Date
+Channel Dropdown: Email / LinkedIn / Phone / WhatsApp /
+In-person / Other
+Contact Person Text
+Template Used Link to Template Library
+Subject Line (if email) Text
+Message Summary Text
+Outcome Dropdown: No response / Bounced / Responded
+positive / Responded neutral / Declined / Session
+booked / Leads received
+Follow-Up Date Date
+Notes Text
+9. Module 4 -- Cohort Manager
+9.1 Purpose
+Track each cohort as a discrete delivery project, from planning through to final placement outcomes
+and documented learnings.
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 20
+9.2 Cohort Card Fields
+Identity and Status
+Field Type
+Cohort Name Text (e.g., "Cohort 1 -- May 2026")
+Status Dropdown: Planning / Recruiting / Training / OET
+Prep / Exam Window / Placement / Closed
+Source Countries Multi-select
+Target Nurses Number
+Enrolled Nurses Auto (count of nurses at Cohort Confirmed and
+beyond)
+Reserve List Count Auto (count at Reserve stage)
+Timeline
+Field Type
+Recruitment Open Date
+Recruitment Close Date
+Training Start Date
+Training End Date
+OET Exam Date (Target) Date
+OET Results Expected Date
+Target First Placement Date
+Training Provider
+Field Type Note
+Provider Name Text
+Provider Contact Text
+Training Format Dropdown: In-person / Remote /
+Hybrid
+Training Cost Per Nurse (ZAR) Currency
+Total Training Cost Auto
+Lessons Planned Number
+Formal Assessment Included Yes / No [!] Cohort 1 learning:
+non-negotiable for Cohort 2
+Pre/Post Proficiency Tracking Yes / No [!] Cohort 1 learning: required
+Per-Candidate Progress Reports Yes / No [!] Cohort 1 learning: required
+Exam Readiness Criteria Defined Yes / No [!] Cohort 1 learning: required
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 21
+Field Type Note
+Provider Notes Long text
+Budget
+Field Type
+Total Budget (ZAR) Currency
+Propela Contribution Currency
+Commitment Fees Collected Auto (sum from linked nurse records)
+Training Cost (Actual) Currency
+OET Exam Cost (Actual) Currency
+Other Costs Currency
+Total Spent Auto
+Budget Remaining Auto
+Outcomes
+Field Type
+OET Pass Rate (Target) % (default 80%)
+OET Pass Rate (Actual) Auto-calculated
+Placement Rate (Target) % (default 70% of passers)
+Placement Rate (Actual) Auto-calculated
+Total Placement Fees Earned Currency
+Cohort Learnings Long text -- post-cohort review
+9.3 Cohort Nurse Progress Table
+Inline Cohort View within the cohort card. Live table of all enrolled nurses. Same columns as Cohort
+View in Nurse Database. Changes update the main nurse record immediately.
+10. Module 5 -- Outreach Log and Template Library
+10.1 Aggregated Outreach Log
+All outreach entries across all four acquisition tracks, in one searchable table.
+Additional columns beyond per-record log:
+• Track (Organisation / Referral Network / Community Channel / Event)
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 22
+• Organisation Type (NEI / Health Facility, if Track = Organisation)
+• Province
+• Cohort Cycle
+Filters: Date range / Track / Channel / Outcome / Province / Cohort Cycle
+Sort: Date / Outcome / Track / Record name
+10.2 Template Library
+Field Type
+Template Name Text
+Template Type Dropdown: Cold outreach / Follow-up / Partnership
+ask / Info session invite / Thank you /
+Re-engagement
+Best Track Multi-select: Organisation / Referral / Community /
+Event
+Channel Dropdown: Email / LinkedIn / WhatsApp
+Subject Line Text (email only)
+Body Rich text
+Times Used Auto-incremented
+Response Rate Auto (positive outcomes ÷ uses)
+Last Used Date Auto
+Best Used For Text
+Status Dropdown: Active / Archived
+10.3 Channel Performance (read-only analytics)
+• Outreach attempts by channel (bar chart)
+• Response rate by channel
+• Top 5 templates by response rate
+• Nurses sourced by acquisition track
+• Monthly outreach volume over time
+11. Data Relationships
+ACQUISITION HUB RECORD (any track)
+├──< OUTREACH LOG ENTRIES
+└──< NURSES (via Source Record field)
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 23
+COHORT
+└──< NURSES (via Cohort Assignment)
+NURSE
+├──< COMMUNICATION LOG ENTRIES
+├── OET RECORD (embedded)
+├── SCORECARD (embedded)
+└── PLACEMENT RECORD (embedded)
+TEMPLATE
+└──< OUTREACH LOG ENTRIES
+12. Key User Flows
+Flow A -- Morning dashboard routine
+1. Open Propela Ops -- splash screen, 1.5s
+2. Dashboard loads. Actions Needed tile shows 6
+3. Actions Panel -- 2 overdue, 4 due today
+4. Click first overdue nurse -- card opens
+5. Review Notes / Flags. Read Motivations.
+6. Confirm YES decision. Update Next Action to "Needs: Shortlist email (writing task)"
+7. Log comm entry: date, channel = Email, notes
+8. Move pipeline stage: Under Review -> Shortlisted -- Yes
+9. Next Action badge updates. Dashboard count drops to 5.
+Flow B -- Adding a hospital as a partnership target
+1. Open Nurse Acquisition Hub -> Track 1: Organisations
+2. Most 108 seeded hospitals already here. Find target hospital.
+3. Open card. Update Outreach Approach = "Info Session Partnership"
+4. Log outreach: channel = LinkedIn, message = info session invite template
+5. Set follow-up date = +5 days
+6. Stage moves to Outreach Sent
+7. Dashboard Hub Follow-ups tile updates
+Flow C -- Logging a Community Channel engagement
+1. Open Hub -> Track 3: Community Channels
+2. Add new channel: "SA Nurses UK Facebook Group", platform = Facebook, est. reach = 4,200
+3. Join the group. Update Access Status = Member. Post Permission = Open
+4. Post about Propela Cohort 2 applications
+5. Log outreach entry: channel = Facebook, outcome = Good response, leads generated = 3
+6. Update stage: Identified -> Active
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 24
+7. Link new applicants who mention the group in their Source field
+Flow D -- Reviewing cohort health mid-cycle
+1. Open Cohort Manager -> Cohort 1
+2. Review cohort pulse: 8 nurses in Training Active, 1 dropped out (red card visible)
+3. OET bar: 8 Not Started (exam date approaching)
+4. Budget remaining: R12,400 of R90,000
+5. Drill into nurse table. Filter by Commitment Fee = Overdue
+6. 1 nurse flagged. Open her card. Next Action = "Needs: Chase commitment fee"
+7. Log call. Update fee status pending confirmation.
+13. Design Principles
+Brand:
+• Primary: Propela Purple #5B2D8E
+• Font: Poppins throughout
+• Module accent colours: Nurse Database = teal, Organisations = orange, Community = emerald,
+Referral = coral, Events = indigo, Cohort = deep purple
+• Visual quality must be premium -- startup-grade, not a scratchpad
+Next Action is the most prominent element on every nurse card. Colour, size, and position reflect
+urgency. Red = overdue. Amber = due today. Teal = upcoming. Grey = no action.
+Readiness Status is the second most prominent badge. Not Ready (grey), Placement Ready (green),
+Placed (purple).
+Flags are never hidden. Red card background for Dropped Out. Flag count in card header wherever
+flags exist. Dashboard Red Flags feed catches stragglers.
+Nothing is deleted. Exit states are permanent records. The filter can exclude them from view, but the
+default includes them.
+One action = one click or drag. Pipeline stage change: drag the card. Next Action update: single
+dropdown select. Outreach log: one form, under 30 seconds.
+Photo-first gallery. The gallery view is the default nurse view. It is designed to mirror the Airtable
+NurseSync visual Aya built -- photo, stars, badges, location -- adapted for international placement
+context.
+Mobile-aware for key actions. Dashboard, nurse card header, and outreach log must function on
+mobile. Full table and gallery views are desktop-first.
+14. Scope Boundaries
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 25
+Phase 1: In Scope (this build)
+• All five modules fully functional
+• Single-user (Aya only)
+• Manual data entry + CSV import on load (Cohort 1 nurses + Health Facilities)
+• Auto-calculations: CV Score, Final Score, Tier, OET pass rate, budget remaining, nurses sourced
+counts
+• Persistent storage across sessions
+• Gallery, Kanban, and Table views for nurse database
+• Template library with effectiveness tracking
+• 4-track Acquisition Hub
+• Splash screen + 1-page dashboard
+Phase 1: Out of Scope
+• Vuyo-facing employer / demand side
+• API integrations (Mailchimp, Lightfield, Typeform)
+• Automated email sending
+• Nurse-facing or institution-facing portals
+• Document storage (CVs, passports, certificates)
+• Actual image file upload (photo URL only)
+15. Build Phases
+Phase 1 -- MVP Artifact (Claude Code)
+Build priority order:
+1. Nurse Database (Gallery + Kanban + Card) -- replaces Notion now
+2. Cohort Manager -- Cohort 1 is live
+3. Nurse Acquisition Hub (4 tracks) -- institution outreach
+4. Dashboard (Splash + 1-page summary) -- built after modules have real data
+5. Template Library -- added in final pass
+Tech stack:
+• React with hooks (useState, useReducer)
+• Tailwind CSS (base utility classes)
+• Recharts (analytics views)
+• Lucide React (icons)
+• window.storage (Claude persistent storage API) -- data persists across sessions
+CSV data seeding on first load:
+• Cohort 1 Notion Merged CSV -> 67 nurse records with full field mapping
+• Health Facilities CSV -> 108 Organisation records (Type B, Track 1)
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 26
+Phase 2 -- Enhanced Ops
+• CSV import for new Typeform application batches
+• Follow-up reminder notifications
+• Multi-cohort analytics (pass rate trends)
+• Bulk Next Action update
+• Nurse record duplicate detection (name + email)
+• Export to CSV for Mailmeteor mail merges
+Phase 3 -- Multi-user + Lightfield Migration
+• Vuyo-facing BD module (employer demand side)
+• Role-based access: Aya = Ops view, Vuyo = BD view
+• Lightfield CRM data migration into Propela Ops
+• Integration layer: Typeform direct sync
+• Full developer API documentation and handoff
+16. Remaining Open Questions
+Question Impact Owner
+Cohort 2 training provider
+requirements (formal assessment
+checklist)
+Affects provider field
+completeness in Cohort Manager
+Aya -- post Cohort 1 learnings doc
+7th and 8th Next Action values Minor field update Aya -- add when recalled
+Appendix A -- Scorecard Reference
+Criterion Weight Max Weighted Score
+Hospital Experience x3 15
+SANC Registration Status x3 15
+English Proficiency x2 10
+Qualifications x2 10
+Specialisation x1 5
+Valid Passport x1 5
+Financial Readiness x1 5
+Motivation x2 10
+Total divisor ÷15 5.0 max
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 27
+Appendix B -- Readiness Status Auto-Calculation
+Pipeline Stage Auto Readiness Status
+Applied through OET Registered Not Ready (grey)
+OET Passed, Placement Ready Placement Ready (green)
+Placed Placed (Propela purple)
+Dropped Out Dropped Out badge (red)
+Deferred Deferred badge (yellow)
+Not Selected, Recommended Pathway Stage label shown as badge
+Appendix C -- Colour Reference
+Element Colour
+Primary / Brand #5B2D8E (Propela Purple)
+Next Action -- Overdue Red (#EF4444)
+Next Action -- Due Today Amber (#F59E0B)
+Next Action -- Upcoming Teal (#0D9488)
+Next Action -- No action Grey (#9CA3AF)
+Readiness: Not Ready Grey (#6B7280)
+Readiness: Placement Ready Green (#10B981)
+Readiness: Placed Propela Purple (#5B2D8E)
+Dropped Out card Red background (#FEE2E2)
+Deferred card Yellow background (#FEF9C3)
+Flag indicator Red (#DC2626)
+Nurse module accent Teal (#0D9488)
+Organisation accent Orange (#F97316)
+Community accent Emerald (#059669)
+Referral accent Coral (#F43F5E)
+Events accent Indigo (#6366F1)
+Cohort accent Deep purple (#7C3AED)
+*Propela Health | Propela Ops v3.0 | Internal Document | Confidential*
+*Approved for Claude Code Build | June 2026*
+Propela Ops — Master PRD v3.0 Approved for Build | June 2026
+Propela Health | Strictly Confidential Page 28
