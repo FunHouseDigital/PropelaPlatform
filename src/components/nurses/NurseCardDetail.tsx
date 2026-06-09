@@ -7,7 +7,7 @@ import { StarRating } from "./StarRating";
 import { CollapsibleSection } from "./CollapsibleSection";
 import { FieldDisplay } from "./FieldDisplay";
 import { NextActionDropdown } from "./NextActionDropdown";
-import { getReadinessColor } from "@/lib/nurse-utils";
+import { getReadinessColor, calculateCvScore, calculateFinalScore, getTier, getTierColor } from "@/lib/nurse-utils";
 
 function getInitials(name: string): string {
   return name
@@ -40,47 +40,6 @@ function getPipelineStageColor(stage: string): string {
   if (stage.includes("Cohort") || stage.includes("Training"))
     return "bg-propela-purple-light text-propela-purple";
   return "bg-gray-100 text-gray-700";
-}
-
-function calculateCvScore(nurse: Nurse): number {
-  const score =
-    ((nurse.hospitalExp * 3 +
-      nurse.sancStatusScore * 3 +
-      nurse.qualifications * 2 +
-      nurse.specialisation * 1) /
-      9) *
-    5;
-  return Math.round(score * 10) / 10;
-}
-
-function calculateFinalScore(nurse: Nurse): number {
-  const score =
-    (nurse.hospitalExp * 3 +
-      nurse.sancStatusScore * 3 +
-      nurse.englishProficiency * 2 +
-      nurse.qualifications * 2 +
-      nurse.specialisation * 1 +
-      nurse.validPassportScore * 1 +
-      nurse.financialReadiness * 1 +
-      nurse.motivationScore * 2) /
-    15;
-  return Math.round(score * 10) / 10;
-}
-
-function getTierLabel(finalScore: number): string {
-  if (finalScore >= 4.0) return "Tier 1 Priority";
-  if (finalScore >= 3.0) return "Tier 1 Standard";
-  if (finalScore >= 2.0) return "Tier 2 Development";
-  if (finalScore >= 1.0) return "Tier 3";
-  return "Not Suitable";
-}
-
-function getTierColor(finalScore: number): string {
-  if (finalScore >= 4.0) return "bg-propela-purple text-white";
-  if (finalScore >= 3.0) return "bg-propela-purple-light text-propela-purple";
-  if (finalScore >= 2.0) return "bg-amber-100 text-amber-700";
-  if (finalScore >= 1.0) return "bg-gray-100 text-gray-600";
-  return "bg-red-100 text-red-700";
 }
 
 interface NurseCardDetailProps {
@@ -605,7 +564,7 @@ export function NurseCardDetail({ nurse }: NurseCardDetailProps) {
                 <Badge
                   className={cn("border-0", getTierColor(finalScore))}
                 >
-                  {getTierLabel(finalScore)}
+                  {getTier(finalScore)}
                 </Badge>
               </div>
             </div>

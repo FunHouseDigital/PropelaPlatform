@@ -30,28 +30,18 @@ export type ReadinessStatus =
   | 'Recommended Pathway';
 
 export type NextAction =
-  | 'Send Welcome Email'
-  | 'Request CV'
-  | 'Review CV'
-  | 'Schedule EfSet Test'
-  | 'Review EfSet Results'
-  | 'Schedule Interview'
-  | 'Conduct Interview'
-  | 'Make Shortlist Decision'
-  | 'Send Selection Notification'
-  | 'Send Agreement'
-  | 'Follow Up Agreement'
-  | 'Confirm Commitment Fee'
-  | 'Register for OET'
-  | 'Confirm OET Results'
-  | 'Schedule OET Retake'
-  | 'Begin Placement Matching'
-  | 'Confirm Placement'
-  | 'Send Placement Invoice'
-  | 'Follow Up Payment'
-  | 'Schedule Check-in'
-  | 'Update Records'
-  | 'No Action Required';
+  | 'Needs: Chase CV, then scoring'
+  | 'Needs: Chase EF SET, then shortlist email'
+  | 'Needs: Shortlist email (writing task)'
+  | 'Needs: Non-selection email'
+  | 'Needs: Non-selection email (English pathway)'
+  | 'Needs: Review'
+  | 'Needs: Send agreement'
+  | 'Needs: Chase commitment fee'
+  | 'Needs: OET registration'
+  | 'Needs: Chase OET results'
+  | 'Needs: Placement outreach'
+  | 'No action required';
 
 export interface Nurse {
   // HEADER

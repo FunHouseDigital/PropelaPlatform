@@ -22,15 +22,15 @@ export function getReadinessColor(status: ReadinessStatus): string {
 }
 
 export function getNextActionColor(action: NextAction | null): string {
-  if (!action || action === 'No Action Required') {
+  if (!action || action === 'No action required') {
     return 'bg-gray-100 text-no-action';
   }
 
   // Overdue/urgent actions
   const overdueActions: NextAction[] = [
-    'Follow Up Agreement',
-    'Follow Up Payment',
-    'Schedule OET Retake',
+    'Needs: Non-selection email',
+    'Needs: Non-selection email (English pathway)',
+    'Needs: Chase commitment fee',
   ];
   if (overdueActions.includes(action)) {
     return 'bg-red-100 text-overdue';
@@ -38,9 +38,8 @@ export function getNextActionColor(action: NextAction | null): string {
 
   // Due today actions
   const dueTodayActions: NextAction[] = [
-    'Confirm Commitment Fee',
-    'Confirm OET Results',
-    'Confirm Placement',
+    'Needs: Review',
+    'Needs: Shortlist email (writing task)',
   ];
   if (dueTodayActions.includes(action)) {
     return 'bg-amber-100 text-due-today';
@@ -52,32 +51,43 @@ export function getNextActionColor(action: NextAction | null): string {
 
 export function calculateCvScore(nurse: Nurse): number {
   const score =
-    (nurse.hospitalExp * 3 +
+    ((nurse.hospitalExp * 3 +
       nurse.sancStatusScore * 3 +
       nurse.qualifications * 2 +
       nurse.specialisation * 1) /
-    9 *
+      9) *
     5;
-  return Math.min(score, 5);
+  return Math.round(Math.min(score, 5.0) * 10) / 10;
 }
 
 export function calculateFinalScore(nurse: Nurse): number {
-  return (
-    nurse.hospitalExp +
-    nurse.sancStatusScore +
-    nurse.englishProficiency +
-    nurse.qualifications +
-    nurse.specialisation +
-    nurse.validPassportScore +
-    nurse.financialReadiness +
-    nurse.motivationScore
-  );
+  const score =
+    (nurse.hospitalExp * 3 +
+      nurse.sancStatusScore * 3 +
+      nurse.englishProficiency * 2 +
+      nurse.qualifications * 2 +
+      nurse.specialisation * 1 +
+      nurse.validPassportScore * 1 +
+      nurse.financialReadiness * 1 +
+      nurse.motivationScore * 2) /
+    15;
+  return Math.round(score * 10) / 10;
 }
 
 export function getTier(finalScore: number): string {
-  if (finalScore >= 70) return 'Tier 1';
-  if (finalScore >= 50) return 'Tier 2';
-  return 'Tier 3';
+  if (finalScore >= 4.0) return 'Tier 1 Priority';
+  if (finalScore >= 3.0) return 'Tier 1 Standard';
+  if (finalScore >= 2.0) return 'Tier 2 Development';
+  if (finalScore >= 1.0) return 'Tier 3';
+  return 'Not Suitable';
+}
+
+export function getTierColor(finalScore: number): string {
+  if (finalScore >= 4.0) return 'bg-propela-purple text-white';
+  if (finalScore >= 3.0) return 'bg-propela-purple-light text-propela-purple';
+  if (finalScore >= 2.0) return 'bg-amber-100 text-amber-700';
+  if (finalScore >= 1.0) return 'bg-gray-100 text-gray-600';
+  return 'bg-red-100 text-red-700';
 }
 
 export function getReadinessFromStage(pipelineStage: PipelineStage): ReadinessStatus {

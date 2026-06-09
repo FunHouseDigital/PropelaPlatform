@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { Nurse, PipelineStage } from "@/types/nurse";
 import { getReadinessFromStage } from "@/lib/nurse-utils";
@@ -51,6 +51,10 @@ interface PipelineViewProps {
 
 export function PipelineView({ nurses: initialNurses }: PipelineViewProps) {
   const [nurses, setNurses] = useState<Nurse[]>(initialNurses);
+
+  useEffect(() => {
+    setNurses(initialNurses);
+  }, [initialNurses]);
 
   const getNursesForStage = useCallback(
     (stage: PipelineStage) => nurses.filter((n) => n.pipelineStage === stage),
