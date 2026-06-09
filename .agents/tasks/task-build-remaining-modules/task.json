@@ -1,0 +1,7 @@
+{
+  "task_id": "task-build-remaining-modules",
+  "task_description": "Build the 4 remaining Propela Ops modules: Module 4 (Cohort Manager), Module 3 (Nurse Acquisition Hub), Module 1 (Dashboard), and Module 5 (Template Library). Each module includes new routes, components, types, mock data, Zustand stores, and sidebar navigation updates following existing patterns.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}

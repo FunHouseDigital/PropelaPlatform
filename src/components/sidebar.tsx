@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, LayoutDashboard, GraduationCap } from "lucide-react";
+import { Users, LayoutDashboard, GraduationCap, Megaphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -20,6 +20,11 @@ const navItems = [
     label: "Cohorts",
     href: "/cohorts",
     icon: GraduationCap,
+  },
+  {
+    label: "Acquisition",
+    href: "/acquisition",
+    icon: Megaphone,
   },
 ];
 

@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Module 1: Dashboard - A /dashboard route with a splash/welcome area and a one-page summary showing key metrics (total nurses, active cohorts, placement rate, upcoming actions), cohort pipeline overview, recent activity feed, and quick-action cards.",
+  "status": "pending",
+  "steps": [
+    "Create src/app/dashboard/page.tsx as a server component that calls getNurses(), getCohorts() from data.ts and renders the Dashboard client component",
+    "Create src/components/dashboard/Dashboard.tsx ('use client') - main dashboard layout with: welcome header (greeting + date), stat cards row, cohort pipeline summary, recent activity, and quick-action section",
+    "Create src/components/dashboard/StatCard.tsx - a metric card component showing: icon, label, value, optional trend indicator. Style with white card, rounded-xl, shadow-sm, icon in propela-purple-light circle.",
+    "Create src/components/dashboard/CohortPipelineChart.tsx - a horizontal stacked bar or summary showing nurses by pipeline stage across all active cohorts. Use recharts (already installed) or simple div-based progress bars.",
+    "Create src/components/dashboard/RecentActivity.tsx - a feed/list showing recent actions (nurses who advanced stages, OET results, placements). Use mock data derived from nurse lastContacted and pipeline stages.",
+    "Create src/components/dashboard/QuickActions.tsx - a row of clickable cards/buttons for common admin tasks: 'Review Applications', 'Chase OET Results', 'Send Reminders', 'Export Report'. Each links to relevant route or shows a badge count.",
+    "Update src/app/page.tsx to redirect to /dashboard instead of /nurses",
+    "Ensure the sidebar Dashboard link (/dashboard) correctly highlights when on that route"
+  ],
+  "acceptance_criteria": [
+    "pnpm build succeeds with no TypeScript errors",
+    "pnpm lint passes",
+    "/dashboard route renders the full dashboard with welcome header, stat cards, pipeline chart, activity feed, and quick actions",
+    "Stat cards show: Total Nurses count, Active Cohorts count, Placement Rate percentage, Pending Actions count (derived from mock data)",
+    "Root route (/) redirects to /dashboard",
+    "Sidebar Dashboard link highlights when on /dashboard",
+    "Styling uses propela-purple brand colors and matches the admin-dashboard.jsx design reference style"
+  ],
+  "verification": [
+    "Run pnpm build and confirm zero errors",
+    "Run pnpm lint and confirm zero errors or only warnings"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

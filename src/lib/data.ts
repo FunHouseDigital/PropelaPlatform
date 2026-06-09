@@ -1,7 +1,9 @@
 import { Nurse } from '@/types/nurse';
 import { Cohort } from '@/types/cohort';
+import { AcquisitionSource, OutreachLead } from '@/types/acquisition';
 import { mockNurses } from './mock-data';
 import { mockCohorts } from './mock-cohorts';
+import { mockAcquisitionSources, mockOutreachLeads } from './mock-acquisition';
 
 export async function getNurses(): Promise<Nurse[]> {
   return mockNurses;
@@ -17,4 +19,16 @@ export async function getCohorts(): Promise<Cohort[]> {
 
 export async function getCohortById(id: string): Promise<Cohort | undefined> {
   return mockCohorts.find((cohort) => cohort.id === id);
+}
+
+export async function getAcquisitionSources(): Promise<AcquisitionSource[]> {
+  return mockAcquisitionSources;
+}
+
+export async function getAcquisitionSourceById(id: string): Promise<AcquisitionSource | undefined> {
+  return mockAcquisitionSources.find((source) => source.id === id);
+}
+
+export async function getOutreachLeads(): Promise<OutreachLead[]> {
+  return mockOutreachLeads;
 }

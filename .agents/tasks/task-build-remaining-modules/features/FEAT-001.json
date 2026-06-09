@@ -1,0 +1,36 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Module 4: Cohort Manager - A new /cohorts route with cohort card view showing status, timeline, training provider, budget, outcomes, and an inline nurse progress table. Includes Prisma Cohort model, mock data, Zustand store, and sidebar navigation update.",
+  "status": "completed",
+  "steps": [
+    "Create src/types/cohort.ts with a Cohort interface containing fields: id, name, status (Active/Planned/Completed/Archived), startDate, endDate, trainingProvider, budget (allocated, spent, remaining), outcomeTargets (placementTarget, currentPlacements, passRate), nurses (array of nurse summary objects with id, fullName, pipelineStage, oetStatus, placementStatus), description, notes",
+    "Create src/lib/mock-cohorts.ts with 3-4 mock cohorts (Cohort 2024-A, Cohort 2024-B, Cohort 2025-A) populated with realistic data matching existing nurse cohort assignments in mock-data.ts. Include nurse summaries pulled from the existing nurse data.",
+    "Update src/lib/data.ts to add getCohorts() and getCohortById(id) async functions that return from mock-cohorts.ts",
+    "Create src/store/cohort-store.ts with Zustand store for view state: searchQuery, statusFilter (All/Active/Planned/Completed/Archived), selectedCohortId",
+    "Create src/app/cohorts/page.tsx as a server component that calls getCohorts() and renders the CohortManager client component",
+    "Create src/components/cohorts/CohortManager.tsx ('use client') as the main container with search, status filter chips, and the card grid",
+    "Create src/components/cohorts/CohortCard.tsx - a card showing: cohort name, status badge (colored like the tier badges in design reference), date range, training provider, budget progress bar (spent/allocated), outcome stats (placements count, pass rate), and nurse count",
+    "Create src/components/cohorts/CohortDetail.tsx - a detail view (either on /cohorts/[id] or as a slide-over panel) showing: full cohort info header, budget breakdown section, outcomes section with target vs actual, timeline section, and the inline nurse progress table",
+    "Create src/components/cohorts/NurseProgressTable.tsx - a table showing nurses in the cohort with columns: Name (with avatar initials), Pipeline Stage (badge), OET Status, Placement Status, Last Updated. Follow the table pattern from admin-dashboard.jsx design reference.",
+    "Create src/app/cohorts/[id]/page.tsx as a server component that calls getCohortById() and renders CohortDetail",
+    "Update src/components/sidebar.tsx to add Cohorts nav item (using GraduationCap or Users icon from Lucide) at position after Nurses",
+    "Update src/app/page.tsx redirect from /nurses to /dashboard (preparing for dashboard module)"
+  ],
+  "acceptance_criteria": [
+    "pnpm build succeeds with no TypeScript errors",
+    "pnpm lint passes",
+    "/cohorts route renders a grid of cohort cards with status, dates, provider, budget bar, and outcomes",
+    "/cohorts/[id] route renders full cohort detail with inline nurse progress table",
+    "Sidebar shows Cohorts navigation link that highlights when active",
+    "Filter chips for status (All, Active, Planned, Completed) filter the cohort cards",
+    "Search filters cohorts by name",
+    "Styling uses propela-purple brand colors and matches existing card/badge patterns"
+  ],
+  "verification": [
+    "Run pnpm build and confirm zero errors",
+    "Run pnpm lint and confirm zero errors or only warnings"
+  ],
+  "blocked_reason": null,
+  "findings": "Build and lint pass with zero errors. All 12 steps implemented successfully. The /cohorts route renders a grid of cohort cards with status filter chips, and /cohorts/[id] shows full detail with budget breakdown, outcomes, timeline, and nurse progress table."
+}

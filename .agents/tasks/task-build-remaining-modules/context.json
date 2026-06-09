@@ -1,0 +1,32 @@
+{
+  "project_type": "Next.js 14 app router with Prisma ORM and Zustand state management",
+  "language": "TypeScript",
+  "build_system": "pnpm with Next.js build pipeline, Prisma client generation",
+  "test_framework": "No test framework configured - using build + lint for verification",
+  "build_command": "pnpm build",
+  "test_command": "pnpm lint",
+  "verification_instructions": "1. Run pnpm build to ensure no type errors. 2. Run pnpm lint to check for code quality issues.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "1. cd /projects/sandbox/PropelaPlatform && pnpm install",
+  "environment_constraints": "COMMON_DEPENDENCIES network mode - can install from npm registry. SQLite database at prisma/dev.db. No test framework installed - verify with build + lint only.",
+  "contribution_requirements": "Follow existing patterns: server components for pages, 'use client' for interactive components, Zustand stores for client state, mock data in src/lib/ for data layer, shadcn/ui components, Tailwind with custom propela brand colors.",
+  "key_patterns": "Data layer: src/lib/data.ts exports async functions that return from src/lib/mock-data.ts. Types: src/types/<module>.ts. Components: src/components/<module>/. Stores: src/store/<module>-store.ts. Pages: src/app/<route>/page.tsx (server component) that calls data layer. Sidebar: src/components/sidebar.tsx with navItems array. Lucide icons. Badge component for status indicators. cn() utility for conditional classNames.",
+  "relevant_files": [
+    "src/components/sidebar.tsx",
+    "src/app/layout.tsx",
+    "src/lib/data.ts",
+    "src/lib/mock-data.ts",
+    "src/types/nurse.ts",
+    "src/store/nurse-store.ts",
+    "src/components/nurses/NurseDatabase.tsx",
+    "src/components/nurses/NurseGalleryCard.tsx",
+    "src/components/nurses/ViewControls.tsx",
+    "src/components/nurses/GalleryView.tsx",
+    "prisma/schema.prisma",
+    "prisma/seed.ts",
+    "tailwind.config.ts",
+    "design-reference/Propela Ops/components/admin-dashboard.jsx",
+    "design-reference/Propela Ops/components/admin-screens.jsx"
+  ],
+  "directory_structure": "src/app/ - Next.js app router pages; src/components/ - React components grouped by module; src/components/ui/ - shadcn/ui base components; src/lib/ - utilities, data layer, mock data; src/types/ - TypeScript interfaces; src/store/ - Zustand stores; prisma/ - schema and seed; design-reference/ - UI design mockups"
+}

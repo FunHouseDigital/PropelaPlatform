@@ -1,0 +1,36 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Module 3: Nurse Acquisition Hub - A new /acquisition route with 4 track tabs (Organisations, Referral Network, Community Channels, Events) and a shared outreach pipeline. Each track shows sources with stats, and the pipeline shows leads progressing through contact stages.",
+  "status": "in_progress",
+  "steps": [
+    "Create src/types/acquisition.ts with interfaces: AcquisitionSource (id, name, type: Organisation|Referral|Community|Event, contactPerson, contactEmail, status: Active|Prospective|Inactive, leadsGenerated, conversionRate, lastContact, notes), OutreachLead (id, sourceId, sourceName, nurseFullName, stage: Contacted|Interested|Applied|Converted|Lost, contactDate, followUpDate, notes)",
+    "Create src/lib/mock-acquisition.ts with mock data: 3-4 organisations (hospitals, nursing agencies), 3-4 referral partners, 3-4 community channels (WhatsApp groups, Facebook groups, forums), 3-4 events (career fairs, conferences). Also include 8-10 outreach leads at various pipeline stages.",
+    "Update src/lib/data.ts to add getAcquisitionSources(), getAcquisitionSourceById(id), and getOutreachLeads() async functions",
+    "Create src/store/acquisition-store.ts with Zustand store: activeTab (organisations|referral|community|events|pipeline), searchQuery, statusFilter",
+    "Create src/app/acquisition/page.tsx as a server component that calls getAcquisitionSources() and getOutreachLeads(), renders the AcquisitionHub client component",
+    "Create src/components/acquisition/AcquisitionHub.tsx ('use client') - main container with tab navigation (4 tracks + Pipeline tab), search bar, and content area",
+    "Create src/components/acquisition/SourceCard.tsx - a card for each acquisition source showing: name, type badge, contact person, leads generated count, conversion rate, status indicator, last contact date",
+    "Create src/components/acquisition/SourceGrid.tsx - renders a grid of SourceCards filtered by the active tab type",
+    "Create src/components/acquisition/OutreachPipeline.tsx - a kanban-style pipeline (or list grouped by stage) showing outreach leads: Contacted -> Interested -> Applied -> Converted. Each lead card shows nurse name, source, date, follow-up indicator.",
+    "Create src/components/acquisition/LeadCard.tsx - small card for a lead in the pipeline showing nurse name, source name, contact date, and status badge",
+    "Update src/components/sidebar.tsx to add Acquisition nav item (using Megaphone or Network icon from Lucide) after Cohorts"
+  ],
+  "acceptance_criteria": [
+    "pnpm build succeeds with no TypeScript errors",
+    "pnpm lint passes",
+    "/acquisition route renders with 5 tabs (Organisations, Referral Network, Community Channels, Events, Pipeline)",
+    "Each track tab shows a grid of source cards with stats",
+    "Pipeline tab shows outreach leads grouped by stage (kanban or grouped list)",
+    "Search filters sources by name",
+    "Status filter works for Active/Prospective/Inactive",
+    "Sidebar shows Acquisition navigation link",
+    "Styling matches existing patterns (propela-purple, card style, badge pattern)"
+  ],
+  "verification": [
+    "Run pnpm build and confirm zero errors",
+    "Run pnpm lint and confirm zero errors or only warnings"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

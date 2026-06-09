@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Module 5: Template Library - A /templates route for managing reusable message/document templates (emails, WhatsApp messages, letters). Includes template cards with categories, preview, and a detail/edit view.",
+  "status": "pending",
+  "steps": [
+    "Create src/types/template.ts with a Template interface: id, name, category (Email|WhatsApp|Letter|SMS|Document), subject (for emails), body (template content with {{placeholders}}), tags (string array), status (Active|Draft|Archived), lastModified, usageCount",
+    "Create src/lib/mock-templates.ts with 8-10 mock templates covering the categories: welcome email, OET reminder WhatsApp, agreement letter, interview confirmation, non-selection email, placement confirmation, cohort welcome, follow-up SMS. Include realistic template body text with placeholders like {{nurse_name}}, {{cohort_name}}, {{date}}.",
+    "Update src/lib/data.ts to add getTemplates() and getTemplateById(id) async functions",
+    "Create src/store/template-store.ts with Zustand store: searchQuery, categoryFilter (All|Email|WhatsApp|Letter|SMS|Document), statusFilter (All|Active|Draft|Archived), selectedTemplateId",
+    "Create src/app/templates/page.tsx as a server component that calls getTemplates() and renders the TemplateLibrary client component",
+    "Create src/components/templates/TemplateLibrary.tsx ('use client') - main container with: header (title + 'Create Template' button placeholder), search bar, category filter chips, status filter, and template card grid",
+    "Create src/components/templates/TemplateCard.tsx - a card showing: template name, category badge (color-coded per category), subject line preview (for emails), body preview (first 2 lines truncated), tags as small chips, usage count, last modified date",
+    "Create src/components/templates/TemplateDetail.tsx - a detail view showing: full template metadata, the complete body content rendered in a styled preview area with placeholder highlighting ({{placeholders}} shown in propela-purple), copy button, and usage stats",
+    "Create src/app/templates/[id]/page.tsx as a server component rendering TemplateDetail",
+    "Update src/components/sidebar.tsx to add Templates nav item (using FileText icon from Lucide) as the last item before any settings"
+  ],
+  "acceptance_criteria": [
+    "pnpm build succeeds with no TypeScript errors",
+    "pnpm lint passes",
+    "/templates route renders a grid of template cards with category badges, previews, and stats",
+    "/templates/[id] route renders the full template detail with body content and highlighted placeholders",
+    "Category filter chips (All, Email, WhatsApp, Letter, SMS, Document) filter the template cards",
+    "Search filters templates by name or body content",
+    "Sidebar shows Templates navigation link",
+    "Styling matches existing patterns with propela-purple accents and consistent card design"
+  ],
+  "verification": [
+    "Run pnpm build and confirm zero errors",
+    "Run pnpm lint and confirm zero errors or only warnings"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
