@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Module 1: Dashboard - A /dashboard route with a splash/welcome area and a one-page summary showing key metrics (total nurses, active cohorts, placement rate, upcoming actions), cohort pipeline overview, recent activity feed, and quick-action cards.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create src/app/dashboard/page.tsx as a server component that calls getNurses(), getCohorts() from data.ts and renders the Dashboard client component",
     "Create src/components/dashboard/Dashboard.tsx ('use client') - main dashboard layout with: welcome header (greeting + date), stat cards row, cohort pipeline summary, recent activity, and quick-action section",
@@ -27,5 +27,5 @@
     "Run pnpm lint and confirm zero errors or only warnings"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Build and lint pass cleanly. Recharts shows a harmless warning about chart dimensions during SSG (static generation renders with no browser viewport), but the chart renders correctly in the browser. The root page already redirected to /dashboard and the sidebar already had the /dashboard nav item with proper highlighting logic."
 }
