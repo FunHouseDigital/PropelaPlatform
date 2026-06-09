@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "feat",
   "description": "Pipeline Kanban View - draggable cards between pipeline stages with two separate funnels (Application Funnel and Cohort Pipeline) plus Exit/Hold states.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create src/components/nurses/PipelineView.tsx - the main Kanban board component using @hello-pangea/dnd (React DnD alternative that works with React 18). Displays columns for each pipeline stage with nurse cards that can be dragged between columns.",
     "Implement two funnel sections displayed as separate groups of columns: Application Funnel (Applied, CV Submitted, CV + English Submitted, Under Review, Shortlisted Yes, Shortlisted Maybe, Not Selected, Didn't Qualify) and Cohort Pipeline (Selected for Cohort, Reserve, Cohort Confirmed, Training Active, OET Registered, OET Passed, OET Failed, Placement Ready, Placed). Plus Exit/Hold states (Deferred, Dropped Out, Recommended Pathway, Not Selected) shown separately at the bottom or side.",
@@ -30,5 +30,5 @@
     "Run pnpm build and confirm it exits with code 0"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "DraggableStyle from @hello-pangea/dnd has a type incompatibility with React CSSProperties (missing --radix index signature). Fixed by explicitly casting style as React.CSSProperties. Build passes cleanly with NODE_OPTIONS=\"\" npx next build."
 }
