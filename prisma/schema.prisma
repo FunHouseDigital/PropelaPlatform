@@ -9,3 +9,104 @@ datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+
+model Nurse {
+  // HEADER
+  id               Int       @id @default(autoincrement())
+  profilePhoto     String?
+  fullName         String
+  preferredName    String?
+  pipelineStage    String
+  nextAction       String?
+  readinessStatus  String
+  flagCount        Int       @default(0)
+  lastContacted    DateTime?
+  cohort           String?
+  submittedAt      DateTime?
+
+  // PERSONAL
+  email            String?
+  contactNumber    String?
+  gender           String?
+  ageGroup         String?
+  provinceCity     String?
+
+  // PROFESSIONAL
+  sancRegistered           Boolean   @default(false)
+  rnInSA                   Boolean   @default(false)
+  sancNumber               String?
+  sancApcExpiry            DateTime?
+  sancApcStatus            String?
+  highestQualification     String?
+  institution              String?
+  yearsExperience          Int       @default(0)
+  primaryClinicalSpecialty String?
+  additionalCertifications String?
+  employmentStatus         String?
+  currentEmployer          String?
+  validPassport            Boolean   @default(false)
+  passportExpiry           DateTime?
+
+  // ENGLISH - EFSET
+  previouslyTakenTest Boolean @default(false)
+  efSetScore          Float?
+  efSetLevel          String?
+  englishPts          Float?
+  proficiencyLevel    String?
+
+  // ENGLISH - OET
+  oetStatus           String?
+  oetExamDate         DateTime?
+  oetExamCentre       String?
+  oetWriting          Float?
+  oetSpeaking         Float?
+  oetListening        Float?
+  oetReading          Float?
+  oetOverallResult    String?
+  oetRetakeRequired   Boolean @default(false)
+  oetRetakeComponents String?
+
+  // SCORECARD
+  hospitalExp         Int    @default(0)
+  sancStatusScore     Int    @default(0)
+  englishProficiency  Int    @default(0)
+  qualifications      Int    @default(0)
+  specialisation      Int    @default(0)
+  validPassportScore  Int    @default(0)
+  financialReadiness  Int    @default(0)
+  motivationScore     Int    @default(0)
+  cvScore             Float?
+  finalScore          Float?
+  tier                String?
+
+  // SELECTION
+  shortlistDecision    String?
+  firstInterviewDate   DateTime?
+  nonSelectionReason   String?
+  recommendedPathway   String?
+
+  // COHORT TRACKING
+  cohortAssigned       String?
+  agreementSent        Boolean   @default(false)
+  agreementSentDate    DateTime?
+  agreementSigned      Boolean   @default(false)
+  agreementSignedDate  DateTime?
+  commitmentFeeStatus  String?
+  commitmentFeeDate    DateTime?
+
+  // PLACEMENT
+  placementStatus        String?
+  destinationCountry     String?
+  employer               String?
+  placementDate          DateTime?
+  placementFeeInvoiced   Boolean @default(false)
+  placementFeeReceived   Boolean @default(false)
+
+  // NOTES
+  motivations      String?
+  questions        String?
+  notesFlags       String?
+  source           String?
+  sourceRecord     String?
+  communicationLog String?
+}
