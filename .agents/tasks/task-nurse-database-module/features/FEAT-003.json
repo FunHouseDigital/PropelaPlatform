@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Nurse Database Gallery View - photo-first Airtable-style card grid with search, filter, sort, and view toggle controls. This is the default view at /nurses.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create src/app/nurses/page.tsx as a server component that fetches all nurses from the database and renders the NurseDatabase client component",
     "Create src/app/nurses/layout.tsx with the page structure (header with title, controls bar, content area)",
