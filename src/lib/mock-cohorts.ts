@@ -1,0 +1,118 @@
+import { Cohort } from '@/types/cohort';
+
+export const mockCohorts: Cohort[] = [
+  {
+    id: 'cohort-2024-a',
+    name: 'Cohort 2024-A',
+    status: 'Active',
+    startDate: '2024-01-15',
+    endDate: '2024-12-31',
+    trainingProvider: 'Propela Training Academy',
+    budget: {
+      allocated: 450000,
+      spent: 312000,
+      remaining: 138000,
+    },
+    outcomeTargets: {
+      placementTarget: 3,
+      currentPlacements: 1,
+      passRate: 67,
+    },
+    nurses: [
+      {
+        id: 1,
+        fullName: 'Thandiwe Mokoena',
+        pipelineStage: 'Placed',
+        oetStatus: 'Passed',
+        placementStatus: 'Placed',
+      },
+      {
+        id: 5,
+        fullName: 'Bongani Dlamini',
+        pipelineStage: 'Dropped Out',
+        oetStatus: null,
+        placementStatus: null,
+      },
+      {
+        id: 11,
+        fullName: 'Fatima Patrick',
+        pipelineStage: 'Placement Ready',
+        oetStatus: 'Passed',
+        placementStatus: 'Matching',
+      },
+    ],
+    description: 'First cohort of 2024 focused on ICU and Paediatric nurses for UK placement. Includes comprehensive OET preparation and clinical bridging programme.',
+    notes: 'One nurse dropped out due to family circumstances. Remaining nurses progressing well.',
+  },
+  {
+    id: 'cohort-2024-b',
+    name: 'Cohort 2024-B',
+    status: 'Active',
+    startDate: '2024-04-01',
+    endDate: '2025-03-31',
+    trainingProvider: 'Global Nurse Training Partners',
+    budget: {
+      allocated: 380000,
+      spent: 195000,
+      remaining: 185000,
+    },
+    outcomeTargets: {
+      placementTarget: 4,
+      currentPlacements: 0,
+      passRate: 0,
+    },
+    nurses: [
+      {
+        id: 2,
+        fullName: 'Nomfundo Ndlovu',
+        pipelineStage: 'Training Active',
+        oetStatus: 'Not Registered',
+        placementStatus: null,
+      },
+      {
+        id: 6,
+        fullName: 'Zanele Nkosi',
+        pipelineStage: 'Deferred',
+        oetStatus: 'Registered',
+        placementStatus: null,
+      },
+      {
+        id: 7,
+        fullName: 'Precious Maila',
+        pipelineStage: 'OET Registered',
+        oetStatus: 'Registered',
+        placementStatus: null,
+      },
+      {
+        id: 12,
+        fullName: 'Grace Okonkwo',
+        pipelineStage: 'OET Failed',
+        oetStatus: 'Failed',
+        placementStatus: null,
+      },
+    ],
+    description: 'Second cohort of 2024 with a mix of specialties including Paediatrics, Oncology, ICU, and Emergency nursing. Longer programme duration to accommodate OET preparation.',
+    notes: 'Zanele Nkosi deferred to Cohort 2025-A due to pregnancy. Grace Okonkwo requires OET retake.',
+  },
+  {
+    id: 'cohort-2025-a',
+    name: 'Cohort 2025-A',
+    status: 'Planned',
+    startDate: '2025-02-01',
+    endDate: '2025-12-31',
+    trainingProvider: 'Propela Training Academy',
+    budget: {
+      allocated: 520000,
+      spent: 0,
+      remaining: 520000,
+    },
+    outcomeTargets: {
+      placementTarget: 6,
+      currentPlacements: 0,
+      passRate: 0,
+    },
+    nurses: [],
+    description: 'Planned cohort for early 2025. Expected to include deferred nurses from 2024-B and new recruits from the current application pipeline.',
+    notes: 'Zanele Nkosi expected to join from Cohort 2024-B deferral. Recruitment in progress.',
+  },
+];

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, LayoutDashboard } from "lucide-react";
+import { Users, LayoutDashboard, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -15,6 +15,11 @@ const navItems = [
     label: "Nurses",
     href: "/nurses",
     icon: Users,
+  },
+  {
+    label: "Cohorts",
+    href: "/cohorts",
+    icon: GraduationCap,
   },
 ];
 
