@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Propela Letterhead — A4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --purple: #5B2D8E;
+    --purple-deep: #43206B;
+    --plum: #0D0815;
+    --ink: #1C1626;
+    --muted: #6E6779;
+    --hair: #E4E0EA;
+    --paper: #FFFFFF;
+  }
+
+  html, body {
+    background: #555;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  /* ---- A4 page : 1754 x 2480 px (~212 dpi) ---- */
+  .page {
+    position: relative;
+    width: 1754px;
+    height: 2480px;
+    background: var(--paper);
+    overflow: hidden;
+    margin: 0 auto;
+  }
+
+  /* ===== TOP ===== */
+  .top-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 18px;
+    background: var(--purple);
+  }
+  .top-bar::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -6px;
+    height: 6px;
+    background: var(--purple-deep);
+    opacity: .55;
+  }
+
+  .header {
+    position: absolute;
+    top: 150px;
+    left: 130px;
+    right: 130px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .brand img {
+    display: block;
+    height: 104px;
+    width: auto;
+  }
+  .brand .tagline {
+    margin-top: 26px;
+    font-size: 25px;
+    font-weight: 500;
+    letter-spacing: .01em;
+    color: var(--purple);
+  }
+  .brand .tagline::before {
+    content: "";
+    display: inline-block;
+    width: 46px;
+    height: 3px;
+    background: var(--purple);
+    vertical-align: middle;
+    margin-right: 18px;
+    margin-bottom: 6px;
+  }
+
+  .header-right {
+    text-align: right;
+    padding-bottom: 8px;
+  }
+  .header-right .label {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .header-right .web {
+    margin-top: 10px;
+    font-size: 23px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .rule {
+    position: absolute;
+    top: 320px;
+    left: 130px;
+    right: 130px;
+    height: 1px;
+    background: var(--hair);
+  }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 230px;
+    background: var(--purple);
+    color: #fff;
+    display: flex;
+    align-items: center;
+  }
+  .footer::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 7px;
+    background: var(--purple-deep);
+    opacity: .6;
+  }
+  .footer-inner {
+    width: 100%;
+    padding: 0 130px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+  }
+  .footer-mark {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    flex-shrink: 0;
+  }
+  .footer-mark img {
+    height: 56px;
+    width: auto;
+    /* black SVG -> white */
+    filter: brightness(0) invert(1);
+  }
+
+  .contact {
+    display: flex;
+    align-items: stretch;
+    gap: 40px;
+  }
+  .contact .col {
+    padding-left: 40px;
+    border-left: 1px solid rgba(255,255,255,.28);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+  }
+  .contact .col:first-child {
+    border-left: none;
+    padding-left: 0;
+  }
+  .contact .k {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.62);
+  }
+  .contact .v {
+    font-size: 25px;
+    font-weight: 500;
+    color: #fff;
+  }
+  .contact .v.sub {
+    font-size: 19px;
+    font-weight: 400;
+    color: rgba(255,255,255,.85);
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="top-bar"></div>
+
+    <div class="header">
+      <div class="brand">
+        <img src="assets/propela-logo-black.svg" alt="Propela" />
+        <div class="tagline">Championing the careers of African nurses</div>
+      </div>
+      <div class="header-right">
+        <div class="label">Propela Health</div>
+        <div class="web">www.propela.health</div>
+      </div>
+    </div>
+
+    <div class="rule"></div>
+
+    <div class="footer">
+      <div class="footer-inner">
+        <div class="footer-mark">
+          <img src="assets/propela-logo-black.svg" alt="Propela" />
+        </div>
+        <div class="contact">
+          <div class="col">
+            <div class="v">Ayabulela Yokwana</div>
+            <div class="v sub">Aya@propela.co</div>
+          </div>
+          <div class="col">
+            <div class="v">Vuyo Pakade</div>
+            <div class="v sub">Vuyo@propela.co</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

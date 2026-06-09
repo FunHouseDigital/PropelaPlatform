@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Propela Health — Platform UI v2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; background: #0D0815; min-height: 100vh; overflow: hidden; }
+    select, input, textarea, button { font-family: 'Poppins', sans-serif; }
+  </style>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" src="components/ios-frame.jsx"></script>
+  <script type="text/babel" src="components/tweaks-panel.jsx"></script>
+  <script type="text/babel" src="components/shared-ui.jsx"></script>
+  <script type="text/babel" src="components/nurse-screens-1.jsx"></script>
+  <script type="text/babel" src="components/nurse-screens-2.jsx"></script>
+  <script type="text/babel" src="components/nurse-screens-3.jsx"></script>
+  <script type="text/babel" src="components/admin-screens.jsx"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const NURSE_SCREENS = [
+      { id: 'signup', label: 'Sign-up Form', short: 'A1' },
+      { id: 'dashboard', label: 'Dashboard', short: 'A2' },
+      { id: 'salary', label: 'Salary Calculator', short: 'A3' },
+      { id: 'waitlist', label: 'While You Wait', short: 'A4' },
+      { id: 'prep', label: 'Prep Hub', short: 'A5' },
+      { id: 'docs', label: 'Documents', short: 'A6' },
+      { id: 'employers', label: 'Employers', short: 'A7' },
+      { id: 'community', label: 'Community', short: 'A8' },
+      { id: 'examfail', label: 'Exam Outcome', short: 'A9' },
+      { id: 'postplace', label: 'Post-Placement', short: 'A10' },
+    ];
+    const ADMIN_SCREENS = [
+      { id: 'pipeline', label: 'Candidate Pipeline', short: 'B1' },
+      { id: 'examtracker', label: 'Exam Tracker', short: 'B2' },
+    ];
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "accentColor": "#5B2D8E",
+      "defaultExam": "OET",
+      "formRadius": "rounded",
+      "dashboardDensity": "compact"
+    }/*EDITMODE-END*/;
+
+    function App() {
+      const tweaks = typeof useTweaks === 'function' ? useTweaks(TWEAK_DEFAULTS) : [TWEAK_DEFAULTS, () => {}];
+      const [t, setTweak] = tweaks;
+
+      const [mode, setMode] = useState('nurse');
+      const [nurseScreen, setNurseScreen] = useState('dashboard');
+      const [adminScreen, setAdminScreen] = useState('pipeline');
+
+      const screens = mode === 'nurse' ? NURSE_SCREENS : ADMIN_SCREENS;
+      const current = mode === 'nurse' ? nurseScreen : adminScreen;
+      const setCurrent = mode === 'nurse' ? setNurseScreen : setAdminScreen;
+
+      // Navigation handler from within screens
+      const handleNav = (id) => {
+        // Map bottom-nav ids to screen ids
+        const navMap = { dashboard: 'dashboard', prep: 'prep', docs: 'docs', community: 'community', support: 'postplace' };
+        const mapped = navMap[id] || id;
+        // Check if it's a nurse screen
+        if (NURSE_SCREENS.some(s => s.id === mapped)) {
+          setNurseScreen(mapped);
+          setMode('nurse');
+        } else if (ADMIN_SCREENS.some(s => s.id === mapped)) {
+          setAdminScreen(mapped);
+          setMode('admin');
+        }
+      };
+
+      const renderNurseScreen = () => {
+        const props = { onNav: handleNav, defaultExam: t.defaultExam };
+        switch (nurseScreen) {
+          case 'signup': return <SignupForm {...props} />;
+          case 'dashboard': return <NurseDashboard {...props} />;
+          case 'salary': return <SalaryCalculator {...props} />;
+          case 'waitlist': return <WhileYouWait {...props} />;
+          case 'prep': return <ExamPrepHub {...props} />;
+          case 'docs': return <DocumentHub {...props} />;
+          case 'employers': return <EmployerPreview {...props} />;
+          case 'community': return <CommunityTab {...props} />;
+          case 'examfail': return <ExamOutcome {...props} />;
+          case 'postplace': return <PostPlacement {...props} />;
+          default: return <NurseDashboard {...props} />;
+        }
+      };
+
+      const renderAdminScreen = () => {
+        switch (adminScreen) {
+          case 'pipeline': return <AdminPipeline onAdminNav={id => setAdminScreen(id)} />;
+          case 'examtracker': return <ExamTracker onAdminNav={id => setAdminScreen(id)} />;
+          default: return <AdminPipeline onAdminNav={id => setAdminScreen(id)} />;
+        }
+      };
+
+      return (
+        <div style={appS.root}>
+          {/* Top bar */}
+          <div style={appS.topBar}>
+            {/* Mode toggle */}
+            <div style={appS.modeToggle}>
+              <button onClick={() => setMode('nurse')} style={{ ...appS.modeBtn, ...(mode === 'nurse' ? appS.modeBtnActive : {}) }}>
+                <span style={{ fontSize: 14 }}>📱</span> Nurse App
+              </button>
+              <button onClick={() => setMode('admin')} style={{ ...appS.modeBtn, ...(mode === 'admin' ? appS.modeBtnActive : {}) }}>
+                <span style={{ fontSize: 14 }}>🖥</span> Admin Panel
+              </button>
+            </div>
+
+            {/* Screen selector */}
+            <div style={appS.screenSelector}>
+              {screens.map(s => (
+                <button key={s.id} onClick={() => setCurrent(s.id)} style={{ ...appS.screenBtn, ...(current === s.id ? appS.screenBtnActive : {}) }}>
+                  <span style={{ fontSize: 10, opacity: 0.6 }}>{s.short}</span> {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Content area */}
+          <div style={appS.content}>
+            {mode === 'nurse' ? (
+              <div style={appS.phoneWrap}>
+                <IOSDevice width={402} height={874}>
+                  {renderNurseScreen()}
+                </IOSDevice>
+              </div>
+            ) : (
+              <div style={appS.desktopWrap}>
+                <div style={appS.desktopFrame}>
+                  {renderAdminScreen()}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Tweaks panel */}
+          <TweaksPanel title="Propela Platform">
+            <TweakSection label="Exam Default">
+              <TweakRadio label="Default exam type" value={t.defaultExam}
+                options={['OET', 'IELTS', 'PTE']}
+                onChange={v => setTweak('defaultExam', v)} />
+            </TweakSection>
+            <TweakSection label="Brand">
+              <TweakColor label="Primary accent" value={t.accentColor}
+                options={['#5B2D8E', '#3D1D5E', '#7B4BAE']}
+                onChange={v => setTweak('accentColor', v)} />
+            </TweakSection>
+            <TweakSection label="Form Style">
+              <TweakRadio label="Border radius" value={t.formRadius}
+                options={['rounded', 'pill', 'sharp']}
+                onChange={v => setTweak('formRadius', v)} />
+            </TweakSection>
+          </TweaksPanel>
+        </div>
+      );
+    }
+
+    const appS = {
+      root: {
+        width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column',
+        background: 'linear-gradient(180deg, #0D0815 0%, #1A1030 100%)',
+        overflow: 'hidden', fontFamily: "'Poppins', sans-serif",
+      },
+      topBar: {
+        padding: '12px 20px 8px', display: 'flex', flexDirection: 'column', gap: 10,
+        flexShrink: 0,
+      },
+      modeToggle: {
+        display: 'flex', gap: 0, background: 'rgba(255,255,255,0.06)',
+        borderRadius: 12, padding: 3, width: 'fit-content',
+      },
+      modeBtn: {
+        padding: '8px 18px', border: 'none', borderRadius: 10,
+        background: 'transparent', color: 'rgba(255,255,255,0.5)',
+        fontSize: 13, fontWeight: 600, fontFamily: "'Poppins', sans-serif",
+        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+        transition: 'all 0.2s',
+      },
+      modeBtnActive: {
+        background: 'rgba(91,45,142,0.5)', color: '#fff',
+        boxShadow: '0 2px 8px rgba(91,45,142,0.3)',
+      },
+      screenSelector: {
+        display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4,
+      },
+      screenBtn: {
+        padding: '6px 14px', border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 20, background: 'rgba(255,255,255,0.04)',
+        color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 500,
+        fontFamily: "'Poppins', sans-serif", cursor: 'pointer',
+        whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5,
+        transition: 'all 0.2s', flexShrink: 0,
+      },
+      screenBtnActive: {
+        background: 'rgba(91,45,142,0.4)', color: '#fff',
+        border: '1px solid rgba(91,45,142,0.6)',
+      },
+      content: {
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '0 20px 20px', minHeight: 0,
+      },
+      phoneWrap: {
+        filter: 'drop-shadow(0 20px 60px rgba(91,45,142,0.3))',
+      },
+      desktopWrap: {
+        width: '100%', maxWidth: 1400, height: '100%',
+        display: 'flex', alignItems: 'stretch',
+      },
+      desktopFrame: {
+        width: '100%', height: '100%', borderRadius: 16, overflow: 'hidden',
+        boxShadow: '0 20px 60px rgba(91,45,142,0.25), 0 0 0 1px rgba(255,255,255,0.06)',
+      },
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

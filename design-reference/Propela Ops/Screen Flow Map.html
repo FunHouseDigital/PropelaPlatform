@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Propela Ops — Screen Flow Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#08060F;font-family:'Poppins',sans-serif}
+#wrap{width:100vw;height:100vh;overflow:hidden;cursor:grab;user-select:none;-webkit-user-select:none}
+#wrap.drag{cursor:grabbing}
+.hdr{position:fixed;top:0;left:0;right:0;height:52px;display:flex;align-items:center;gap:10px;padding:0 18px;background:rgba(8,6,15,0.85);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,0.06);z-index:50;pointer-events:none}
+.hdr-logo{width:28px;height:28px;border-radius:8px;background:#5B2D8E;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0}
+.hdr-title{font-size:13px;font-weight:600;color:rgba(255,255,255,0.9)}
+.hdr-dot{width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,0.2)}
+.hdr-tag{font-size:11px;font-weight:500;color:rgba(255,255,255,0.38);padding:2px 8px;background:rgba(255,255,255,0.05);border-radius:20px}
+.ctrl{position:fixed;bottom:18px;right:18px;display:flex;flex-direction:column;gap:5px;z-index:50}
+.cb{width:34px;height:34px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.65);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);transition:all .15s;font-family:'Poppins',sans-serif;line-height:1}
+.cb:hover{background:rgba(255,255,255,0.12);color:#fff}
+.cs{height:1px;background:rgba(255,255,255,0.08);margin:1px 4px}
+.leg{position:fixed;top:62px;right:18px;background:rgba(8,6,15,0.88);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:11px 13px;z-index:50;backdrop-filter:blur(10px);min-width:152px}
+.lh{font-size:9.5px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.lr{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:10.5px;color:rgba(255,255,255,0.6)}
+.ld{width:9px;height:9px;border-radius:2.5px;flex-shrink:0}
+.ll{height:2px;width:20px;border-radius:1px;flex-shrink:0}
+.ll.dsh{background:none!important;border-top:2px dashed rgba(255,255,255,0.25)}
+.ldiv{height:1px;background:rgba(255,255,255,0.07);margin:7px 0}
+.zlbl{position:fixed;bottom:18px;left:18px;font-size:10.5px;color:rgba(255,255,255,0.28);z-index:50;font-family:'Poppins',sans-serif}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo">P</div>
+  <div class="hdr-title">Propela Ops</div>
+  <div class="hdr-dot"></div>
+  <div class="hdr-tag">Screen Flow Map</div>
+  <div class="hdr-dot"></div>
+  <div class="hdr-tag">24 screens &nbsp;·&nbsp; 36 connections</div>
+</div>
+
+<div class="leg">
+  <div class="lh">Sections</div>
+  <div class="lr"><div class="ld" style="background:#1D8A70"></div>Onboarding</div>
+  <div class="lr"><div class="ld" style="background:#5B2D8E"></div>Nurse App</div>
+  <div class="lr"><div class="ld" style="background:#2563EB"></div>Ops (Admin)</div>
+  <div class="ldiv"></div>
+  <div class="lh">Connections</div>
+  <div class="lr"><div class="ll" style="background:rgba(255,255,255,0.4)"></div>Primary</div>
+  <div class="lr"><div class="ll" style="background:#7B4BAE"></div>Nurse nav</div>
+  <div class="lr"><div class="ll" style="background:#3B82F6"></div>Admin nav</div>
+  <div class="lr"><div class="ll dsh"></div>Back / return</div>
+  <div class="lr"><div class="ll" style="background:#E68A00"></div>System trigger</div>
+</div>
+
+<div class="ctrl">
+  <button class="cb" id="btn-fit" title="Fit all">⊙</button>
+  <button class="cb" id="btn-100" title="100%" style="font-size:10px;font-weight:600">1:1</button>
+  <div class="cs"></div>
+  <button class="cb" id="btn-plus">+</button>
+  <button class="cb" id="btn-minus">−</button>
+</div>
+<div class="zlbl" id="zlbl">50%</div>
+<div style="position:fixed;bottom:18px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(255,255,255,0.18);z-index:50;pointer-events:none;font-family:'Poppins',sans-serif;white-space:nowrap">Drag to pan &nbsp;·&nbsp; Scroll to zoom &nbsp;·&nbsp; ⊙ fit all &nbsp;·&nbsp; 1:1 full size</div>
+
+<div id="wrap">
+  <svg id="svg" xmlns="http://www.w3.org/2000/svg" style="transform-origin:0 0;overflow:visible"></svg>
+</div>
+
+<script>
+// ── CANVAS ─────────────────────────────────────────────────────────────────
+const CW=3020, CH=1580;
+const NW=172, NH=215;   // mobile node
+const DW=208, DH=140;   // desktop node
+
+// ── SVG HELPERS ─────────────────────────────────────────────────────────────
+const rct=(x,y,w,h,rx=0,fill='rgba(255,255,255,0.07)',extra='')=>
+  `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${fill}" ${extra}/>`;
+const cir=(cx,cy,rad,fill='rgba(255,255,255,0.1)')=>
+  `<circle cx="${cx}" cy="${cy}" r="${rad}" fill="${fill}"/>`;
+const bar=(x,y,w,h=3,rx=1.5,a=.18)=>
+  rct(x,y,w,h,rx,`rgba(255,255,255,${a})`);
+const txt=(x,y,s,sz=9,fw=400,fill='rgba(255,255,255,0.4)',a='start')=>
+  `<text x="${x}" y="${y}" font-family="Poppins,sans-serif" font-size="${sz}" font-weight="${fw}" fill="${fill}" text-anchor="${a}">${s}</text>`;
+
+// ── WIREFRAME LIBRARY ────────────────────────────────────────────────────────
+const WF = {
+
+  splash:(w,h)=>{
+    const [by,bh]=[36,h-36];
+    return[
+      rct(0,by,w,bh,0,'rgba(91,45,142,0.22)'),
+      cir(w/2,by+bh*.36,27,'rgba(91,45,142,0.6)'),
+      txt(w/2,by+bh*.36+8,'P',18,700,'rgba(255,255,255,0.9)','middle'),
+      bar(w/2-32,by+bh*.62,64,6,3,.48),
+      bar(w/2-22,by+bh*.73,44,4,2,.28),
+      rct(12,h-38,w-24,24,7,'rgba(91,45,142,0.65)'),
+    ].join('')
+  },
+
+  auth:(w,h)=>{
+    const [by,bh]=[36,h-36];
+    return[
+      rct(0,by,w,bh,0,'#F0EBF8'),
+      cir(w/2,by+bh*.2,20,'rgba(91,45,142,0.25)'),
+      txt(w/2,by+bh*.2+6,'P',13,700,'rgba(91,45,142,0.75)','middle'),
+      bar(w/2-36,by+bh*.42,72,7,3,.35),
+      bar(w/2-26,by+bh*.54,52,4,2,.22),
+      rct(12,by+bh*.68,w-24,26,7,'rgba(91,45,142,0.5)'),
+      rct(12,by+bh*.85,w-24,22,6,'rgba(0,0,0,0)','stroke="rgba(91,45,142,0.3)" stroke-width="1.5"'),
+    ].join('')
+  },
+
+  admin_login:(w,h)=>{
+    const [by,bh]=[36,h-36];
+    return[
+      rct(0,by,w,bh,0,'#F0EBF8'),
+      cir(w/2,by+18,15,'rgba(37,99,235,0.3)'),
+      txt(w/2,by+24,'P',10,700,'rgba(37,99,235,0.8)','middle'),
+      rct(20,by+40,w-40,18,5,'rgba(0,0,0,0)','stroke="rgba(0,0,0,0.12)" stroke-width="1"'),
+      rct(20,by+64,w-40,18,5,'rgba(0,0,0,0)','stroke="rgba(0,0,0,0.12)" stroke-width="1"'),
+      rct(20,by+88,w-40,22,6,'rgba(37,99,235,0.55)'),
+    ].join('')
+  },
+
+  form_step:(w,h,step=1)=>{
+    const [by,bh]=[36,h-36];
+    const err=step===2?rct(8,by+28,w-16,16,4,'rgba(220,53,69,0.1)','stroke="rgba(220,53,69,0.22)" stroke-width="1"'):'';
+    const ty=step===2?by+52:by+32;
+    const dots=[0,1,2,3,4].map(i=>{
+      const cx=12+i*(w-16)/4, done=i<step-1, cur=i===step-1;
+      const fill=done||cur?'rgba(91,45,142,0.75)':'rgba(255,255,255,0.12)';
+      return[cir(cx,by+12,cur?6:4,fill),
+        i<4?bar(cx+4,by+10,(w-16)/4-8,3,1.5,done?.45:.1):''
+      ].join('')
+    }).join('');
+    return[dots,err,
+      bar(8,ty,72,6,3,.4),bar(8,ty+12,50,4,2,.22),
+      rct(8,ty+24,w-16,24,5,'rgba(255,255,255,0.05)','stroke="rgba(255,255,255,0.1)" stroke-width="1"'),
+      rct(8,ty+54,w-16,24,5,'rgba(255,255,255,0.05)','stroke="rgba(255,255,255,0.1)" stroke-width="1"'),
+      rct(8,ty+84,w-16,24,5,'rgba(255,255,255,0.05)','stroke="rgba(255,255,255,0.1)" stroke-width="1"'),
+      rct(8,h-38,w-16,24,7,'rgba(91,45,142,0.6)'),
+    ].join('')
+  },
+
+  nurse_dash:(w,h)=>{
+    const [by,bh]=[36,h-36];
+    const stg=[0,1,2,3,4].map(i=>
+      cir(14+i*(w-20)/4,by+bh*.32+14,i===2?6:4,
+        i<2?'rgba(40,167,69,0.7)':i===2?'rgba(91,45,142,0.9)':'rgba(255,255,255,0.14)')
+    ).join('');
+    return[
+      rct(0,by,w,bh*.28,0,'rgba(91,45,142,0.32)'),
+      bar(10,by+11,w*.55,6,3,.45),bar(10,by+22,w*.38,4,2,.28),
+      cir(w-20,by+20,12,'rgba(255,255,255,0.2)'),
+      rct(6,by+bh*.28+4,w-12,30,7,'rgba(255,255,255,0.06)','stroke="rgba(255,255,255,0.08)" stroke-width="1"'),
+      stg,
+      ...[0,1,2].map(i=>rct(6,by+bh*.44+i*46,w-12,38,8,'rgba(255,255,255,0.05)','stroke="rgba(255,255,255,0.08)" stroke-width="1"')),
+      ...[0,1,2].map(i=>bar(14,by+bh*.44+i*46+12,48,5,2,.32)),
+      rct(6,h-44,w-12,28,8,'rgba(91,45,142,0.12)','stroke="rgba(91,45,142,0.2)" stroke-width="1"'),
+    ].join('')
+  },
+
+  salary:(w,h)=>{
+    const [by,bh]=[36,h-36];
+    return[
+      rct(8,by+8,w-16,20,8,'rgba(255,255,255,0.05)','stroke="rgba(255,255,255,0.08)" stroke-width="1"'),
+      rct(8,by+8,(w-16)/2,20,8,'rgba(91,45,142,0.5)'),
+      bar(14,by+15,42,4,2,.5),bar((w-16)/2+12,by+15,34,4,2,.25),
+      ...[[8,by+36],[w/2+4,by+36],[8,by+36+bh*.28],[w/2+4,by+36+bh*.28]].map(([sx,sy])=>[
+        rct(sx,sy,w/2-12,bh*.26,7,'rgba(255,255,255,0.05)','stroke="rgba(255,255,255,0.08)" stroke-width="1"'),
+        bar(sx+6,sy+10,42,7,3,.35),bar(sx+6,sy+22,28,4,2,.18),
+      ].join('')).join(''),
+      rct(8,h-36,w-16,20,5,'rgba(91,45,142,0.09)'),bar(12,h-28,w-28,3,1.5,.14),bar(12,h-22,(w-28)*.65,3,1.5,.09),
+    ].join('')
+  },
+
+  checklist:(w,h)=>{
+    const [by,bh]=[36,h-36];
+    const rr=26,rcx=w/2,rcy=by+46,circ=2*Math.PI*rr;
+    return[
+      `<circle cx="${rcx}" cy="${rcy}" r="${rr}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="6"/>`,
+      `<circle cx="${rcx}" cy="${rcy}" r="${rr}" fill="none" stroke="rgba(91,45,142,0.65)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${circ*.62}" transform="rotate(-90 ${rcx} ${rcy})"/>`,
+      txt(rcx,rcy+5,'2/6',10,700,'rgba(255,255,255,0.6)','middle'),
+      ...[0,1,2,3].map(i=>{
+        const iy=by+88+i*28,done=i<1;
+        return[
+          rct(8,iy,12,12,3,done?'rgba(40,167,69,0.5)':'rgba(255,255,255,0.06)',done?'':'stroke="rgba(255,255,255,0.12)" stroke-width="1"'),
+          bar(26,iy+4,w-40,4,2,.22),
+          rct(w-24,iy+1,14,10,5,[0,1].includes(i)?'rgba(220,53,69,0.28)':i===2?'rgba(255,152,0,0.28)':'rgba(40,167,69,0.25)'),
+        ].join('')
+      }).join(''),
+    ].join('')
+  },
+
+  prep:(w,h)=>{
+    const [by,bh]=[36,h-36];
+    return[
+      rct(8,by+7,w-16,20,8,'rgba(255,255,255,0.04)','stroke="rgba(255,255,255,0.08)" stroke-width="1"'),
+      rct(8,by+7,(w-16)/3,20,8,'rgba(255,255,255,0.14)'),
+      ...[0,1,2,3].map(i=>{
+        const cy=by+34+i*40;
+        return[
+          rct(8,cy,w-16,34,6,'rgba(255,255,255,0.04)','stroke="rgba(255,255,255,0.07)" stroke-width="1"'),
+          bar(18,cy+10,38,4,2,.3),bar(18,cy+18,55,3,1.5,.15),
+          rct(8,cy+28,w-16,4,2,'rgba(255,255,255,0.06)'),
+          rct(8,cy+28,(w-16)*(.28+i*.14),4,2,'rgba(91,45,142,0.6)'),
+        ].join('')
+      }).join(''),
+    ].join('')
+  },
+
+  docs:(w,h)=>{
+    const [by,bh]=[36,h-36];
+    return[
+      rct(8,by+7,40,16,8,'rgba(91,45,142,0.5)'),
+      rct(52,by+7,48,16,8,'rgba(255,255,255,0.05)','stroke="rgba(255,255,255,0.09)" stroke-width="1"'),
+      rct(104,by+7,48,16,8,'rgba(255,255,255,0.05)','stroke="rgba(255,255,255,0.09)" stroke-width="1"'),
+      ...[0,1,2,3,4].map(i=>{
+        const dy=by+30+i*29,ok=i<2,pend=i===2;
+        return[
+          bar(8,dy,ok?65:75,4,2,.22),
+          rct(w-42,dy-3,36,14,7,ok?'rgba(40,167,69,0.35)':pend?'rgba(255,152,0,0.3)':'rgba(255,255,255,0.07)'),
+          i<4?bar(8,dy+18,w-16,1,0,.06):'',
+        ].join('')
+      }).join(''),
+    ].join('')
+  },
+
+  employers:(w,h)=>{
+    const [by,bh]=[36,h-36];
+    const flags=['🇬🇧','🇮🇪','🇬🇧'];
+    return[0,1,2].map(i=>{
+      const ey=by+6+i*(bh/3+1);
+      return[
+        rct(8,ey,w-16,bh/3-4,8,'rgba(255,255,255,0.04)','stroke="rgba(255,255,255,0.08)" stroke-width="1"'),
+        txt(18,ey+18,flags[i],15,400,'rgba(255,255,255,0.9)'),
+        bar(40,ey+8,w-58,5,2,.3),bar(40,ey+17,w-68,3,1.5,.18),
+        rct(40,ey+26,26,10,5,'rgba(91,45,142,0.38)'),rct(70,ey+26,22,10,5,'rgba(91,45,142,0.25)'),
+      ].join('')
+    }).join('')
+  },
+
+  community:(w,h)=>{
+    const [by,bh]=[36,h-36];
+    const ac=['rgba(91,45,142,0.8)','rgba(37,99,235,0.7)','rgba(40,167,69,0.7)','rgba(255,152,0,0.7)','rgba(220,53,69,0.65)'];
+    const av=[0,1,2,3,4].map(i=>cir(14+i*22,by+16,8,ac[i])).join('');
+    return[av,
+      rct(8,by+34,w*.62,22,6,'rgba(255,255,255,0.07)'),bar(13,by+42,w*.55,4,2,.22),
+      rct(w*.32,by+62,w*.62,22,6,'rgba(91,45,142,0.38)'),bar(w*.36,by+70,w*.54,4,2,.35),
+      rct(8,by+90,w*.58,22,6,'rgba(255,255,255,0.07)'),bar(13,by+98,w*.5,4,2,.22),
+      rct(w*.36,by+118,w*.58,22,6,'rgba(91,45,142,0.38)'),bar(w*.4,by+126,w*.5,4,2,.35),
+      rct(8,h-34,w-46,22,11,'rgba(255,255,255,0.06)','stroke="rgba(255,255,255,0.1)" stroke-width="1"'),
+      cir(w-18,h-23,11,'rgba(91,45,142,0.6)'),
+    ].join('')
+  },
+
+  outcome:(w,h)=>{
+    const [by,bh]=[36,h-36];
+    const borderC=['rgba(40,167,69,0.6)','rgba(91,45,142,0.6)','rgba(255,152,0,0.6)'];
+    return[
+      rct(0,by,w,bh*.27,0,'rgba(91,45,142,0.3)'),
+      txt(w/2,by+bh*.12,'💜',16,400,'rgba(255,255,255,0.9)','middle'),
+      bar(w/2-35,by+bh*.22,70,5,2,.35),
+      ...[0,1,2].map(i=>{
+        const cy=by+bh*.32+i*(bh*.22+3);
+        return[
+          rct(8,cy,w-16,bh*.22,6,'rgba(255,255,255,0.04)','stroke="rgba(255,255,255,0.07)" stroke-width="1"'),
+          rct(8,cy,3,bh*.22,3,borderC[i]),
+          bar(16,cy+9,68,5,2,.3),bar(16,cy+18,82,3,1.5,.15),bar(16,cy+25,68,3,1.5,.11),
+        ].join('')
+      }).join(''),
+    ].join('')
+  },
+
+  settlement:(w,h)=>{
+    const [by,bh]=[36,h-36];
+    return[
+      bar(8,by+8,100,6,3,.35),bar(8,by+18,72,4,2,.2),
+      ...[0,1,2,3,4].map(i=>{
+        const iy=by+32+i*27,done=i===3;
+        return[
+          rct(8,iy,14,14,3,done?'rgba(40,167,69,0.5)':'rgba(255,255,255,0.06)',done?'':'stroke="rgba(255,255,255,0.12)" stroke-width="1"'),
+          bar(27,iy+4,w-40,4,2,.22),bar(27,iy+11,(w-40)*.65,3,1.5,.12),
+        ].join('')
+      }).join(''),
+      rct(8,h-38,(w-20)/2,22,7,'rgba(37,211,102,0.35)'),
+      rct((w+4)/2,h-38,(w-20)/2,22,7,'rgba(255,255,255,0.06)','stroke="rgba(255,255,255,0.12)" stroke-width="1"'),
+    ].join('')
+  },
+
+  // ── DESKTOP SIDEBAR HELPER ────────────────────────────────────────────────
+  _sb:(h,ac='rgba(91,45,142,0.5)')=>{
+    const [by,bh]=[36,h-36],sb=44;
+    return[
+      rct(0,by,sb,bh,0,'rgba(0,0,0,0.28)'),
+      cir(sb/2,by+14,9,ac),
+      ...[0,1,2,3,4].map(i=>rct(15,by+34+i*18,14,8,4,i===0?'rgba(255,255,255,0.18)':'rgba(255,255,255,0.07)')).join(''),
+      cir(sb/2,by+bh-14,7,'rgba(255,255,255,0.14)'),
+    ].join('')
+  },
+
+  admin_dash:(w,h)=>{
+    const [by,bh]=[36,h-36],sb=44,cx=sb+4,cw=w-sb-8;
+    return[
+      WF._sb(h,'rgba(91,45,142,0.5)'),
+      ...[0,1,2].map(i=>[
+        rct(cx+i*(cw/3+1),by+4,cw/3-2,25,4,'rgba(255,255,255,0.05)','stroke="rgba(255,255,255,0.07)" stroke-width="1"'),
+        bar(cx+i*(cw/3+1)+5,by+11,30,6,3,.35),
+      ].join('')).join(''),
+      rct(cx,by+33,cw,11,0,'rgba(255,255,255,0.04)'),
+      ...[0,1,2,3,4].map(i=>[
+        rct(cx,by+44+i*14,cw,13,0,i===1?'rgba(91,45,142,0.12)':'rgba(255,255,255,0.025)'),
+        bar(cx+5,by+49+i*14,38,3,1.5,.2),
+        rct(cx+cw-34,by+47+i*14,28,8,4,i===1?'rgba(40,167,69,0.35)':i===3?'rgba(255,152,0,0.25)':'rgba(255,255,255,0.06)'),
+      ].join('')).join(''),
+    ].join('')
+  },
+
+  admin_table:(w,h)=>{
+    const [by,bh]=[36,h-36],sb=44,cx=sb+4,cw=w-sb-8;
+    return[
+      WF._sb(h,'rgba(91,45,142,0.5)'),
+      rct(cx,by+4,28,13,6,'rgba(91,45,142,0.5)'),
+      rct(cx+32,by+4,30,13,6,'rgba(255,255,255,0.05)','stroke="rgba(255,255,255,0.08)" stroke-width="1"'),
+      rct(cx+66,by+4,30,13,6,'rgba(255,255,255,0.05)','stroke="rgba(255,255,255,0.08)" stroke-width="1"'),
+      rct(cx,by+21,cw,10,0,'rgba(255,255,255,0.04)'),
+      ...[0,1,2,3,4].map(i=>[
+        rct(cx,by+31+i*14,cw,13,0,i===2?'rgba(91,45,142,0.15)':'rgba(255,255,255,0.02)'),
+        cir(cx+8,by+38+i*14,4,'rgba(255,255,255,0.22)'),
+        bar(cx+18,by+36+i*14,35,3,1.5,.2),
+        rct(cx+cw-32,by+34+i*14,27,9,4,i===0?'rgba(91,45,142,0.4)':i===2?'rgba(37,99,235,0.35)':'rgba(255,255,255,0.06)'),
+      ].join('')).join(''),
+    ].join('')
+  },
+
+  admin_detail:(w,h)=>{
+    const [by,bh]=[36,h-36],sb=44,cx=sb+4,cw=w-sb-8,tW=cw*.55,pW=cw*.43,px=cx+tW+cw*.02;
+    return[
+      WF._sb(h,'rgba(91,45,142,0.5)'),
+      rct(cx,by+4,tW,10,0,'rgba(255,255,255,0.04)'),
+      ...[0,1,2,3].map(i=>[
+        rct(cx,by+14+i*14,tW,12,0,i===1?'rgba(91,45,142,0.12)':'rgba(255,255,255,0.02)'),
+        bar(cx+4,by+19+i*14,32,3,1.5,.18),
+      ].join('')).join(''),
+      rct(px-1,by,pW,bh,4,'rgba(91,45,142,0.07)','stroke="rgba(91,45,142,0.22)" stroke-width="1"'),
+      cir(px+pW/2,by+14,12,'rgba(91,45,142,0.5)'),
+      bar(px+pW/2-22,by+30,44,5,2,.35),bar(px+pW/2-16,by+39,32,3,1.5,.2),
+      rct(px+4,by+50,pW-8,22,4,'rgba(255,255,255,0.04)'),
+      ...[0,1,2].map(i=>bar(px+8+i*(pW-16)/3,by+57,(pW-16)/3-4,3,1.5,.2)).join(''),
+      rct(px+4,by+78,pW-8,26,4,'rgba(255,255,255,0.04)','stroke="rgba(255,255,255,0.08)" stroke-width="1"'),
+      bar(px+8,by+84,pW-18,3,1.5,.15),bar(px+8,by+91,(pW-18)*.7,3,1.5,.1),
+    ].join('')
+  },
+
+  admin_hub:(w,h)=>{
+    const [by,bh]=[36,h-36],sb=44,cx=sb+4,cw=w-sb-8;
+    const tc=['rgba(37,99,235,0.25)','rgba(91,45,142,0.22)','rgba(40,167,69,0.2)'];
+    return[
+      WF._sb(h,'rgba(37,99,235,0.5)'),
+      bar(cx,by+4,65,5,2,.35),
+      ...[0,1,2].map(i=>[
+        rct(cx+i*(cw/3+2),by+14,cw/3-2,bh-20,6,tc[i],'stroke="rgba(255,255,255,0.07)" stroke-width="1"'),
+        bar(cx+i*(cw/3+2)+5,by+22,cw/3-14,5,2,.35),
+        ...[0,1,2].map(j=>[
+          rct(cx+i*(cw/3+2)+5,by+32+j*22,cw/3-14,17,4,'rgba(255,255,255,0.05)','stroke="rgba(255,255,255,0.06)" stroke-width="1"'),
+          bar(cx+i*(cw/3+2)+9,by+38+j*22,cw/3-24,3,1.5,.2),
+        ].join('')).join(''),
+      ].join('')).join(''),
+    ].join('')
+  },
+
+  admin_card:(w,h)=>{
+    const [by,bh]=[36,h-36],sb=44,cx=sb+4,cw=w-sb-8;
+    return[
+      WF._sb(h,'rgba(37,99,235,0.5)'),
+      rct(cx,by+4,cw,36,6,'rgba(37,99,235,0.14)','stroke="rgba(37,99,235,0.22)" stroke-width="1"'),
+      cir(cx+18,by+22,12,'rgba(37,99,235,0.42)'),
+      bar(cx+36,by+13,64,5,2,.4),bar(cx+36,by+23,42,3,1.5,.22),
+      ...[0,1,2].map(i=>[
+        rct(cx+i*(cw/3+2),by+46,cw/3-2,25,4,'rgba(255,255,255,0.05)','stroke="rgba(255,255,255,0.07)" stroke-width="1"'),
+        bar(cx+i*(cw/3+2)+5,by+53,28,6,3,.3),bar(cx+i*(cw/3+2)+5,by+63,18,3,1.5,.15),
+      ].join('')).join(''),
+      rct(cx,by+77,cw,26,4,'rgba(255,255,255,0.03)','stroke="rgba(255,255,255,0.07)" stroke-width="1"'),
+      bar(cx+5,by+83,cw-14,3,1.5,.15),bar(cx+5,by+90,(cw-14)*.7,3,1.5,.1),
+    ].join('')
+  },
+
+  admin_tracker:(w,h)=>{
+    const [by,bh]=[36,h-36],sb=44,cx=sb+4,cw=w-sb-8;
+    return[
+      WF._sb(h,'rgba(91,45,142,0.5)'),
+      rct(cx,by+4,cw*.3-2,26,4,'rgba(255,255,255,0.05)','stroke="rgba(255,255,255,0.08)" stroke-width="1"'),
+      bar(cx+5,by+12,28,6,3,.35),
+      rct(cx+cw*.3+2,by+4,cw*.3-2,26,4,'rgba(255,255,255,0.05)','stroke="rgba(255,255,255,0.08)" stroke-width="1"'),
+      bar(cx+cw*.3+7,by+12,28,6,3,.35),
+      rct(cx+cw*.62,by+4,cw*.38,26,5,'rgba(91,45,142,0.5)'),
+      rct(cx,by+35,cw,10,0,'rgba(255,255,255,0.04)'),
+      ...[0,1,2,3].map(i=>[
+        rct(cx,by+45+i*14,cw,13,0,'rgba(255,255,255,0.02)'),
+        cir(cx+7,by+52+i*14,4,'rgba(255,255,255,0.22)'),
+        bar(cx+17,by+50+i*14,28,3,1.5,.2),
+        bar(cx+cw*.38,by+50+i*14,28,3,1.5,.15),
+        rct(cx+cw-40,by+48+i*14,36,9,4,i===0?'rgba(40,167,69,0.3)':i===2?'rgba(255,152,0,0.3)':'rgba(255,255,255,0.06)'),
+      ].join('')).join(''),
+    ].join('')
+  },
+
+  admin_reports:(w,h)=>{
+    const [by,bh]=[36,h-36],sb=44,cx=sb+4,cw=w-sb-8;
+    const barH=bh*.42;
+    const barVals=[20,34,18,42,30,24];
+    return[
+      WF._sb(h,'rgba(91,45,142,0.5)'),
+      rct(cx,by+4,cw,barH,5,'rgba(255,255,255,0.04)','stroke="rgba(255,255,255,0.07)" stroke-width="1"'),
+      ...barVals.map((v,i)=>{
+        const bw=(cw-12)/6,bx=cx+4+i*bw,bh2=v*(barH-12)/44;
+        return rct(bx,by+4+(barH-12)-bh2,bw-3,bh2,2,`rgba(91,45,142,${.3+i*.04})`);
+      }).join(''),
+      ...[0,1,2].map(i=>[
+        rct(cx,by+barH+8+i*18,cw,14,2,'rgba(255,255,255,0.02)'),
+        bar(cx+5,by+barH+13+i*18,40,3,1.5,.2),bar(cx+cw-38,by+barH+13+i*18,28,3,1.5,.15),
+      ].join('')).join(''),
+    ].join('')
+  },
+
+  admin_settings:(w,h)=>{
+    const [by,bh]=[36,h-36],sb=44,cx=sb+4,cw=w-sb-8;
+    const sidebar=[
+      rct(0,by,sb,bh,0,'rgba(0,0,0,0.28)'),
+      cir(sb/2,by+14,9,'rgba(91,45,142,0.5)'),
+      ...[0,1,2,3,4].map(i=>rct(15,by+34+i*18,14,8,4,i===4?'rgba(255,255,255,0.22)':'rgba(255,255,255,0.07)')).join(''),
+      cir(sb/2,by+bh-14,7,'rgba(255,255,255,0.14)'),
+    ].join('');
+    return[sidebar,
+      bar(cx,by+6,58,5,2,.35),
+      ...[0,1,2,3,4].map(i=>[
+        rct(cx,by+17+i*20,cw,15,4,'rgba(255,255,255,0.04)','stroke="rgba(255,255,255,0.07)" stroke-width="1"'),
+        bar(cx+5,by+23+i*20,42,3,1.5,.22),
+        rct(cx+cw-25,by+20+i*20,18,9,4,'rgba(255,255,255,0.09)'),
+      ].join('')).join(''),
+    ].join('')
+  },
+};
+
+// ── NODES ────────────────────────────────────────────────────────────────────
+const NODES=[
+  // ONBOARDING
+  {id:'splash',     label:'Splash Screen',    code:'00',   sec:'onboarding',dev:'mobile', wf:'splash',         x:60,   y:600},
+  {id:'auth',       label:'Sign In / Apply',  code:'01',   sec:'onboarding',dev:'mobile', wf:'auth',           x:305,  y:600},
+  {id:'s1',         label:'Personal Info',    code:'A1a',  sec:'onboarding',dev:'mobile', wf:'form_step',      x:550,  y:330, step:1},
+  {id:'s2',         label:'Credentials',      code:'A1b',  sec:'onboarding',dev:'mobile', wf:'form_step',      x:755,  y:330, step:2},
+  {id:'s3',         label:'Experience',       code:'A1c',  sec:'onboarding',dev:'mobile', wf:'form_step',      x:960,  y:330, step:3},
+  {id:'s4',         label:'Documents',        code:'A1d',  sec:'onboarding',dev:'mobile', wf:'form_step',      x:1165, y:330, step:4},
+  {id:'s5',         label:'Review & Submit',  code:'A1e',  sec:'onboarding',dev:'mobile', wf:'form_step',      x:1370, y:330, step:5},
+  {id:'adminlogin', label:'Admin Login',      code:'01B',  sec:'onboarding',dev:'desktop',wf:'admin_login',    x:555,  y:960},
+  // NURSE APP
+  {id:'nursedash',  label:'Dashboard',        code:'A2',   sec:'nurse',     dev:'mobile', wf:'nurse_dash',     x:1640, y:195},
+  {id:'salary',     label:'Salary Calculator',code:'A3',   sec:'nurse',     dev:'mobile', wf:'salary',         x:1910, y:20},
+  {id:'waitlist',   label:'While You Wait',   code:'A4',   sec:'nurse',     dev:'mobile', wf:'checklist',      x:1910, y:265},
+  {id:'employers',  label:'Employer Preview', code:'A7',   sec:'nurse',     dev:'mobile', wf:'employers',      x:1910, y:510},
+  {id:'prep',       label:'Exam Prep Hub',    code:'A5',   sec:'nurse',     dev:'mobile', wf:'prep',           x:2250, y:20},
+  {id:'docs',       label:'Document Hub',     code:'A6',   sec:'nurse',     dev:'mobile', wf:'docs',           x:2250, y:265},
+  {id:'community',  label:'Community',        code:'A8',   sec:'nurse',     dev:'mobile', wf:'community',      x:2250, y:510},
+  {id:'outcome',    label:'Exam Outcome',     code:'A9',   sec:'nurse',     dev:'mobile', wf:'outcome',        x:2610, y:110},
+  {id:'postplace',  label:'Post-Placement',   code:'A10',  sec:'nurse',     dev:'mobile', wf:'settlement',     x:2610, y:395},
+  // ADMIN / OPS
+  {id:'admindash',  label:'Ops Dashboard',    code:'B0',   sec:'admin',     dev:'desktop',wf:'admin_dash',     x:1640, y:840},
+  {id:'gallery',    label:'Nurse Gallery',    code:'B1',   sec:'admin',     dev:'desktop',wf:'admin_table',    x:1930, y:788},
+  {id:'nursecard',  label:'Nurse Card',       code:'B1+',  sec:'admin',     dev:'desktop',wf:'admin_detail',   x:2250, y:788},
+  {id:'acqhub',     label:'Acquisition Hub',  code:'B2',   sec:'admin',     dev:'desktop',wf:'admin_hub',      x:1930, y:958},
+  {id:'instcard',   label:'Institution Card', code:'B2+',  sec:'admin',     dev:'desktop',wf:'admin_card',     x:2250, y:958},
+  {id:'examtrack',  label:'Exam Tracker',     code:'B3',   sec:'admin',     dev:'desktop',wf:'admin_tracker',  x:1930, y:1128},
+  {id:'reports',    label:'Reports',          code:'B4',   sec:'admin',     dev:'desktop',wf:'admin_reports',  x:2250, y:1128},
+  {id:'settings',   label:'Settings',         code:'B5',   sec:'admin',     dev:'desktop',wf:'admin_settings', x:1930, y:1298},
+];
+
+// ── EDGES ─────────────────────────────────────────────────────────────────────
+// type: 'primary'|'nurse'|'admin'|'back'|'system'
+// route: undefined=auto | 'above' | 'below'
+const EDGES=[
+  // Onboarding
+  {f:'splash',    t:'auth',      label:'Launch',            type:'primary'},
+  {f:'auth',      t:'s1',        label:'Apply now',         type:'nurse'},
+  {f:'auth',      t:'adminlogin',label:'Admin login',       type:'admin'},
+  {f:'s1',        t:'s2',        label:'Continue',          type:'primary'},
+  {f:'s2',        t:'s3',        label:'Continue',          type:'primary'},
+  {f:'s3',        t:'s4',        label:'Continue',          type:'primary'},
+  {f:'s4',        t:'s5',        label:'Continue',          type:'primary'},
+  {f:'s5',        t:'nursedash', label:'Submit',            type:'nurse'},
+  {f:'adminlogin',t:'admindash', label:'Login',             type:'admin'},
+  // Step backs
+  {f:'s2',t:'s1', label:'Back', type:'back', route:'above'},
+  {f:'s3',t:'s2', label:'Back', type:'back', route:'above'},
+  {f:'s4',t:'s3', label:'Back', type:'back', route:'above'},
+  {f:'s5',t:'s4', label:'Back', type:'back', route:'above'},
+  // Nurse app
+  {f:'nursedash', t:'salary',    label:'Salary Calculator', type:'nurse'},
+  {f:'nursedash', t:'waitlist',  label:'While You Wait',    type:'nurse'},
+  {f:'nursedash', t:'employers', label:'Employer Previews', type:'nurse'},
+  {f:'nursedash', t:'prep',      label:'Prep Hub (nav)',    type:'nurse'},
+  {f:'nursedash', t:'docs',      label:'Documents (nav)',   type:'nurse'},
+  {f:'nursedash', t:'community', label:'Community (nav)',   type:'nurse'},
+  {f:'nursedash', t:'outcome',   label:'Exam result',      type:'system'},
+  {f:'nursedash', t:'postplace', label:'Support (nav)',     type:'nurse'},
+  {f:'outcome',   t:'prep',      label:'Review components', type:'nurse'},
+  {f:'salary',    t:'nursedash', label:'Back',              type:'back', route:'above'},
+  {f:'waitlist',  t:'nursedash', label:'Back',              type:'back', route:'above'},
+  {f:'employers', t:'nursedash', label:'Back',              type:'back', route:'above'},
+  // Admin app
+  {f:'admindash', t:'gallery',   label:'Candidates',        type:'admin'},
+  {f:'gallery',   t:'nursecard', label:'Select candidate',  type:'admin'},
+  {f:'nursecard', t:'gallery',   label:'Back',              type:'back', route:'above'},
+  {f:'admindash', t:'acqhub',    label:'Acquisition Hub',   type:'admin'},
+  {f:'acqhub',    t:'instcard',  label:'Select institution',type:'admin'},
+  {f:'instcard',  t:'acqhub',    label:'Back',              type:'back', route:'above'},
+  {f:'admindash', t:'examtrack', label:'Exam Tracker',      type:'admin'},
+  {f:'admindash', t:'reports',   label:'Reports',           type:'admin'},
+  {f:'admindash', t:'settings',  label:'Settings',          type:'admin'},
+  {f:'examtrack', t:'admindash', label:'Back',              type:'back', route:'below'},
+];
+
+// ── NODE HELPERS ──────────────────────────────────────────────────────────────
+function nodeSize(n){return n.dev==='mobile'?{w:NW,h:NH}:{w:DW,h:DH}}
+function nodeRect(n){const s=nodeSize(n);return{x:n.x,y:n.y,...s,cx:n.x+s.w/2,cy:n.y+s.h/2}}
+function nodeById(id){return NODES.find(n=>n.id===id)}
+
+// ── SECTION COLORS ────────────────────────────────────────────────────────────
+const SCOL={
+  onboarding:{hdr:'#1D8A70',hdr2:'#186E5A',bg:'rgba(29,138,112,0.08)',border:'rgba(29,138,112,0.2)'},
+  nurse:      {hdr:'#5B2D8E',hdr2:'#4A2375',bg:'rgba(91,45,142,0.08)',border:'rgba(91,45,142,0.2)'},
+  admin:      {hdr:'#1E4DB7',hdr2:'#163D96',bg:'rgba(30,77,183,0.08)',border:'rgba(30,77,183,0.2)'},
+};
+
+// ── EDGE STYLE ────────────────────────────────────────────────────────────────
+const ECOL={
+  primary:{s:'rgba(255,255,255,0.38)',d:'',w:1.6},
+  nurse:  {s:'#7B4BAE',d:'',w:1.6},
+  admin:  {s:'#3B82F6',d:'',w:1.6},
+  back:   {s:'rgba(255,255,255,0.22)',d:'5,4',w:1.2},
+  system: {s:'#E68A00',d:'4,3',w:1.6},
+};
+
+// ── EDGE PATH ─────────────────────────────────────────────────────────────────
+function edgePath(edge){
+  const sn=nodeById(edge.f),dn=nodeById(edge.t);
+  if(!sn||!dn)return'';
+  const sr=nodeRect(sn),dr=nodeRect(dn);
+  if(edge.route==='above'){
+    const sx=sr.cx,sy=sr.y,tx=dr.cx,ty=dr.y;
+    const my=Math.min(sy,ty)-44;
+    return`M ${sx} ${sy} C ${sx} ${my} ${tx} ${my} ${tx} ${ty}`;
+  }
+  if(edge.route==='below'){
+    const sx=sr.cx,sy=sr.y+sr.h,tx=dr.cx,ty=dr.y+dr.h;
+    const my=Math.max(sy,ty)+44;
+    return`M ${sx} ${sy} C ${sx} ${my} ${tx} ${my} ${tx} ${ty}`;
+  }
+  // Auto: right→left connection
+  const goR=dr.cx>sr.cx;
+  let sx,sy,tx,ty;
+  if(goR){sx=sr.x+sr.w;sy=sr.cy;tx=dr.x;ty=dr.cy;}
+  else{sx=sr.x;sy=sr.cy;tx=dr.x+dr.w;ty=dr.cy;}
+  const dx=tx-sx,dy=ty-sy;
+  const tension=Math.max(Math.abs(dx)*.42,50);
+  const cp1x=sx+(goR?tension:-tension),cp1y=sy;
+  const cp2x=tx-(goR?tension:-tension),cp2y=ty;
+  return`M ${sx} ${sy} C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${tx} ${ty}`;
+}
+
+function bezierMid(path){
+  // get ~midpoint from "M x0 y0 C cx1 cy1 cx2 cy2 x1 y1"
+  const parts=path.match(/[-\d.]+/g).map(Number);
+  if(parts.length<8)return{x:0,y:0};
+  const [x0,y0,cx1,cy1,cx2,cy2,x1,y1]=parts;
+  const t=.5;
+  const mt=(1-t),x=mt**3*x0+3*mt**2*t*cx1+3*mt*t**2*cx2+t**3*x1;
+  const y=mt**3*y0+3*mt**2*t*cy1+3*mt*t**2*cy2+t**3*y1;
+  return{x,y};
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function buildSVG(){
+  let out='';
+
+  // Canvas bg
+  out+=rct(0,0,CW,CH,0,'#08060F');
+
+  // Subtle dot grid
+  out+=`<pattern id="grid" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="14" cy="14" r="0.9" fill="rgba(255,255,255,0.045)"/></pattern>`;
+  out+=`<rect width="${CW}" height="${CH}" fill="url(#grid)"/>`;
+
+  // ── SECTION ZONES ──────────────────────────────────────────────────────
+  const zones=[
+    {sec:'onboarding',x:30,y:295,w:1562,h:878},
+    {sec:'nurse',x:1608,y:0,w:1242,h:748},
+    {sec:'admin',x:1608,y:756,w:900,h:702},
+  ];
+  zones.forEach(z=>{
+    const c=SCOL[z.sec];
+    out+=rct(z.x,z.y,z.w,z.h,16,c.bg,`stroke="${c.border}" stroke-width="1"`);
+  });
+  out+=txt(46,320,'ONBOARDING',10,600,'rgba(29,138,112,0.75)');
+  out+=txt(1626,22,'NURSE APP',10,600,'rgba(91,45,142,0.75)');
+  out+=txt(1626,775,'OPS APP',10,600,'rgba(30,77,183,0.75)');
+
+  // ── DEFS (arrow markers) ──────────────────────────────────────────────
+  const markers=Object.entries(ECOL).map(([k,v])=>
+    `<marker id="arr-${k}" markerWidth="7" markerHeight="7" refX="5.5" refY="3" orient="auto"><path d="M0,0.5 L0,5.5 L7,3 z" fill="${v.s}" opacity="${k==='back'?.6:1}"/></marker>`
+  ).join('');
+  out=out.replace('<pattern',`<defs>${markers}</defs><pattern`);
+
+  // ── EDGES ──────────────────────────────────────────────────────────────
+  EDGES.forEach(e=>{
+    const col=ECOL[e.type];
+    const p=edgePath(e);
+    if(!p)return;
+    out+=`<path d="${p}" stroke="${col.s}" stroke-width="${col.w}" fill="none" ${col.d?`stroke-dasharray="${col.d}"`:''}
+      marker-end="url(#arr-${e.type})" opacity="${e.type==='back'?.75:1}"/>`;
+    // Label
+    if(e.label){
+      const mid=bezierMid(p);
+      const isBack=e.type==='back';
+      // Skip generic 'Back' labels — arrow direction is self-evident
+      if(isBack && e.label==='Back') return;
+      const fw=isBack?400:500;
+      const fc=isBack?'rgba(255,255,255,0.38)':col.s;
+      const bgW=e.label.length*5.4+12,bgH=15;
+      out+=rct(mid.x-bgW/2,mid.y-bgH/2+1,bgW,bgH,4,'rgba(8,6,15,0.9)');
+      out+=txt(mid.x,mid.y+4.5,e.label,8.5,fw,fc,'middle');
+    }
+  });
+
+  // ── NODES ──────────────────────────────────────────────────────────────
+  NODES.forEach(n=>{
+    const s=nodeSize(n),sc=SCOL[n.sec];
+    const {x,y,w,h}={x:n.x,y:n.y,...s};
+    // Card
+    out+=rct(x,y,w,h,12,'#0E0B1C',`stroke="rgba(255,255,255,0.09)" stroke-width="1"`);
+    // Header gradient approx
+    out+=rct(x,y,w,36,12,sc.hdr,'style="clip-path:inset(0 0 0 0 round 12px 12px 0 0)"');
+    // Header flat bottom
+    out+=rct(x,y+12,w,24,0,sc.hdr);
+    // Code badge
+    const bw=n.code.length*6.2+12;
+    out+=rct(x+8,y+9,bw,17,8,'rgba(255,255,255,0.18)');
+    out+=txt(x+14,y+21,n.code,9,700,'rgba(255,255,255,1)');
+    // Screen label
+    const lx2=x+8+bw+7;
+    const maxChars=w===NW?16:19;
+    const label=n.label.length>maxChars?n.label.slice(0,maxChars-1)+'…':n.label;
+    out+=txt(lx2,y+21.5,label,10.5,600,'rgba(255,255,255,0.95)');
+    // Wireframe body
+    const wfFn=WF[n.wf];
+    if(wfFn){
+      const wfArgs=n.wf==='form_step'?[w,h,n.step||1]:[w,h];
+      out+=`<g transform="translate(${x},${y})">${wfFn(...wfArgs)}</g>`;
+    }
+    // Bottom divider
+    out+=`<line x1="${x+1}" y1="${y+36}" x2="${x+w-1}" y2="${y+36}" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>`;
+  });
+
+  return out;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+const svgEl=document.getElementById('svg');
+svgEl.setAttribute('width',CW);
+svgEl.setAttribute('height',CH);
+svgEl.innerHTML=buildSVG();
+
+// ── PAN / ZOOM ────────────────────────────────────────────────────────────────
+let zoom=.52, panX=0, panY=52;
+
+function applyTransform(){
+  svgEl.style.transform=`translate(${panX}px,${panY}px) scale(${zoom})`;
+  document.getElementById('zlbl').textContent=Math.round(zoom*100)+'%';
+}
+
+function fitToScreen(){
+  const vw=window.innerWidth, vh=window.innerHeight-52;
+  const zx=vw/CW, zy=vh/CH;
+  zoom=Math.min(zx,zy)*.94;
+  panX=(vw-CW*zoom)/2;
+  panY=52+(vh-CH*zoom)/2;
+  applyTransform();
+}
+
+function zoomTo100(){
+  zoom=1;
+  panX=Math.max(0,(window.innerWidth-CW)/2);
+  panY=52+Math.max(0,(window.innerHeight-52-CH)/2);
+  applyTransform();
+}
+
+fitToScreen();
+
+// Drag to pan
+const wrap=document.getElementById('wrap');
+let dragging=false, lastX=0, lastY=0;
+wrap.addEventListener('mousedown',e=>{if(e.button!==0)return;dragging=true;lastX=e.clientX;lastY=e.clientY;wrap.classList.add('drag')});
+window.addEventListener('mousemove',e=>{if(!dragging)return;panX+=e.clientX-lastX;panY+=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;applyTransform()});
+window.addEventListener('mouseup',()=>{dragging=false;wrap.classList.remove('drag')});
+
+// Wheel to zoom
+wrap.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const rect=wrap.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const prevZ=zoom;
+  zoom=Math.max(.18,Math.min(2.4,zoom*Math.exp(-e.deltaY*.001)));
+  panX=mx-(mx-panX)*(zoom/prevZ);
+  panY=my-(my-panY)*(zoom/prevZ);
+  applyTransform();
+},{passive:false});
+
+// Touch pan/pinch
+let touches={},lastDist=0;
+wrap.addEventListener('touchstart',e=>{[...e.touches].forEach(t=>touches[t.identifier]={x:t.clientX,y:t.clientY})});
+wrap.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  const ts=[...e.touches];
+  if(ts.length===1){
+    const t=ts[0],prev=touches[t.identifier]||{x:t.clientX,y:t.clientY};
+    panX+=t.clientX-prev.x;panY+=t.clientY-prev.y;
+    touches[t.identifier]={x:t.clientX,y:t.clientY};
+    applyTransform();
+  }else if(ts.length===2){
+    const d=Math.hypot(ts[0].clientX-ts[1].clientX,ts[0].clientY-ts[1].clientY);
+    if(lastDist){const ratio=d/lastDist;zoom=Math.max(.18,Math.min(2.4,zoom*ratio));}
+    lastDist=d;
+    const cx=(ts[0].clientX+ts[1].clientX)/2,cy=(ts[0].clientY+ts[1].clientY)/2;
+    ts.forEach(t=>touches[t.identifier]={x:t.clientX,y:t.clientY});
+    applyTransform();
+  }
+},{passive:false});
+wrap.addEventListener('touchend',e=>{[...e.changedTouches].forEach(t=>delete touches[t.identifier]);if(e.touches.length<2)lastDist=0});
+
+// Buttons
+document.getElementById('btn-fit').addEventListener('click',fitToScreen);
+document.getElementById('btn-100').addEventListener('click',zoomTo100);
+document.getElementById('btn-plus').addEventListener('click',()=>{
+  const cx=window.innerWidth/2,cy=window.innerHeight/2;
+  const prev=zoom;zoom=Math.min(2.4,zoom*1.22);
+  panX=cx-(cx-panX)*(zoom/prev);panY=cy-(cy-panY)*(zoom/prev);applyTransform();
+});
+document.getElementById('btn-minus').addEventListener('click',()=>{
+  const cx=window.innerWidth/2,cy=window.innerHeight/2;
+  const prev=zoom;zoom=Math.max(.18,zoom/1.22);
+  panX=cx-(cx-panX)*(zoom/prev);panY=cy-(cy-panY)*(zoom/prev);applyTransform();
+});
+
+window.addEventListener('resize',fitToScreen);
+</script>
+</body>
+</html>
