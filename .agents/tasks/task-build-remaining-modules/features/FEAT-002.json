@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Module 3: Nurse Acquisition Hub - A new /acquisition route with 4 track tabs (Organisations, Referral Network, Community Channels, Events) and a shared outreach pipeline. Each track shows sources with stats, and the pipeline shows leads progressing through contact stages.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create src/types/acquisition.ts with interfaces: AcquisitionSource (id, name, type: Organisation|Referral|Community|Event, contactPerson, contactEmail, status: Active|Prospective|Inactive, leadsGenerated, conversionRate, lastContact, notes), OutreachLead (id, sourceId, sourceName, nurseFullName, stage: Contacted|Interested|Applied|Converted|Lost, contactDate, followUpDate, notes)",
     "Create src/lib/mock-acquisition.ts with mock data: 3-4 organisations (hospitals, nursing agencies), 3-4 referral partners, 3-4 community channels (WhatsApp groups, Facebook groups, forums), 3-4 events (career fairs, conferences). Also include 8-10 outreach leads at various pipeline stages.",
@@ -32,5 +32,5 @@
     "Run pnpm lint and confirm zero errors or only warnings"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Build and lint pass cleanly. All 5 tabs render. Pipeline uses kanban-style column layout with 5 stages. Used Megaphone icon from Lucide for sidebar. Filter chips use rounded-2xl pattern matching existing codebase style."
 }
