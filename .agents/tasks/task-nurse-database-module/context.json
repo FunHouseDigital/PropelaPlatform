@@ -1,0 +1,22 @@
+{
+  "project_type": "React SPA - Nurse Operations Platform (Propela Ops)",
+  "language": "JavaScript/JSX",
+  "build_system": "Vite + npm",
+  "test_framework": "Vitest with React Testing Library",
+  "build_command": "npm run build",
+  "test_command": "npm test",
+  "verification_instructions": "1. Run npm run build to confirm production build succeeds. 2. Run npm run dev and confirm the app loads at localhost. 3. Confirm Gallery View displays nurse cards with photo/initials, name, CV score stars, specialty badge, location, readiness status, and next action badge. 4. Confirm Pipeline Kanban view shows draggable cards across stage columns. 5. Confirm Nurse Card opens with all field sections and Next Action is the most prominent element. 6. Confirm Cohort View shows filtered table with OET and commitment fee columns.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "1. cd /projects/sandbox/PropelaPlatform 2. npm create vite@latest . -- --template react 3. npm install 4. npm install -D tailwindcss @tailwindcss/vite 5. npm install react-router-dom lucide-react recharts 6. Configure tailwind, set up Poppins font via CDN in index.html",
+  "environment_constraints": "COMMON_DEPENDENCIES network mode - npm packages available. Node.js v22 pre-installed.",
+  "contribution_requirements": "Single-user app for Aya Yokwana (COO). Primary colour #5B2D8E. Font Poppins throughout. Desktop-first for gallery/table views. Mobile-aware for nurse card. Capacity 500 nurses. localStorage for persistence.",
+  "key_patterns": "Design reference uses inline styles with a colour constant object (C) and font constant (F='Poppins, sans-serif'). Badges use small rounded pill shapes. Cards use borderRadius 16, subtle boxShadow. The gallery card pattern shows: circular photo, name, star rating, years+specialty badges, location, readiness status badge, next action badge, flag count. Kanban cards are compact: small circular photo, name, next action badge, readiness badge, flag count. Admin dashboard uses a sidebar navigation with gradient purple background.",
+  "relevant_files": [
+    "design-reference/Propela Ops/Propela_Ops_MasterPRD_v3.txt",
+    "design-reference/Propela Ops/components/shared-ui.jsx",
+    "design-reference/Propela Ops/components/admin-dashboard.jsx",
+    "design-reference/Propela Ops/components/admin-screens.jsx",
+    "design-reference/Propela Ops/assets/propela-logo-black.svg"
+  ],
+  "directory_structure": "Root: /projects/sandbox/PropelaPlatform. Currently only contains design-reference/ folder with PRD and JSX mockup components. The app will be scaffolded at the root level with src/, public/, etc."
+}

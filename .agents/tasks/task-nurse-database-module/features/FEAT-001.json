@@ -1,0 +1,37 @@
+{
+  "id": "FEAT-001",
+  "type": "chore",
+  "description": "Scaffold the React application with Vite, Tailwind CSS, React Router, Lucide React, and Recharts. Set up project structure, theming (Propela Purple #5B2D8E, Poppins font), and localStorage data layer with seed data structure.",
+  "status": "in_progress",
+  "steps": [
+    "Initialize Vite React project at /projects/sandbox/PropelaPlatform (use the existing directory - run npm create vite@latest with --template react, accepting overwrite for existing files)",
+    "Install dependencies: npm install react-router-dom lucide-react recharts. Install dev deps: npm install -D tailwindcss @tailwindcss/vite",
+    "Configure Tailwind CSS: update vite.config.js to include @tailwindcss/vite plugin. Create src/index.css with @import 'tailwindcss' directive. Extend theme in tailwind config or use CSS variables for: colors (purple: #5B2D8E, purpleDark: #3D1D5E, purpleLight: #F3EDF9, purpleMid: #7B4BAE, green: #28A745, orange: #FF9800, red: #DC3545, dark: #1A1A2E, text: #374151, grey: #6B7280, border: #E0D6EC, bg: #F8F7FC)",
+    "Add Poppins font via Google Fonts CDN link in index.html. Set body font-family to 'Poppins, sans-serif' in index.css",
+    "Create project directory structure: src/components/ (shared UI), src/components/layout/ (Sidebar, TopBar), src/pages/ (page-level components), src/data/ (seed data and store), src/hooks/ (custom hooks), src/utils/ (helpers), src/assets/ (logo SVG)",
+    "Copy the propela-logo-black.svg from design-reference/Propela Ops/assets/ into src/assets/",
+    "Create src/data/store.js - a localStorage-backed data store with: initializeStore() that checks if data exists in localStorage, getNurses()/setNurses(), getCohorts()/setCohorts(), getOrganisations()/setOrganisations(). Use JSON serialization. Key prefix 'propela_ops_'",
+    "Create src/data/seedData.js - generate 67 realistic seed nurse records for Cohort 1 following the PRD Section 7.7 field spec. Each nurse should have: id, fullName, preferredName, email, contactNumber, gender, ageGroup, province, city, registeredWithSANC, registeredNurseInSA, sancNumber, sancApcExpiry, sancApcStatus, highestQualification, qualificationInstitution, yearsOfClinicalExperience, primaryClinicalSpecialty, additionalCertifications, employmentStatus, currentEmployer, validPassport, passportExpiry, previouslyTakenEnglishTest, efSetScore (0-100), efSetLevel, englishPts, englishProficiencyLevel, oetStatus, oetExamDate, oetWritingScore, oetSpeakingScore, oetListeningScore, oetReadingScore, oetOverallResult, retakeRequired, retakeComponents, scorecard (hospitalExp, sancStatus, englishProficiency, qualifications, specialisation, validPassport, financialReadiness, motivation), cvScore (auto-calculated), finalScore (auto-calculated), tier (auto-calculated), pipelineStage, shortlistDecision, firstInterviewDate, nonSelectionReason, recommendedPathway, cohortAssigned, agreementSent, agreementSigned, commitmentFeeStatus, commitmentFeeDate, placementStatus, destinationCountry, photoUrl, nextAction, readinessStatus (auto-calculated from pipelineStage), flags (count from notes), motivations, questions, notes, source, communicationLog, submittedAt, lastContacted. Distribute nurses across pipeline stages realistically: ~15 Applied, ~10 CV Submitted, ~8 CV+English Submitted, ~5 Under Review, ~8 Shortlisted Yes, ~4 Shortlisted Maybe, ~7 Not Selected, ~3 Didnt Qualify, ~4 Selected for Cohort/Confirmed, ~3 Training Active. Include 5-8 nurses with [FLAG] in their notes.",
+    "Create src/data/seedOrganisations.js - generate 108 Health Facility organisation records for the Acquisition Hub Track 1 seed. Fields: id, organisationName, organisationType ('Health Facility'), province, city, physicalAddress, primaryContactName, contactEmail, contactPhone, linkedinWebsite, currentStage, lastContactDate, nextFollowUpDate, preferredChannel, nursesSourced, internalRating, notes, tags, healthcareGroup, facilityType, overviewDescription, outreachApproach, infoSessionHeld, infoSessionDate, nursesAttendingInfoSession, nursesConvertedToApplicants. Distribute across all 9 SA provinces. Include Netcare, Life Healthcare, Mediclinic, Public, and Independent facilities.",
+    "Create src/data/constants.js - all dropdown options from the PRD: PIPELINE_STAGES (array of {value, label, category} for Application Funnel, Cohort Pipeline, Exit/Hold), NEXT_ACTION_OPTIONS, READINESS_STATUSES, GENDER_OPTIONS, AGE_GROUP_OPTIONS, QUALIFICATION_OPTIONS, EXPERIENCE_OPTIONS, SPECIALTY_OPTIONS, OET_STATUS_OPTIONS, COMMITMENT_FEE_OPTIONS, PLACEMENT_STATUS_OPTIONS, PROVINCE_OPTIONS (9 SA provinces), SOURCE_OPTIONS, SHORTLIST_OPTIONS, TIER_LABELS, SCORECARD_WEIGHTS",
+    "Create src/utils/calculations.js - helper functions: calculateCvScore(scorecard), calculateFinalScore(scorecard), calculateTier(finalScore), calculateReadinessStatus(pipelineStage), getNextActionColour(nextAction, followUpDate), getFlagCount(notes)",
+    "Set up React Router in src/App.jsx with routes: / (Dashboard - placeholder), /nurses (Nurse Database), /nurses/:id (Nurse Card), /cohorts (Cohort Manager - placeholder), /acquisition (Acquisition Hub - placeholder), /templates (Template Library - placeholder). Include the sidebar layout wrapper.",
+    "Create src/components/layout/Sidebar.jsx - desktop sidebar navigation matching the admin-dashboard.jsx design: gradient purple background (#5B2D8E to #3D1D5E), Propela logo at top, nav items with Lucide icons (LayoutDashboard, Users, FolderKanban, Building2, FileText), active state highlighting, Aya avatar at bottom. Use React Router NavLink for active state.",
+    "Create src/components/layout/Layout.jsx - main layout wrapper with Sidebar on left (width 220px) and content area on right that fills remaining space with overflow-auto",
+    "Verify: Run npm run build successfully with no errors. Run npm run dev and confirm the app shell loads with sidebar navigation visible."
+  ],
+  "acceptance_criteria": [
+    "npm run build completes without errors",
+    "npm run dev serves the app successfully",
+    "Navigating to /nurses route shows the Nurse Database page (even if placeholder content)",
+    "Sidebar shows 5 navigation items with Lucide icons and active state highlighting",
+    "localStorage contains 67 nurse records and 108 organisation records after first load",
+    "All calculation utilities produce correct values (cvScore, finalScore, tier, readinessStatus)"
+  ],
+  "verification": [
+    "Run 'npm run build' and confirm exit code 0",
+    "Run 'npm run dev' in background, then curl localhost:5173 to confirm HTML response"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

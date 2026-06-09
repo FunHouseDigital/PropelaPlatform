@@ -1,0 +1,7 @@
+{
+  "task_id": "task-nurse-database-module",
+  "task_description": "Scaffold the Propela Ops React application and implement Module 1 - Nurse Database with Gallery View, Pipeline Kanban View, Cohort View, and full Nurse Card. This is the first and highest-priority module per the PRD, replacing Notion for nurse tracking.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}
