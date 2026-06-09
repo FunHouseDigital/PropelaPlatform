@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Nurse Database Gallery View - photo-first Airtable-style card grid with search, filter, sort, and view toggle controls. This is the default view at /nurses.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create src/app/nurses/page.tsx as a server component that fetches all nurses from the database and renders the NurseDatabase client component",
     "Create src/app/nurses/layout.tsx with the page structure (header with title, controls bar, content area)",
@@ -34,5 +34,5 @@
     "Run pnpm build and confirm it exits with code 0"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "1. Build passes with NODE_OPTIONS='' npx next build (exit 0). 2. Gallery view is the default view at /nurses. 3. Star rating uses calculateCvScore formula: (hospitalExp*3 + sancStatusScore*3 + qualifications*2 + specialisation*1) / 9 * 5, capped at 5. 4. Next Action badge is most prominent with color coding (red for overdue, amber for due-today, teal for upcoming, grey for no action). 5. Filter panel extracts province from provinceCity field (splits on comma). 6. Pipeline and Table views show placeholder until implemented in FEAT-004/FEAT-005. 7. npx next lint fails due to sandbox proxy-bootstrap module issue (not related to code)."
 }
