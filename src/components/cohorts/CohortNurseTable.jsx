@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Flag, ChevronUp, ChevronDown } from 'lucide-react';
 import { getNurses, saveNurses } from '../../lib/storage';
 import { PIPELINE_STAGES, OET_STATUSES, COMMITMENT_FEE_STATUSES, NEXT_ACTION_VALUES } from '../../lib/constants';
+import { calculateReadinessStatus } from '../../lib/calculations';
 
 function getPipelineColor(stage) {
   if (['OET Passed', 'Placement Ready', 'Placed'].includes(stage)) return 'bg-green-100 text-green-700';
@@ -83,12 +84,18 @@ export default function CohortNurseTable({ cohortName, onNurseUpdate }) {
     const allNurses = getNurses();
     const idx = allNurses.findIndex((n) => n.id === nurseId);
     if (idx === -1) return;
-    allNurses[idx] = { ...allNurses[idx], [field]: value };
+
+    const updates = { [field]: value };
+    if (field === 'pipelineStage') {
+      updates.readinessStatus = calculateReadinessStatus(value);
+    }
+
+    allNurses[idx] = { ...allNurses[idx], ...updates };
     saveNurses(allNurses);
 
     // Update local state
     setNurses((prev) =>
-      prev.map((n) => (n.id === nurseId ? { ...n, [field]: value } : n))
+      prev.map((n) => (n.id === nurseId ? { ...n, ...updates } : n))
     );
     setEditingCell(null);
     if (onNurseUpdate) onNurseUpdate();
