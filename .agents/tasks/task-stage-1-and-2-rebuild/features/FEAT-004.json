@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "feat",
   "description": "Cohort Manager Module + Nurse Acquisition Hub (4 tracks) - Complete Cohort 1 card with nurse progress table, budget tracker, and full Acquisition Hub with Organisations, Referral Network, Community Channels, Events tracks",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create src/pages/CohortManager.jsx - Main cohort page showing cohort cards. Cohort 1 is pre-seeded. Each cohort card shows: name, status badge, enrolled/target count, timeline summary, budget summary. Clicking a cohort opens its full detail view.",
     "Create src/components/cohorts/CohortCard.jsx - Full cohort detail view per PRD Section 9.2. Sections: Identity & Status (name, status dropdown, source countries, target nurses, enrolled count auto, reserve count auto), Timeline (all date fields), Training Provider (name, contact, format, cost per nurse, total cost auto, lessons planned, assessment checkboxes with [!] Cohort 1 learning labels), Budget (total, propela contribution, commitment fees collected auto, training cost actual, OET exam cost actual, other costs, total spent auto, budget remaining auto), Outcomes (OET pass rate target/actual, placement rate target/actual, total placement fees, cohort learnings long text).",
@@ -35,5 +35,5 @@
     "Run npm run dev, navigate to /cohorts and /acquisition, confirm both load with data"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 12 steps completed. Build passes cleanly. Cohort Manager shows Cohort 1 with nurse data from localStorage. Acquisition Hub has 4 functional tabs with seed data. Outreach log works on all record types. The eslint react-hooks/static-components rule requires functions used as components (with JSX args) to be outside the render function - solved by converting SortIcon to a regular function (renderSortIcon)."
 }
