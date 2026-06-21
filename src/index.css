@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --color-propela-purple: #5B2D8E;
+  --color-propela-purple-dark: #3D1D5E;
+  --color-propela-purple-light: #F3EDF9;
+  --color-propela-purple-mid: #7B4BAE;
+  --color-propela-bg: #F8F7FC;
+  --font-family-sans: "Poppins", sans-serif;
+}
+
+body {
+  font-family: var(--font-family-sans);
+  margin: 0;
+  padding: 0;
+  background: var(--color-propela-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
