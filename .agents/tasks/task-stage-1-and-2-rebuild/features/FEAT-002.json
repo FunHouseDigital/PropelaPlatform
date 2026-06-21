@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Nurse Database Module - Complete implementation with Gallery View, Pipeline Kanban View, Cohort View, and full Nurse Card with all fields, scorecard, communication log",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create src/pages/NurseDatabase.jsx as the main module container. Include a top bar with: module title 'Nurse Database', search bar (searches name, email, SANC number), view toggle buttons (Gallery / Pipeline / Cohort), Group By dropdown, Filter panel trigger, Sort dropdown.",
     "Create src/components/nurses/GalleryView.jsx - Photo-first card grid (Airtable-style, per PRD Section 7.4). Each card shows: circular photo (or initials avatar with #5B2D8E background if no photo), full name, CV Score as 1-5 stars (half-stars supported), years badge (number in colored circle), specialty badge, city/province with location icon, readiness status badge (color-coded per Appendix C), next action badge (red if overdue, amber if due today, teal if upcoming, grey if no action), flag indicator (red icon with count if flags > 0). Support grouping by: Primary Clinical Specialty (default), Pipeline Stage, Cohort, Readiness Status. Cards should be clickable to open the full Nurse Card.",
