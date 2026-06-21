@@ -1,0 +1,7 @@
+{
+  "task_id": "task-stage-1-and-2-rebuild",
+  "task_description": "Rebuild Propela Ops Stage 1 (project scaffold + Nurse Database module) and Stage 2 (Dashboard module, Cohort Manager, Acquisition Hub) from scratch as the previous PR was never merged and the branch no longer exists.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}
