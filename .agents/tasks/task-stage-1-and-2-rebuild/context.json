@@ -1,0 +1,22 @@
+{
+  "project_type": "React SPA (Propela Ops - internal operations platform for Propela Health)",
+  "language": "JavaScript/JSX",
+  "build_system": "Vite + npm",
+  "test_framework": "Vitest (to be set up)",
+  "build_command": "npm run build",
+  "test_command": "npm test",
+  "verification_instructions": "1. Run npm install 2. Run npm run build - confirm no errors 3. Run npm run dev to check the app loads 4. Verify routing works for all modules",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "npm install in the project root (app lives in /projects/sandbox/PropelaPlatform/)",
+  "environment_constraints": "Standard sandbox with internet access. Node.js available. npm install works.",
+  "contribution_requirements": "Branch: stage-1-and-2-rebuild. No push - orchestrator handles that.",
+  "key_patterns": "React + Vite + Tailwind CSS v4. React Router for module routing. localStorage for persistence (Phase 1 single user). Propela purple #5B2D8E as primary brand color. Poppins font. Design reference JSX components in design-reference/Propela Ops/components/ show the visual language. Lucide React for icons. The PRD specifies 5 modules: Dashboard, Nurse Database, Nurse Acquisition Hub, Cohort Manager, Outreach Log + Template Library.",
+  "relevant_files": [
+    "design-reference/Propela Ops/Propela_Ops_MasterPRD_v3.txt",
+    "design-reference/Propela Ops/components/admin-dashboard.jsx",
+    "design-reference/Propela Ops/components/shared-ui.jsx",
+    "design-reference/Propela Ops/components/nurse-screens-1.jsx",
+    "design-reference/Propela Ops/assets/propela-logo-black.svg"
+  ],
+  "directory_structure": "Root: /projects/sandbox/PropelaPlatform/. Currently only has design-reference/ folder. The React app will be created at root level (package.json, src/, public/, etc.)"
+}
