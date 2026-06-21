@@ -1,0 +1,39 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Cohort Manager Module + Nurse Acquisition Hub (4 tracks) - Complete Cohort 1 card with nurse progress table, budget tracker, and full Acquisition Hub with Organisations, Referral Network, Community Channels, Events tracks",
+  "status": "pending",
+  "steps": [
+    "Create src/pages/CohortManager.jsx - Main cohort page showing cohort cards. Cohort 1 is pre-seeded. Each cohort card shows: name, status badge, enrolled/target count, timeline summary, budget summary. Clicking a cohort opens its full detail view.",
+    "Create src/components/cohorts/CohortCard.jsx - Full cohort detail view per PRD Section 9.2. Sections: Identity & Status (name, status dropdown, source countries, target nurses, enrolled count auto, reserve count auto), Timeline (all date fields), Training Provider (name, contact, format, cost per nurse, total cost auto, lessons planned, assessment checkboxes with [!] Cohort 1 learning labels), Budget (total, propela contribution, commitment fees collected auto, training cost actual, OET exam cost actual, other costs, total spent auto, budget remaining auto), Outcomes (OET pass rate target/actual, placement rate target/actual, total placement fees, cohort learnings long text).",
+    "Create src/components/cohorts/CohortNurseTable.jsx - Inline nurse progress table within the cohort card. Same columns as Cohort View in Nurse Database (Photo+Name, Pipeline Stage, Next Action, OET Status, OET Scores, Commitment Fee, Agreement Signed, Flags, Last Contacted). Changes here update the main nurse record immediately in localStorage.",
+    "Seed Cohort 1 data in src/data/seedCohorts.js: name='Cohort 1 - May 2026', status='Training', targetNurses=10, trainingStart, trainingEnd, OET exam date, budget fields with realistic ZAR amounts (total budget R90,000).",
+    "Create src/pages/AcquisitionHub.jsx - Main hub page with tab navigation for 4 tracks + a universal filter bar. Track tabs: Organisations, Referral Network, Community Channels, Events. Include shared pipeline stage filter and search.",
+    "Create src/components/acquisition/OrganisationsTrack.jsx - Track 1 per PRD Section 8.3. Table/card list of organisations with sub-type filter (NEI / Health Facility). 108 seeded facilities already in localStorage. Each record shows: name, type badge, province, city, current stage badge, last contact, next follow-up, nurses sourced count, internal rating (stars). Click opens full organisation card with all fields (shared fields + Type B specific fields: healthcare group, facility type, outreach approach, info session fields). Include 'Add Organisation' button.",
+    "Create src/components/acquisition/ReferralTrack.jsx - Track 2 per PRD Section 8.4. Card/table list of referrers. Fields: name, type badge, link to nurse record, contact info, relationship stage, nurses referred count, nurses converted count, conversion rate auto, last referral date. Include 'Add Referrer' button. Seed 5 sample referrers.",
+    "Create src/components/acquisition/CommunityTrack.jsx - Track 3 per PRD Section 8.5. Card/table list of community channels. Fields: name, channel type badge, platform, URL, estimated reach, admin name, access status badge, post permission, current stage, last posted, last post outcome, nurses sourced. Include 'Add Channel' button. Seed 8 sample channels (WhatsApp groups, Facebook groups, DENOSA, LinkedIn groups).",
+    "Create src/components/acquisition/EventsTrack.jsx - Track 4 per PRD Section 8.6. Card/table list of events. Fields: name, type badge, organiser, event date, location, status badge, nurses met, leads generated, nurses converted, budget, follow-up required/date. Include 'Add Event' button. Seed 5 sample events.",
+    "Create src/components/acquisition/OutreachLogEntry.jsx - Shared outreach log form per PRD Section 8.7. Fields: date, channel dropdown, contact person, template used (link), subject line (if email), message summary, outcome dropdown, follow-up date, notes. Can be attached to any acquisition hub record.",
+    "Create src/data/seedAcquisition.js - Seed data for referrers (5), community channels (8), and events (5) with realistic South African context data. The 108 facilities are already in seedFacilities.js from FEAT-001.",
+    "Wire up all acquisition hub records to persist in localStorage. All CRUD operations (create, read, update) work. Outreach logs are stored as arrays within each record."
+  ],
+  "acceptance_criteria": [
+    "Cohort Manager shows Cohort 1 with correct enrolled count from nurse data",
+    "Cohort detail view shows all fields from PRD Section 9.2",
+    "Cohort nurse progress table shows nurses assigned to Cohort 1 with live data",
+    "Acquisition Hub has 4 track tabs all functional",
+    "Organisations track shows 108 seeded facilities with filtering by type",
+    "Referral Network shows 5 seeded referrers with conversion rate",
+    "Community Channels shows 8 seeded channels",
+    "Events shows 5 seeded events",
+    "Adding outreach log entries works on any hub record",
+    "All data persists in localStorage",
+    "npm run build completes without errors"
+  ],
+  "verification": [
+    "Run npm run build and confirm zero errors",
+    "Run npm run dev, navigate to /cohorts and /acquisition, confirm both load with data"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

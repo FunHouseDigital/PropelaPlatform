@@ -1,0 +1,38 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Nurse Database Module - Complete implementation with Gallery View, Pipeline Kanban View, Cohort View, and full Nurse Card with all fields, scorecard, communication log",
+  "status": "pending",
+  "steps": [
+    "Create src/pages/NurseDatabase.jsx as the main module container. Include a top bar with: module title 'Nurse Database', search bar (searches name, email, SANC number), view toggle buttons (Gallery / Pipeline / Cohort), Group By dropdown, Filter panel trigger, Sort dropdown.",
+    "Create src/components/nurses/GalleryView.jsx - Photo-first card grid (Airtable-style, per PRD Section 7.4). Each card shows: circular photo (or initials avatar with #5B2D8E background if no photo), full name, CV Score as 1-5 stars (half-stars supported), years badge (number in colored circle), specialty badge, city/province with location icon, readiness status badge (color-coded per Appendix C), next action badge (red if overdue, amber if due today, teal if upcoming, grey if no action), flag indicator (red icon with count if flags > 0). Support grouping by: Primary Clinical Specialty (default), Pipeline Stage, Cohort, Readiness Status. Cards should be clickable to open the full Nurse Card.",
+    "Create src/components/nurses/PipelineView.jsx - Kanban board with one column per pipeline stage (all stages from Section 7.2). Each column shows count. Compact kanban cards show: small circular photo, name, next action badge, readiness status badge, flag count. Cards are draggable between columns (use drag and drop). Moving a card updates the pipeline stage in localStorage and prompts consideration of Next Action update.",
+    "Create src/components/nurses/CohortView.jsx - Table view filtered to active cohort. Columns per PRD Section 7.6: Photo + Name (link to card), Pipeline Stage badge, Next Action color badge, OET Status badge, OET Scores (W/S/L/R color-coded pass/fail), Commitment Fee badge (Paid/Pending/Overdue), Agreement Signed checkbox, Flag count, Last Contacted date. Include cohort selector dropdown at top.",
+    "Create src/components/nurses/NurseCard.jsx - Full nurse record modal/panel (per PRD Section 7.7). Layout: Card Header (always visible, no scroll): profile photo, full name, preferred name in brackets, pipeline stage dropdown, LARGE next action dropdown (most prominent element - color coded), readiness status badge, flag count icon, last contacted date, cohort tag, submitted at date. Below header in scrollable sections: Personal Information, Professional Profile, English Proficiency - Screening (EF SET), English Proficiency - Qualification (OET), Scorecard (with auto-calculated CV Score and Final Score and Tier), Selection and Pathway, Cohort and Commitment, Placement, Notes/Flags/Source/Comms. Include Communication Log section at bottom with chronological entries (date, channel, summary, next action set). Include 'Add Communication' button that opens a quick-log form.",
+    "Create src/components/nurses/FilterPanel.jsx - Slide-out filter panel with filters for: Cohort, Pipeline Stage, Specialty, Readiness Status, Next Action, Flag present (yes/no), EF SET Level, OET Status, Province. Each filter is a multi-select. Include clear all and apply buttons.",
+    "Create src/components/nurses/NurseFormFields.jsx - Reusable form field components for the nurse card edit mode. Dropdowns use the constants from src/lib/constants.js. Scorecard fields show the weight multiplier next to each criterion. Auto-calculations update in real-time as scores are entered.",
+    "Wire up all views in NurseDatabase.jsx: state management for active view, active filters, search query, sort order, group by selection. Data reads from localStorage via the storage layer. All mutations (pipeline stage change, next action update, field edits) persist immediately to localStorage.",
+    "Implement the Nurse Card Next Action as the most visually dominant element per PRD design principles: large font, color background (red=overdue, amber=due today, teal=upcoming, grey=no action). The dropdown should be easily clickable for quick updates.",
+    "Implement exit state visual treatments: Dropped Out shows red card background (#FEE2E2), Deferred shows yellow background (#FEF9C3), Not Selected shows muted card. These states show their stage label as the badge instead of Readiness Status."
+  ],
+  "acceptance_criteria": [
+    "Gallery View displays all 67 seeded nurses as photo cards grouped by specialty by default",
+    "Pipeline Kanban shows columns for all pipeline stages with correct nurse counts",
+    "Dragging a card between kanban columns updates the nurse's pipeline stage in localStorage",
+    "Cohort View shows table filtered to Cohort 1 nurses with OET and commitment fee columns",
+    "Full Nurse Card opens when clicking any nurse and shows all fields from PRD Section 7.7",
+    "Scorecard auto-calculates CV Score, Final Score, and Tier when values change",
+    "Next Action badge is the most prominent visual element on nurse cards",
+    "Filter panel correctly filters nurses across all three views",
+    "Search works by name, email, and SANC number",
+    "Exit states (Dropped Out, Deferred) show distinct visual treatments",
+    "All changes persist in localStorage across page refreshes",
+    "npm run build completes without errors"
+  ],
+  "verification": [
+    "Run npm run build and confirm zero errors",
+    "Run npm run dev in background, navigate to /nurses, confirm gallery loads with nurse cards"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
