@@ -99,11 +99,11 @@ function pickProvince(rand) {
   return pick(weighted, rand);
 }
 
-function generateEmail(firstName, lastName) {
+function generateEmail(firstName, lastName, rand) {
   const cleanFirst = firstName.toLowerCase().replace(/[^a-z]/g, '');
   const cleanLast = lastName.toLowerCase().replace(/[^a-z]/g, '');
   const domains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'];
-  const domain = domains[Math.floor(Math.random() * domains.length)];
+  const domain = domains[Math.floor(rand() * domains.length)];
   return `${cleanFirst}.${cleanLast}@${domain}`;
 }
 
@@ -255,7 +255,7 @@ export function seedNurses() {
         nextAction: pick(NEXT_ACTIONS_BY_STAGE[stage] || ['No action required'], rand),
         readinessStatus: calculateReadinessStatus(stage),
         flags: Math.floor(rand() * 10) < 2 ? 1 : 0, // 20% have a flag
-        email: generateEmail(firstName, lastName),
+        email: generateEmail(firstName, lastName, rand),
         contactNumber: generatePhone(rand),
         gender: isFemale ? 'Female' : 'Male',
         ageGroup: pick(['25-29', '30-35', '35-40', '40+'], rand),
