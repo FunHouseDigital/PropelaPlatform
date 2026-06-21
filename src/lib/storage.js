@@ -1,5 +1,7 @@
 import { seedNurses } from '../data/seedNurses';
 import { seedFacilities } from '../data/seedFacilities';
+import { seedCohorts } from '../data/seedCohorts';
+import { seedReferrers, seedCommunityChannels, seedEvents } from '../data/seedAcquisition';
 
 const STORAGE_PREFIX = 'propela_ops_';
 
@@ -55,6 +57,30 @@ export function initializeData() {
     const seededFacilities = seedFacilities();
     setData('facilities', seededFacilities);
   }
+
+  const cohorts = getData('cohorts');
+  if (!cohorts || cohorts.length === 0) {
+    const seededCohorts = seedCohorts();
+    setData('cohorts', seededCohorts);
+  }
+
+  const referrers = getData('referrers');
+  if (!referrers || referrers.length === 0) {
+    const seededReferrers = seedReferrers();
+    setData('referrers', seededReferrers);
+  }
+
+  const communityChannels = getData('communityChannels');
+  if (!communityChannels || communityChannels.length === 0) {
+    const seededChannels = seedCommunityChannels();
+    setData('communityChannels', seededChannels);
+  }
+
+  const events = getData('events');
+  if (!events || events.length === 0) {
+    const seededEvents = seedEvents();
+    setData('events', seededEvents);
+  }
 }
 
 /**
@@ -83,4 +109,60 @@ export function getFacilities() {
  */
 export function saveFacilities(facilities) {
   setData('facilities', facilities);
+}
+
+/**
+ * Get all cohorts from localStorage.
+ */
+export function getCohorts() {
+  return getData('cohorts') || [];
+}
+
+/**
+ * Save all cohorts to localStorage.
+ */
+export function saveCohorts(cohorts) {
+  setData('cohorts', cohorts);
+}
+
+/**
+ * Get all referrers from localStorage.
+ */
+export function getReferrers() {
+  return getData('referrers') || [];
+}
+
+/**
+ * Save all referrers to localStorage.
+ */
+export function saveReferrers(referrers) {
+  setData('referrers', referrers);
+}
+
+/**
+ * Get all community channels from localStorage.
+ */
+export function getCommunityChannels() {
+  return getData('communityChannels') || [];
+}
+
+/**
+ * Save all community channels to localStorage.
+ */
+export function saveCommunityChannels(channels) {
+  setData('communityChannels', channels);
+}
+
+/**
+ * Get all events from localStorage.
+ */
+export function getEvents() {
+  return getData('events') || [];
+}
+
+/**
+ * Save all events to localStorage.
+ */
+export function saveEvents(events) {
+  setData('events', events);
 }
