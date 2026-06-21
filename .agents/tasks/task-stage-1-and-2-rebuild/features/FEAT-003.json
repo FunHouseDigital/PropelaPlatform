@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Dashboard Module - Splash screen + main dashboard with Actions Needed, Active Nurses, Cohort Status, Hub Follow-ups tiles, Actions Panel, Cohort Pulse, Red Flags, Recent Activity",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create src/components/dashboard/SplashScreen.jsx - Full screen with Propela purple (#5B2D8E) background, Propela logo centered (use the SVG from design-reference/Propela Ops/assets/propela-logo-black.svg but render in white), 'Ops' as secondary label below logo, 'Aya Yokwana' name below, subtle fade-in animation. Auto-transitions to main dashboard after 1.5 seconds OR on click anywhere. Only shown once per session (use sessionStorage flag).",
     "Create src/pages/Dashboard.jsx - Main dashboard page per PRD Section 6.2. Top bar: Propela Ops logo (small, left) + 'Good morning/afternoon/evening, Aya' with today's date + Quick-add button dropdown (+ New Nurse, + Log Outreach). Layout is a single page, no scroll required on desktop.",
@@ -33,5 +33,5 @@
     "Run npm run dev, confirm dashboard loads with live metrics from seeded data"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Added nextActionDueDate, lastContacted fields and communicationLog entries to seedNurses.js to provide live data for dashboard metrics. The seeded data generates dates relative to today so the dashboard always shows meaningful overdue/due-today/upcoming data. Users who already have seeded data in localStorage will need to clear it (or the app will use existing data which may lack these new fields - dashboard handles missing fields gracefully by filtering them out)."
 }
