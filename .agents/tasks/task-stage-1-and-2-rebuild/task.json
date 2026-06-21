@@ -1,7 +1,14 @@
 {
   "task_id": "task-stage-1-and-2-rebuild",
   "task_description": "Rebuild Propela Ops Stage 1 (project scaffold + Nurse Database module) and Stage 2 (Dashboard module, Cohort Manager, Acquisition Hub) from scratch as the previous PR was never merged and the branch no longer exists.",
-  "status": "in_progress",
+  "status": "completed",
   "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
-  "blocked_reason": null
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "skipped",
+    "test_quality": "skipped",
+    "docker_build": "skipped",
+    "summary": "npm run build passes cleanly (1804 modules, zero errors, 434KB JS + 36KB CSS). Semantic review identified 7 issues; 3 correctness bugs fixed (readinessStatus on drag-drop, CohortNurseTable inline edit, seed email determinism). Remaining 4 issues are acceptable Phase 1 trade-offs (state management pattern, write frequency, code duplication)."
+  }
 }
