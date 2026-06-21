@@ -127,6 +127,63 @@ function generateDate(rand, yearStart, yearEnd) {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
+const COMM_CHANNELS = ['WhatsApp', 'Email', 'Phone', 'In-person'];
+const COMM_SUMMARIES = [
+  'Discussed application progress and next steps',
+  'Sent follow-up regarding outstanding documents',
+  'Confirmed receipt of CV and English scores',
+  'Checked in on OET preparation progress',
+  'Discussed commitment fee payment',
+  'Sent cohort information pack',
+  'Follow-up on agreement signing',
+  'Reminder about upcoming OET registration deadline',
+  'Discussed placement preferences and availability',
+  'Confirmed training schedule and expectations',
+  'Sent welcome email with orientation details',
+  'Checked passport validity status',
+];
+
+function generateNextActionDueDate(rand, stage) {
+  if (stage === 'Placed' || stage === 'Deferred' || stage === 'Dropped Out' || stage === 'Recommended Pathway') {
+    return '';
+  }
+  // Generate dates around today: some past (overdue), some today, some future
+  const now = new Date();
+  const offset = Math.floor(rand() * 14) - 5; // -5 to +8 days from today
+  const date = new Date(now);
+  date.setDate(date.getDate() + offset);
+  return date.toISOString().split('T')[0];
+}
+
+function generateRecentDate(rand) {
+  const now = new Date();
+  const daysAgo = Math.floor(rand() * 21); // 0-20 days ago
+  const date = new Date(now);
+  date.setDate(date.getDate() - daysAgo);
+  return date.toISOString().split('T')[0];
+}
+
+function generateCommunicationLog(rand, firstName, lastName) {
+  const count = Math.floor(rand() * 4); // 0-3 entries
+  if (count === 0) return [];
+  const log = [];
+  for (let i = 0; i < count; i++) {
+    const now = new Date();
+    const daysAgo = Math.floor(rand() * 30) + i * 7;
+    const date = new Date(now);
+    date.setDate(date.getDate() - daysAgo);
+    log.push({
+      date: date.toISOString().split('T')[0],
+      channel: pick(COMM_CHANNELS, rand),
+      summary: pick(COMM_SUMMARIES, rand),
+      nextActionSet: rand() > 0.5 ? 'Yes' : 'No',
+    });
+  }
+  // Sort newest first
+  log.sort((a, b) => b.date.localeCompare(a.date));
+  return log;
+}
+
 export function seedNurses() {
   const rand = seededRandom(42);
   const nurses = [];
@@ -284,9 +341,11 @@ export function seedNurses() {
               'Referred by Lilian from Cohort 1',
             ], rand)
           : '',
-        communicationLog: [],
+        communicationLog: generateCommunicationLog(rand, firstName, lastName),
         photoURL: '',
         submittedAt: generateDate(rand, 2025, 2026),
+        nextActionDueDate: generateNextActionDueDate(rand, stage),
+        lastContacted: generateRecentDate(rand),
       };
 
       // Calculate scores
