@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Flag, GripVertical } from 'lucide-react';
 import { PIPELINE_STAGES } from '../../lib/constants';
+import { calculateReadinessStatus } from '../../lib/calculations';
 
 function getNextActionColor(nurse) {
   if (!nurse.nextAction || nurse.nextAction === 'No action required') {
@@ -121,7 +122,11 @@ export default function PipelineView({ nurses, onNurseClick, onUpdateNurse }) {
     e.preventDefault();
     setDragOverStage(null);
     if (draggedNurse && draggedNurse.pipelineStage !== targetStage) {
-      const updated = { ...draggedNurse, pipelineStage: targetStage };
+      const updated = {
+        ...draggedNurse,
+        pipelineStage: targetStage,
+        readinessStatus: calculateReadinessStatus(targetStage),
+      };
       onUpdateNurse(updated);
     }
     setDraggedNurse(null);
