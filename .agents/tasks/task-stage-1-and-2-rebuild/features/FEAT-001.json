@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Project scaffold - React + Vite + Tailwind CSS v4 app with routing, sidebar navigation, localStorage persistence layer, and data seeding (67 nurses + 108 health facilities)",
+  "status": "in_progress",
+  "steps": [
+    "Initialize Vite React project at /projects/sandbox/PropelaPlatform/ with: npm create vite@latest . -- --template react. Install dependencies: react-router-dom, lucide-react, tailwindcss@4, @tailwindcss/vite.",
+    "Configure Tailwind CSS v4 in vite.config.js using the @tailwindcss/vite plugin. Create src/index.css with @import 'tailwindcss'. Add custom Propela brand colors as CSS custom properties: --propela-purple: #5B2D8E, --propela-purple-dark: #3D1D5E, --propela-purple-light: #F3EDF9, --propela-purple-mid: #7B4BAE. Include Poppins font from Google Fonts.",
+    "Create src/App.jsx with React Router setup. Routes: / (Dashboard), /nurses (Nurse Database), /acquisition (Acquisition Hub), /cohorts (Cohort Manager), /outreach (Outreach Log + Templates). Wrap in a layout with a sidebar.",
+    "Create src/components/layout/Sidebar.jsx - Desktop sidebar navigation with Propela purple gradient background (matching admin-dashboard.jsx design). Include: Propela logo at top, navigation items for all 5 modules with icons (using Lucide React), user avatar 'A' for Aya at bottom. Active state: rgba(255,255,255,0.15) background. Width: 220px.",
+    "Create src/components/layout/Layout.jsx - Main layout wrapper with sidebar on left, content area on right with F8F7FC background.",
+    "Create src/lib/storage.js - localStorage persistence layer. Functions: getData(key), setData(key, value), initializeData(). On first load (no data in localStorage), seed the nurse and facility data.",
+    "Create src/data/seedNurses.js - Generate 67 realistic nurse records matching the PRD nurse card field specification (Section 7.7). Include all fields: fullName, preferredName, pipelineStage, nextAction, readinessStatus, flags, email, contactNumber, gender, ageGroup, province, city, registeredWithSANC, registeredNurseInSA, sancNumber, sancAPCExpiry, sancAPCStatus, highestQualification, qualificationInstitution, yearsOfClinicalExperience, primaryClinicalSpecialty, additionalCertifications, employmentStatus, currentEmployer, validPassport, passportExpiryDate, efSetScore, efSetLevel, englishPts, oetStatus, scorecardFields (hospitalExp, sancStatus, qualifications, specialisation, financialReadiness, motivation, passport), cvScore (auto-calculated), finalScore (auto-calculated), tier (auto-calculated), shortlistDecision, cohortAssigned, agreementSigned, commitmentFeeStatus, source, motivations, questions, notesFlags, communicationLog[], photoURL, submittedAt. Use realistic South African nurse names, provinces (Gauteng, Western Cape, KwaZulu-Natal, Eastern Cape, etc.), specialties from PRD dropdown list. Distribute across pipeline stages realistically.",
+    "Create src/data/seedFacilities.js - Generate 108 health facility records for Track 1 Organisations (Type B). Fields per PRD Section 8.3: organisationName, organisationType (Health Facility), province, city, physicalAddress, primaryContactName, contactEmail, contactPhone, website, currentStage, lastContactDate, nextFollowUpDate, preferredChannel, nursesSourcedCount, internalRating, notes, healthcareGroup (Life Healthcare/Mediclinic/Netcare/Public/Independent/Other), facilityType (Private/Public), overview, outreachApproach, infoSessionHeld, infoSessionDate, nursesAttendingInfoSession, nursesConvertedToApplicants. Use real South African hospital names distributed across provinces.",
+    "Create src/lib/calculations.js - Implement auto-calculation utilities from PRD Appendix A: calculateCVScore(nurse) uses Hospital Exp x3 + SANC Status x3 + Qualifications x2 + Specialisation x1 then divides by sum of weights to get 0-5 scale. calculateFinalScore(nurse) uses all 8 criteria with full weighting / 15. calculateTier(finalScore) maps to tier names per PRD. calculateReadinessStatus(pipelineStage) per Appendix B.",
+    "Create src/lib/constants.js - All dropdown values from PRD: PIPELINE_STAGES (all stages from Section 7.2), NEXT_ACTION_VALUES (Section 7.7), READINESS_STATUSES, SPECIALTIES, PROVINCES (9 SA provinces), QUALIFICATION_TYPES, YEARS_EXPERIENCE, OET_STATUSES, COMMITMENT_FEE_STATUSES, HEALTHCARE_GROUPS, ORGANISATION_STAGES, TIERS, SHORTLIST_DECISIONS, SOURCE_OPTIONS, etc.",
+    "Create placeholder pages for each module: src/pages/Dashboard.jsx, src/pages/NurseDatabase.jsx, src/pages/AcquisitionHub.jsx, src/pages/CohortManager.jsx, src/pages/OutreachLog.jsx. Each should show the module title and a brief description. NurseDatabase will be expanded in FEAT-002."
+  ],
+  "acceptance_criteria": [
+    "npm run build completes without errors",
+    "App loads at localhost with sidebar navigation visible showing all 5 modules",
+    "Clicking each navigation item routes to the correct module page",
+    "localStorage contains seeded data on first load (67 nurses, 108 facilities)",
+    "Calculations utility correctly computes CV Score, Final Score, Tier, and Readiness Status",
+    "Tailwind CSS v4 is working with custom Propela purple color tokens",
+    "Poppins font loads and is applied as the base font"
+  ],
+  "verification": [
+    "Run npm install && npm run build and confirm zero errors",
+    "Run npm run dev in background, confirm app serves without crashing"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
