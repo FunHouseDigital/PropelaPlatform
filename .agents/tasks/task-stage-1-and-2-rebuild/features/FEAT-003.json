@@ -1,0 +1,37 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Dashboard Module - Splash screen + main dashboard with Actions Needed, Active Nurses, Cohort Status, Hub Follow-ups tiles, Actions Panel, Cohort Pulse, Red Flags, Recent Activity",
+  "status": "pending",
+  "steps": [
+    "Create src/components/dashboard/SplashScreen.jsx - Full screen with Propela purple (#5B2D8E) background, Propela logo centered (use the SVG from design-reference/Propela Ops/assets/propela-logo-black.svg but render in white), 'Ops' as secondary label below logo, 'Aya Yokwana' name below, subtle fade-in animation. Auto-transitions to main dashboard after 1.5 seconds OR on click anywhere. Only shown once per session (use sessionStorage flag).",
+    "Create src/pages/Dashboard.jsx - Main dashboard page per PRD Section 6.2. Top bar: Propela Ops logo (small, left) + 'Good morning/afternoon/evening, Aya' with today's date + Quick-add button dropdown (+ New Nurse, + Log Outreach). Layout is a single page, no scroll required on desktop.",
+    "Create src/components/dashboard/ActionMetrics.jsx - Row 1: 4 tiles. (1) Actions Needed - total nurses with overdue or due-today Next Action - LARGEST NUMBER on page, red if > 0 green if clear. (2) Active Nurses - count of nurses in pipeline excluding Placed and exit states - Propela purple. (3) Cohort Status - active cohort name + status badge with status color. (4) Hub Follow-ups - institutions/channels with follow-up due today or overdue - amber if > 0.",
+    "Create src/components/dashboard/ActionsPanel.jsx - Left column (60%) of Row 2. Title: 'Nurses needing action'. Prioritized list in 3 sections: OVERDUE (red header) - nurses whose Next Action follow-up date has passed. DUE TODAY (amber header) - nurses with Next Action due today. UPCOMING (grey header) - next 3 days. Each row: small circular nurse photo, name, Next Action label, days since last contact. Click opens nurse card directly (navigate to /nurses with nurse card open).",
+    "Create src/components/dashboard/CohortPulse.jsx - Right column (40%) of Row 2. Active cohort card: cohort name + status badge, enrolled vs target (e.g. 9/10), OET status bar with colored blocks (Not Started/Studying/Registered/Passed/Failed), commitment fees bar (Paid/Pending/Overdue colored blocks), next milestone + days remaining, budget progress bar (spent vs total).",
+    "Create src/components/dashboard/RedFlags.jsx - Left column of Row 3. All nurse cards with unresolved [FLAG] flags. Shows: name, flag count, last contacted date. Click opens nurse card. Empty state: 'No active flags.' with a green check.",
+    "Create src/components/dashboard/RecentActivity.jsx - Right column of Row 3. Last 10 logged actions across all modules (from communication logs and outreach logs). Timestamped entries with icons for type (nurse update, outreach sent, cohort change, template used).",
+    "Wire up Dashboard.jsx with real data from localStorage: compute Actions Needed count from nurses with overdue/due-today next actions, compute Active Nurses from pipeline stages, pull cohort data, compute hub follow-ups from facility records. All data is live - reflects current state of localStorage.",
+    "Add the splash screen to the route - show SplashScreen on first visit per session, then transition to main Dashboard. Use sessionStorage to track if splash was already shown this session."
+  ],
+  "acceptance_criteria": [
+    "Splash screen appears on first load with Propela purple background, logo, and Aya's name",
+    "Splash auto-dismisses after 1.5s or on click",
+    "Splash only shows once per browser session",
+    "Dashboard shows 4 metric tiles with live data from localStorage",
+    "Actions Needed tile shows correct count and is visually dominant",
+    "Actions Panel lists nurses grouped by overdue/due today/upcoming",
+    "Clicking a nurse in Actions Panel navigates to their full card",
+    "Cohort Pulse shows OET status distribution and budget progress",
+    "Red Flags section shows nurses with [FLAG] in their notes",
+    "Recent Activity shows chronological log entries",
+    "Quick-add buttons exist for New Nurse and Log Outreach",
+    "npm run build completes without errors"
+  ],
+  "verification": [
+    "Run npm run build and confirm zero errors",
+    "Run npm run dev, confirm dashboard loads with live metrics from seeded data"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
