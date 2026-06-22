@@ -120,7 +120,7 @@ export default function DocumentRepository() {
   const nurseList = useMemo(() => {
     return nurses
       .filter((nurse) => {
-        const matchesSearch = nurse.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = nurse.fullName.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStage = !stageFilter || nurse.pipelineStage === stageFilter;
         return matchesSearch && matchesStage;
       })
@@ -173,7 +173,7 @@ export default function DocumentRepository() {
         </button>
 
         <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">{selectedNurse.name}</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{selectedNurse.fullName}</h2>
           <p className="text-sm text-gray-500">
             {selectedNurse.pipelineStage} - {selectedNurseDocs.length} documents
           </p>
@@ -229,7 +229,7 @@ export default function DocumentRepository() {
             className="text-left border border-gray-200 rounded-lg p-4 hover:border-[#5B2D8E]/30 hover:shadow-sm transition-all"
           >
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-900">{nurse.name}</p>
+              <p className="text-sm font-medium text-gray-900">{nurse.fullName}</p>
               <span className="text-xs font-medium bg-[#5B2D8E]/10 text-[#5B2D8E] px-2 py-0.5 rounded-full">
                 {nurse.docCount} docs
               </span>
