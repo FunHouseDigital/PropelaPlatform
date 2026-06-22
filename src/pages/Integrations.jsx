@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import { Server, Webhook, Puzzle, RefreshCw } from 'lucide-react';
+import ApiEndpointSimulator from '../components/integrations/ApiEndpointSimulator';
+import ApiKeyManager from '../components/integrations/ApiKeyManager';
+import WebhookConfig from '../components/integrations/WebhookConfig';
+import WebhookDeliveryLog from '../components/integrations/WebhookDeliveryLog';
 
 const TABS = [
   { id: 'api-endpoints', label: 'API Endpoints', icon: Server },
@@ -45,13 +49,15 @@ export default function Integrations() {
 
       {/* Tab Content */}
       {activeTab === 'api-endpoints' && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <p className="text-gray-500 text-sm">API Endpoints management coming soon.</p>
+        <div className="space-y-8">
+          <ApiEndpointSimulator />
+          <ApiKeyManager />
         </div>
       )}
       {activeTab === 'webhooks' && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <p className="text-gray-500 text-sm">Webhooks management coming soon.</p>
+        <div className="space-y-8">
+          <WebhookConfig />
+          <WebhookDeliveryLog />
         </div>
       )}
       {activeTab === 'integrations' && (
