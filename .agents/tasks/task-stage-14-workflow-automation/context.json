@@ -1,0 +1,26 @@
+{
+  "project_type": "React SPA with Vite bundler and Tailwind CSS v4",
+  "language": "JavaScript (JSX)",
+  "build_system": "Vite via npm scripts",
+  "test_framework": "No formal test framework configured - validation via build",
+  "build_command": "npm run build",
+  "test_command": "npm run build",
+  "verification_instructions": "Run npm run build to ensure no compilation errors. The project uses no unit test framework.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd /projects/sandbox/PropelaPlatform && npm install",
+  "environment_constraints": "Open internet available for npm installs",
+  "contribution_requirements": "Follow existing patterns: pages in src/pages/, components in src/components/<feature>/, data in src/data/, storage functions in src/lib/storage.js, state in src/context/AppContext.jsx",
+  "key_patterns": "Pages use tabbed interfaces with TABS array and activeTab state. Components use lucide-react icons, Tailwind classes, useAppContext() hook for state. Data is seeded via seed files imported in storage.js. @dnd-kit used for drag-and-drop. Recharts for charts. All state persisted to localStorage via get/save function pairs in storage.js and corresponding useState+update pattern in AppContext.",
+  "relevant_files": [
+    "src/App.jsx",
+    "src/components/layout/Sidebar.jsx",
+    "src/context/AppContext.jsx",
+    "src/lib/storage.js",
+    "src/pages/Integrations.jsx",
+    "src/pages/AuditTrail.jsx",
+    "src/data/seedAuditTrail.js",
+    "src/data/seedIntegrations.js",
+    "src/components/integrations/IntegrationCards.jsx"
+  ],
+  "directory_structure": "src/pages/ - page-level components with tabbed UIs; src/components/<feature>/ - feature component folders; src/data/ - seed data generators; src/lib/storage.js - localStorage CRUD; src/context/AppContext.jsx - global state provider; src/hooks/ - custom hooks"
+}
