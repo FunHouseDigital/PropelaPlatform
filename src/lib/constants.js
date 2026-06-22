@@ -323,3 +323,44 @@ export const ACQUISITION_TRACKS = [
   'Community Channels',
   'Events',
 ];
+
+// Placement Pipeline Columns (Section 11 - Placement & Outcomes Tracker)
+export const PLACEMENT_PIPELINE_COLUMNS = [
+  'Ready for Placement',
+  'CV Sent',
+  'Interview Scheduled',
+  'Offer Received',
+  'Visa Processing',
+  'Placed',
+  'Settled',
+];
+
+// Visa/Immigration Statuses
+export const VISA_STATUSES = [
+  'Not Started',
+  'Application Submitted',
+  'Documents Requested',
+  'Biometrics Scheduled',
+  'Processing',
+  'Approved',
+  'Rejected',
+];
+
+// NHS Salary Bands
+export const SALARY_BANDS = [
+  'Band 5 (GBP 28,407-34,581)',
+  'Band 6 (GBP 35,392-42,618)',
+  'Band 7 (GBP 43,742-50,056)',
+];
+
+// Relocation Checklist Items
+export const RELOCATION_CHECKLIST_ITEMS = [
+  'Accommodation arranged',
+  'Bank account opened',
+  'NMC registration submitted',
+  'Right to work confirmed',
+  'Airport pickup scheduled',
+  'Orientation date set',
+  'Uniform ordered',
+  'IT access requested',
+];
