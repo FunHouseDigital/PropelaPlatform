@@ -4,6 +4,7 @@ import { seedCohorts } from '../data/seedCohorts';
 import { seedReferrers, seedCommunityChannels, seedEvents } from '../data/seedAcquisition';
 import { seedOutreachTemplates } from '../data/seedOutreach';
 import { seedPlacements } from '../data/seedPlacements';
+import { seedSettings } from '../data/seedSettings';
 
 const STORAGE_PREFIX = 'propela_ops_';
 
@@ -94,6 +95,12 @@ export function initializeData() {
   if (!placements || placements.length === 0) {
     const seededPlacements = seedPlacements();
     setData('placements', seededPlacements);
+  }
+
+  const settings = getData('settings');
+  if (!settings) {
+    const seededSettings = seedSettings();
+    setData('settings', seededSettings);
   }
 }
 
@@ -221,4 +228,18 @@ export function getReportTemplates() {
  */
 export function saveReportTemplates(templates) {
   setData('reportTemplates', templates);
+}
+
+/**
+ * Get settings from localStorage.
+ */
+export function getSettings() {
+  return getData('settings') || seedSettings();
+}
+
+/**
+ * Save settings to localStorage.
+ */
+export function saveSettings(settings) {
+  setData('settings', settings);
 }
