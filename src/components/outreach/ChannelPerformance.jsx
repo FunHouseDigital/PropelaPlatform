@@ -3,7 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, Cell,
 } from 'recharts';
-import { getFacilities, getReferrers, getCommunityChannels, getEvents, getOutreachTemplates } from '../../lib/storage';
+import { useAppContext } from '../../context/AppContext';
 
 const PURPLE = '#5B2D8E';
 const PURPLE_LIGHT = '#8B5DC0';
@@ -11,32 +11,30 @@ const PURPLE_LIGHTER = '#B794D4';
 const CHART_COLORS = ['#5B2D8E', '#8B5DC0', '#B794D4', '#D4B8E8', '#F3EDF9'];
 
 export default function ChannelPerformance() {
+  const { facilities, referrers, communityChannels, events, outreachTemplates } = useAppContext();
+
   const analytics = useMemo(() => {
     // Gather all outreach entries
     const allEntries = [];
 
-    const facilities = getFacilities();
     facilities.forEach((f) => {
       (f.outreachLog || []).forEach((entry) => {
         allEntries.push({ ...entry, track: 'Organisations', nursesSourced: f.nursesSourced || 0 });
       });
     });
 
-    const referrers = getReferrers();
     referrers.forEach((r) => {
       (r.outreachLog || []).forEach((entry) => {
         allEntries.push({ ...entry, track: 'Referral Network', nursesSourced: r.nursesReferred || 0 });
       });
     });
 
-    const channels = getCommunityChannels();
-    channels.forEach((c) => {
+    communityChannels.forEach((c) => {
       (c.outreachLog || []).forEach((entry) => {
         allEntries.push({ ...entry, track: 'Community Channels', nursesSourced: c.nursesSourced || 0 });
       });
     });
 
-    const events = getEvents();
     events.forEach((ev) => {
       (ev.outreachLog || []).forEach((entry) => {
         allEntries.push({ ...entry, track: 'Events', nursesSourced: ev.nursesSourced || 0 });
@@ -65,8 +63,7 @@ export default function ChannelPerformance() {
     })).sort((a, b) => b.rate - a.rate);
 
     // Chart 3: Top 5 templates by response rate
-    const templates = getOutreachTemplates();
-    const topTemplates = [...templates]
+    const topTemplates = [...outreachTemplates]
       .filter((t) => t.status === 'Active' && t.timesUsed > 0)
       .sort((a, b) => (b.responseRate || 0) - (a.responseRate || 0))
       .slice(0, 5)
@@ -76,7 +73,7 @@ export default function ChannelPerformance() {
     const trackNurses = {};
     facilities.forEach((f) => { trackNurses['Organisations'] = (trackNurses['Organisations'] || 0) + (f.nursesSourced || 0); });
     referrers.forEach((r) => { trackNurses['Referral Network'] = (trackNurses['Referral Network'] || 0) + (r.nursesReferred || 0); });
-    channels.forEach((c) => { trackNurses['Community Channels'] = (trackNurses['Community Channels'] || 0) + (c.nursesSourced || 0); });
+    communityChannels.forEach((c) => { trackNurses['Community Channels'] = (trackNurses['Community Channels'] || 0) + (c.nursesSourced || 0); });
     events.forEach((ev) => { trackNurses['Events'] = (trackNurses['Events'] || 0) + (ev.nursesSourced || 0); });
 
     const nursesByTrack = Object.entries(trackNurses).map(([track, count]) => ({ track, count }));
@@ -96,7 +93,7 @@ export default function ChannelPerformance() {
     const totalAttempts = allEntries.length;
     const totalResponses = allEntries.filter((e) => e.outcome && e.outcome !== 'No response' && e.outcome !== 'Bounced').length;
     const overallResponseRate = totalAttempts > 0 ? Math.round((totalResponses / totalAttempts) * 100) : 0;
-    const totalTemplates = templates.filter((t) => t.status === 'Active').length;
+    const totalTemplates = outreachTemplates.filter((t) => t.status === 'Active').length;
 
     return {
       channelAttempts,
@@ -108,7 +105,7 @@ export default function ChannelPerformance() {
       overallResponseRate,
       totalTemplates,
     };
-  }, []);
+  }, [facilities, referrers, communityChannels, events, outreachTemplates]);
 
   return (
     <div>

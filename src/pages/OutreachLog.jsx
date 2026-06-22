@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { Mail, FileText, BarChart3 } from 'lucide-react';
 import OutreachTable from '../components/outreach/OutreachTable';
 import TemplateLibrary from '../components/outreach/TemplateLibrary';
-import ChannelPerformance from '../components/outreach/ChannelPerformance';
+
+const ChannelPerformance = lazy(() => import('../components/outreach/ChannelPerformance'));
 
 const TABS = [
   { id: 'log', label: 'Outreach Log', icon: Mail },
@@ -44,7 +45,15 @@ export default function OutreachLog() {
       {/* Tab Content */}
       {activeTab === 'log' && <OutreachTable />}
       {activeTab === 'templates' && <TemplateLibrary />}
-      {activeTab === 'performance' && <ChannelPerformance />}
+      {activeTab === 'performance' && (
+        <Suspense fallback={
+          <div className="flex items-center justify-center py-12">
+            <div className="text-sm text-gray-400">Loading analytics...</div>
+          </div>
+        }>
+          <ChannelPerformance />
+        </Suspense>
+      )}
     </div>
   );
 }
