@@ -10,6 +10,7 @@ import {
   ClipboardList,
   FileText,
   MessageSquare,
+  Puzzle,
   Settings,
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
   { path: '/reports', label: 'Reports', icon: ClipboardList },
   { path: '/documents', label: 'Documents', icon: FileText },
   { path: '/communications', label: 'Communications', icon: MessageSquare },
+  { path: '/integrations', label: 'Integrations', icon: Puzzle },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
