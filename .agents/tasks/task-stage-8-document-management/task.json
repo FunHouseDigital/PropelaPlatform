@@ -1,0 +1,7 @@
+{
+  "task_id": "task-stage-8-document-management",
+  "task_description": "Implement Stage 8: Document Management & Compliance Module for Propela Ops. This includes a document repository per nurse, compliance checklist with auto-calculation, document templates with mock download, and a verification workflow with approve/reject actions.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}
