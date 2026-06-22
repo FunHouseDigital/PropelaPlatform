@@ -364,3 +364,14 @@ export const RELOCATION_CHECKLIST_ITEMS = [
   'Uniform ordered',
   'IT access requested',
 ];
+
+// Pipeline stages in progression order (used by analytics)
+export const PIPELINE_STAGES_ORDER = [
+  'Applied', 'CV Submitted', 'CV + English Submitted', 'Under Review',
+  'Shortlisted - Yes', 'Shortlisted - Maybe', 'Selected for Cohort', 'Reserve',
+  'Cohort Confirmed', 'Training Active', 'OET Registered', 'OET Passed',
+  'OET Failed', 'Placement Ready', 'Placed',
+];
+
+// Exit states (nurses who have left the active pipeline)
+export const EXIT_STATES = ['Placed', 'Deferred', 'Dropped Out', 'Recommended Pathway', 'Not Selected', "Didn't Qualify"];
