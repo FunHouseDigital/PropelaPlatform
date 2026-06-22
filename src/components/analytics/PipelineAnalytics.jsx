@@ -5,15 +5,7 @@ import {
 } from 'recharts';
 import { AlertTriangle, Activity, TrendingDown } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
-
-const EXIT_STATES = ['Placed', 'Deferred', 'Dropped Out', 'Recommended Pathway', 'Not Selected', "Didn't Qualify"];
-
-const PIPELINE_STAGES_ORDER = [
-  'Applied', 'CV Submitted', 'CV + English Submitted', 'Under Review',
-  'Shortlisted - Yes', 'Shortlisted - Maybe', 'Selected for Cohort', 'Reserve',
-  'Cohort Confirmed', 'Training Active', 'OET Registered', 'OET Passed',
-  'OET Failed', 'Placement Ready', 'Placed',
-];
+import { PIPELINE_STAGES_ORDER, EXIT_STATES } from '../../lib/constants';
 
 const EXIT_STAGES = ['Not Selected', "Didn't Qualify", 'Deferred', 'Dropped Out', 'Recommended Pathway'];
 
