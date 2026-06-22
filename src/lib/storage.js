@@ -2,6 +2,7 @@ import { seedNurses } from '../data/seedNurses';
 import { seedFacilities } from '../data/seedFacilities';
 import { seedCohorts } from '../data/seedCohorts';
 import { seedReferrers, seedCommunityChannels, seedEvents } from '../data/seedAcquisition';
+import { seedOutreachTemplates } from '../data/seedOutreach';
 
 const STORAGE_PREFIX = 'propela_ops_';
 
@@ -80,6 +81,12 @@ export function initializeData() {
   if (!events || events.length === 0) {
     const seededEvents = seedEvents();
     setData('events', seededEvents);
+  }
+
+  const outreachTemplates = getData('outreachTemplates');
+  if (!outreachTemplates || outreachTemplates.length === 0) {
+    const seededTemplates = seedOutreachTemplates();
+    setData('outreachTemplates', seededTemplates);
   }
 }
 
@@ -165,4 +172,18 @@ export function getEvents() {
  */
 export function saveEvents(events) {
   setData('events', events);
+}
+
+/**
+ * Get all outreach templates from localStorage.
+ */
+export function getOutreachTemplates() {
+  return getData('outreachTemplates') || [];
+}
+
+/**
+ * Save all outreach templates to localStorage.
+ */
+export function saveOutreachTemplates(templates) {
+  setData('outreachTemplates', templates);
 }
