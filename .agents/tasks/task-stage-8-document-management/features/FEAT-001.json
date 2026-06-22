@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Set up environment, create seed data, storage layer, constants, and AppContext integration for the Document Management module",
+  "status": "in_progress",
+  "steps": [
+    "Run `npm install` to confirm the project builds from the current state",
+    "Run `npm run build` to confirm baseline is green",
+    "Create src/data/seedDocuments.js with seed data for nurse documents (per-nurse document records with types: passport, nursing qualification, OET certificate, IELTS, CBT certificate, NMC decision letter, visa documents, references), document statuses (pending, verified, expired, rejected), expiry dates, verification history, and document templates (offer letters, reference request forms, compliance certificates). Also include a verification queue with pending review items. Use the same seededRandom pattern from seedPlacements.js. Link documents to existing nurse IDs (nurse-001 through nurse-067). Generate 5-8 documents per nurse for nurses in later pipeline stages, fewer for early stages. Include document templates with id, name, type, content placeholder text, and category.",
+    "Add document-related constants to src/lib/constants.js: DOCUMENT_TYPES array (Passport, Nursing Qualification, OET Certificate, IELTS Certificate, CBT Certificate, NMC Decision Letter, Visa Documents, References), DOCUMENT_STATUSES array (Pending, Verified, Expired, Rejected), DOCUMENT_TEMPLATE_TYPES array (Offer Letter, Reference Request Form, Compliance Certificate), VERIFICATION_ACTIONS array (Approved, Rejected), and COMPLIANCE_REQUIRED_DOCUMENTS object mapping pipeline stages to arrays of required document type strings",
+    "Add storage functions to src/lib/storage.js: import seedDocuments from data file, add getDocuments/saveDocuments, getDocumentTemplates/saveDocumentTemplates, getVerificationQueue/saveVerificationQueue functions following existing pattern. Add initialization block in initializeData() for documents, documentTemplates, and verificationQueue",
+    "Add state to src/context/AppContext.jsx: import getDocuments/saveDocuments, getDocumentTemplates/saveDocumentTemplates, getVerificationQueue/saveVerificationQueue. Add useState + useCallback updateDocuments, updateDocumentTemplates, updateVerificationQueue. Add all to context value object."
+  ],
+  "acceptance_criteria": [
+    "npm run build succeeds with no errors",
+    "src/data/seedDocuments.js exports seedDocuments() returning an object with { documents: [...], templates: [...], verificationQueue: [...] }",
+    "src/lib/constants.js exports DOCUMENT_TYPES, DOCUMENT_STATUSES, DOCUMENT_TEMPLATE_TYPES, VERIFICATION_ACTIONS, and COMPLIANCE_REQUIRED_DOCUMENTS",
+    "src/lib/storage.js has get/save functions for documents, documentTemplates, verificationQueue and initializes them in initializeData()",
+    "src/context/AppContext.jsx exposes documents, documentTemplates, verificationQueue state and their update functions"
+  ],
+  "verification": [
+    "Run `npm run build` and confirm zero errors",
+    "Run `npm run lint` and confirm no critical issues"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
