@@ -18,6 +18,12 @@ import {
   savePlacements,
   getSettings,
   saveSettings,
+  getDocuments,
+  saveDocuments,
+  getDocumentTemplates,
+  saveDocumentTemplates,
+  getVerificationQueue,
+  saveVerificationQueue,
 } from '../lib/storage';
 
 const AppContext = createContext(null);
@@ -32,6 +38,9 @@ export function AppProvider({ children }) {
   const [outreachTemplates, setOutreachTemplates] = useState(() => getOutreachTemplates());
   const [placements, setPlacements] = useState(() => getPlacements());
   const [settings, setSettings] = useState(() => getSettings());
+  const [documents, setDocuments] = useState(() => getDocuments());
+  const [documentTemplates, setDocumentTemplates] = useState(() => getDocumentTemplates());
+  const [verificationQueue, setVerificationQueue] = useState(() => getVerificationQueue());
 
   // Update functions that write through to localStorage
   const updateNurses = useCallback((updatedNurses) => {
@@ -79,6 +88,21 @@ export function AppProvider({ children }) {
     saveSettings(updatedSettings);
   }, []);
 
+  const updateDocuments = useCallback((updatedDocuments) => {
+    setDocuments(updatedDocuments);
+    saveDocuments(updatedDocuments);
+  }, []);
+
+  const updateDocumentTemplates = useCallback((updatedTemplates) => {
+    setDocumentTemplates(updatedTemplates);
+    saveDocumentTemplates(updatedTemplates);
+  }, []);
+
+  const updateVerificationQueue = useCallback((updatedQueue) => {
+    setVerificationQueue(updatedQueue);
+    saveVerificationQueue(updatedQueue);
+  }, []);
+
   const value = {
     nurses,
     facilities,
@@ -89,6 +113,9 @@ export function AppProvider({ children }) {
     outreachTemplates,
     placements,
     settings,
+    documents,
+    documentTemplates,
+    verificationQueue,
     updateNurses,
     updateFacilities,
     updateCohorts,
@@ -98,6 +125,9 @@ export function AppProvider({ children }) {
     updateOutreachTemplates,
     updatePlacements,
     updateSettings,
+    updateDocuments,
+    updateDocumentTemplates,
+    updateVerificationQueue,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
