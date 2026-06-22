@@ -34,6 +34,8 @@ import {
   saveAlertRules,
   getAlertHistory,
   saveAlertHistory,
+  getNotificationPreferences,
+  saveNotificationPreferences,
 } from '../lib/storage';
 
 const AppContext = createContext(null);
@@ -56,6 +58,7 @@ export function AppProvider({ children }) {
   const [commEmailTemplates, setCommEmailTemplates] = useState(() => getCommEmailTemplates());
   const [alertRules, setAlertRules] = useState(() => getAlertRules());
   const [alertHistory, setAlertHistory] = useState(() => getAlertHistory());
+  const [notificationPreferences, setNotificationPreferences] = useState(() => getNotificationPreferences());
 
   // Update functions that write through to localStorage
   const updateNurses = useCallback((updatedNurses) => {
@@ -143,6 +146,11 @@ export function AppProvider({ children }) {
     saveAlertHistory(updatedHistory);
   }, []);
 
+  const updateNotificationPreferences = useCallback((updatedPreferences) => {
+    setNotificationPreferences(updatedPreferences);
+    saveNotificationPreferences(updatedPreferences);
+  }, []);
+
   const value = {
     nurses,
     facilities,
@@ -161,6 +169,7 @@ export function AppProvider({ children }) {
     commEmailTemplates,
     alertRules,
     alertHistory,
+    notificationPreferences,
     updateNurses,
     updateFacilities,
     updateCohorts,
@@ -178,6 +187,7 @@ export function AppProvider({ children }) {
     updateCommEmailTemplates,
     updateAlertRules,
     updateAlertHistory,
+    updateNotificationPreferences,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
