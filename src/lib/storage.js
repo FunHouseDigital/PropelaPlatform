@@ -375,3 +375,22 @@ export function getAlertHistory() {
 export function saveAlertHistory(history) {
   setData('alertHistory', history);
 }
+
+/**
+ * Get notification preferences from localStorage.
+ */
+export function getNotificationPreferences() {
+  return getData('notificationPreferences') || {
+    document_expiry: true,
+    compliance_alert: true,
+    pipeline_change: true,
+    placement_update: true,
+  };
+}
+
+/**
+ * Save notification preferences to localStorage.
+ */
+export function saveNotificationPreferences(preferences) {
+  setData('notificationPreferences', preferences);
+}
