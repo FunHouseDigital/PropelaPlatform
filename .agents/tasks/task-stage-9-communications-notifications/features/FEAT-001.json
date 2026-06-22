@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Build the complete Communications & Notifications module including seed data, storage functions, AppContext state, routing, sidebar navigation with notification badge, and all four tabbed sub-modules (Communication Log, Notification Center, Email Templates, Automated Alerts).",
+  "status": "in_progress",
+  "steps": [
+    "Create src/data/seedCommunications.js with deterministic seed data generators for: communications (per-nurse history with type email/whatsapp/call/sms, channel, notes, date, nurseId, linked events), notifications (document expiry warnings, compliance alerts, pipeline stage changes, placement updates with read/unread state and timestamps), emailTemplates (welcome, status update, document request, placement confirmation categories with variable placeholders like {{nurse_name}}, {{cohort}}, {{dates}}), and alertRules (configurable rules like 'document expires in 30 days', 'compliance drops below 80%' with enabled/disabled state and history). Use the seededRandom pattern from seedDocuments.js.",
+    "Add storage functions in src/lib/storage.js: getCommunications/saveCommunications, getNotifications/saveNotifications, getEmailTemplates/saveEmailTemplates, getAlertRules/saveAlertRules. Add initialization logic in initializeData() that seeds communications data if not present, importing from seedCommunications.js.",
+    "Add state to src/context/AppContext.jsx: import new storage functions, add useState hooks for communications, notifications, emailTemplates, alertRules, add useCallback update functions (updateCommunications, updateNotifications, updateEmailTemplates, updateAlertRules), export all in value object.",
+    "Update src/components/layout/Sidebar.jsx: import MessageSquare (or Bell) icon from lucide-react, add Communications nav item to NAV_ITEMS array (path: '/communications', label: 'Communications', icon: MessageSquare) positioned between Documents and Settings. Add a notification badge (small red circle with unread count) next to the Communications label using useAppContext to get unread notification count.",
+    "Create src/pages/Communications.jsx as a tabbed page (following DocumentManagement.jsx pattern) with four tabs: Communication Log, Notification Center, Email Templates, Automated Alerts. Use lucide-react icons for each tab (MessageSquare, Bell, Mail, AlertTriangle or similar).",
+    "Create src/components/communications/CommunicationLog.jsx: display per-nurse communication history in a filterable table/list. Include: log new communication modal (type/channel/notes/date picker), filter by nurse (searchable dropdown), filter by date range, filter by channel type. Show linked outreach/pipeline events. Display entries as cards/rows with nurse name, type badge, date, preview of notes.",
+    "Create src/components/communications/NotificationCenter.jsx: in-app notification feed showing document expiry warnings, compliance alerts, pipeline stage changes, placement updates. Each notification shows icon, title, description, timestamp, read/unread state. Support mark as read/unread (individual and bulk), filter by type, and notification preferences section (toggle alerts by category).",
+    "Create src/components/communications/EmailTemplates.jsx: template builder with variable insertion ({{nurse_name}}, {{cohort}}, {{dates}}, etc.), preview panel with sample data substitution, categorized templates list (welcome, status update, document request, placement confirmation), create/edit/delete templates, send simulation button that logs to communication history.",
+    "Create src/components/communications/AutomatedAlerts.jsx: alert rule builder UI with condition fields (trigger type, threshold, entity), list of configured rules with enable/disable toggle, alert history/audit log showing triggered alerts with timestamps, create new rule modal, delete/edit existing rules.",
+    "Add route in src/App.jsx: import Communications page, add <Route path='/communications' element={<Communications />} /> inside the Layout route group, positioned between /documents and /settings."
+  ],
+  "acceptance_criteria": [
+    "npm run build completes with zero errors",
+    "Route /communications renders the Communications page with four functional tabs",
+    "Sidebar shows Communications nav item with notification badge showing unread count",
+    "Communication Log tab displays seed data, supports adding new entries, and filtering by nurse/date/channel",
+    "Notification Center shows notifications with read/unread state and mark as read functionality",
+    "Email Templates tab shows categorized templates with variable preview and send simulation",
+    "Automated Alerts tab shows configurable rules with enable/disable toggle and alert history"
+  ],
+  "verification": [
+    "Run npm run build in /projects/sandbox/PropelaPlatform and confirm exit code 0 with no errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

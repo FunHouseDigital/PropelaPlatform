@@ -1,0 +1,7 @@
+{
+  "task_id": "task-stage-9-communications-notifications",
+  "task_description": "Build Stage 9: Communications & Notifications module for Propela Ops platform. Includes Communication Log, Notification Center, Email Templates, and Automated Alerts tabs with full CRUD, seed data, storage, AppContext state, routing, and sidebar with notification badge.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001"],
+  "blocked_reason": null
+}
