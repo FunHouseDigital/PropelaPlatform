@@ -151,7 +151,16 @@ function RuleEditorModal({ rule, onSave, onCancel }) {
 
   const handleSave = () => {
     if (!name.trim()) return;
-    onSave({ name: name.trim(), description: description.trim(), conditions, actions });
+    // Filter out conditions with empty values
+    const filteredConditions = conditions
+      .map((group) => ({
+        ...group,
+        conditions: group.conditions.filter((c) => c.value.trim() !== ''),
+      }))
+      .filter((group) => group.conditions.length > 0);
+    // Require at least one valid condition
+    if (filteredConditions.length === 0) return;
+    onSave({ name: name.trim(), description: description.trim(), conditions: filteredConditions, actions });
   };
 
   const getActionParamFields = (type) => {
@@ -366,6 +375,7 @@ export default function RuleBuilder() {
   }, [automationRules, updateAutomationRules]);
 
   const handleDelete = useCallback((ruleId) => {
+    if (!window.confirm('Are you sure you want to delete this rule? This action cannot be undone.')) return;
     const updated = automationRules.filter((r) => r.id !== ruleId);
     updateAutomationRules(updated);
   }, [automationRules, updateAutomationRules]);
@@ -391,7 +401,7 @@ export default function RuleBuilder() {
     } else {
       const maxPriority = automationRules.length > 0 ? Math.max(...automationRules.map((r) => r.priority)) : 0;
       const newRule = {
-        id: `rule-${String(Date.now()).slice(-6)}`,
+        id: crypto.randomUUID(),
         name: data.name,
         description: data.description,
         enabled: true,

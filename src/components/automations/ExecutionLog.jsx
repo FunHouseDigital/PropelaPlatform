@@ -60,7 +60,7 @@ export default function ExecutionLog() {
 
   const handleRerun = useCallback((entry) => {
     const newEntry = {
-      id: `exec-${String(Date.now()).slice(-6)}`,
+      id: crypto.randomUUID(),
       ruleId: entry.ruleId,
       ruleName: entry.ruleName,
       triggeredAt: new Date().toISOString(),
