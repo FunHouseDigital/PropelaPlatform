@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { RefreshCw, CheckCircle, AlertTriangle, Clock, ArrowRightLeft } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 
@@ -27,6 +27,19 @@ export default function DataSyncDashboard() {
   const [syncProgress, setSyncProgress] = useState({});
   const [conflicts, setConflicts] = useState(SAMPLE_CONFLICTS);
   const [conflictResolutions, setConflictResolutions] = useState({});
+  const mountedRef = useRef(true);
+  const rAfIdRef = useRef(null);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (rAfIdRef.current !== null) {
+        cancelAnimationFrame(rAfIdRef.current);
+        rAfIdRef.current = null;
+      }
+    };
+  }, []);
 
   const handleManualSync = useCallback((integrationId) => {
     // Start sync animation
@@ -37,15 +50,18 @@ export default function DataSyncDashboard() {
     const duration = 2000;
 
     const animate = () => {
+      if (!mountedRef.current) return;
       const elapsed = Date.now() - startTime;
       const progress = Math.min((elapsed / duration) * 100, 100);
       setSyncProgress((prev) => ({ ...prev, [integrationId]: progress }));
 
       if (progress < 100) {
-        requestAnimationFrame(animate);
+        rAfIdRef.current = requestAnimationFrame(animate);
       } else {
+        rAfIdRef.current = null;
         // Mark sync complete
         setTimeout(() => {
+          if (!mountedRef.current) return;
           setSyncProgress((prev) => {
             const next = { ...prev };
             delete next[integrationId];
@@ -65,7 +81,7 @@ export default function DataSyncDashboard() {
       }
     };
 
-    requestAnimationFrame(animate);
+    rAfIdRef.current = requestAnimationFrame(animate);
   }, [syncStatus, updateSyncStatus]);
 
   const handleResolutionSelect = useCallback((conflictId, choice) => {
