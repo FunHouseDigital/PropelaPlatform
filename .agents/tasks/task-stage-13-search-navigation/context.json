@@ -1,0 +1,27 @@
+{
+  "project_type": "React SPA with Vite bundler",
+  "language": "JavaScript (JSX)",
+  "build_system": "Vite 8 with @vitejs/plugin-react",
+  "test_framework": "None configured",
+  "build_command": "npm run build",
+  "test_command": "N/A - no test framework",
+  "verification_instructions": "Run npm run build and confirm zero errors. Visually verify components render correctly.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "npm install",
+  "environment_constraints": "Full internet access available. No test framework configured - verification via build only.",
+  "contribution_requirements": "Follow existing patterns: components in src/components/<feature>/, pages in src/pages/, state in AppContext with localStorage persistence via src/lib/storage.js, icons from lucide-react, styling via Tailwind CSS v4.",
+  "key_patterns": "AppContext provides global state with useState + localStorage write-through. Each page is a top-level component in src/pages/. Feature components live in src/components/<feature>/. Layout uses fixed sidebar (220px) with main content area. Routes defined in App.jsx within a Layout wrapper. All data persistence uses getData/setData helpers from src/lib/storage.js with 'propela_ops_' prefix.",
+  "relevant_files": [
+    "src/components/layout/Layout.jsx",
+    "src/components/layout/Sidebar.jsx",
+    "src/App.jsx",
+    "src/context/AppContext.jsx",
+    "src/lib/storage.js",
+    "src/lib/constants.js",
+    "src/pages/Dashboard.jsx",
+    "src/pages/NurseDatabase.jsx",
+    "src/pages/PlacementTracker.jsx",
+    "src/pages/DocumentManagement.jsx"
+  ],
+  "directory_structure": "src/App.jsx (routes), src/components/layout/ (Layout, Sidebar), src/components/<feature>/ (feature components), src/pages/ (page-level components), src/context/AppContext.jsx (global state), src/lib/ (storage, constants, calculations), src/data/ (seed data)"
+}
