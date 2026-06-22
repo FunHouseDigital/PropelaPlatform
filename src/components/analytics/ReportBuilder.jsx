@@ -82,7 +82,7 @@ export default function ReportBuilder() {
         data.rows.push({
           type: 'nursePipeline',
           ID: n.id,
-          Name: `${n.firstName} ${n.surname}`,
+          Name: n.fullName,
           Stage: n.pipelineStage,
           Score: n.finalScore || 0,
           Cohort: n.cohortAssigned || 'Unassigned',
@@ -96,7 +96,7 @@ export default function ReportBuilder() {
       filteredNurses.forEach((n) => {
         data.rows.push({
           type: 'oetResults',
-          Name: `${n.firstName} ${n.surname}`,
+          Name: n.fullName,
           'OET Status': n.oetStatus || 'Pending',
           'EfSet Score': n.efSetScore || 'N/A',
         });
