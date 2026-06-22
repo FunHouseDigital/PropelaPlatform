@@ -9,6 +9,7 @@ import OutreachLog from './pages/OutreachLog';
 import PlacementTracker from './pages/PlacementTracker';
 import Analytics from './pages/Analytics';
 import DocumentManagement from './pages/DocumentManagement';
+import Communications from './pages/Communications';
 import Settings from './pages/Settings';
 import { initializeData } from './lib/storage';
 import { AppProvider } from './context/AppContext';
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="/placements" element={<PlacementTracker />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/documents" element={<DocumentManagement />} />
+            <Route path="/communications" element={<Communications />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Routes>
