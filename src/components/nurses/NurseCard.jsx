@@ -31,6 +31,7 @@ import {
   EMPLOYMENT_STATUSES,
 } from '../../lib/constants';
 import { calculateCVScore, calculateFinalScore, calculateTier, calculateReadinessStatus } from '../../lib/calculations';
+import { useDebounce } from '../../hooks/useDebounce';
 
 function getNextActionColor(nurse) {
   if (!nurse.nextAction || nurse.nextAction === 'No action required') {
@@ -138,7 +139,12 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
   const [showAddComm, setShowAddComm] = useState(false);
   const [commForm, setCommForm] = useState({ channel: 'Email', summary: '', nextAction: '' });
 
-  const updateField = (field, value) => {
+  // Debounced version of onUpdate for text field changes (500ms delay)
+  const debouncedUpdate = useDebounce((updatedNurse) => {
+    onUpdate(updatedNurse);
+  }, 500);
+
+  const updateField = (field, value, { debounce = false } = {}) => {
     const updated = { ...localNurse, [field]: value };
     // Recalculate derived fields
     if (field === 'pipelineStage') {
@@ -150,7 +156,15 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
       updated.tier = calculateTier(updated.finalScore);
     }
     setLocalNurse(updated);
-    onUpdate(updated);
+    if (debounce) {
+      debouncedUpdate(updated);
+    } else {
+      onUpdate(updated);
+    }
+  };
+
+  const updateFieldDebounced = (field, value) => {
+    updateField(field, value, { debounce: true });
   };
 
   const updateScorecard = (key, value) => {
