@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Implement the Cohort Comparison View and Report Builder tabs. Cohort Comparison provides side-by-side comparison of cohort performance with bar/radar charts. Report Builder provides customizable report generation with CSV export, saved templates, and mock scheduling UI.",
+  "status": "in_progress",
+  "steps": [
+    "Implement src/components/analytics/CohortComparison.jsx: (a) Use useAppContext() to access cohorts, nurses, placements. (b) For each cohort, compute metrics: OET pass rate (nurses with oetStatus=Passed / total in cohort), placement rate (nurses with pipelineStage=Placed / total in cohort), average finalScore of cohort nurses, budget efficiency (cohort budget.totalBudget / placed count = cost per successful placement), timeline adherence (compare actual training dates vs planned). (c) If only 1 cohort exists, show its metrics with a 'target' comparison (using the cohort's oetPassRateTarget and placementRateTarget from seed data). (d) Render a radar chart (Recharts RadarChart) comparing actual vs target across dimensions: OET Pass Rate, Placement Rate, Avg Score, Budget Efficiency, Timeline Adherence. (e) Render bar charts for side-by-side numeric comparisons. (f) Add a cohort selector (dropdown/toggle) at the top for when multiple cohorts exist.",
+    "Implement src/components/analytics/ReportBuilder.jsx: (a) Create a form UI with sections: Metrics Selection (checkboxes for: Nurse Pipeline, OET Results, Placement Outcomes, Revenue, Cohort Performance, Acquisition Sources), Date Range (start/end date inputs), Filters (dropdowns for: Cohort, Specialty, Source - populated from context data). (b) Add a 'Generate Report' button that computes a preview table based on selected metrics and filters, pulling data from AppContext. (c) Add 'Export CSV' button that converts the preview table data to a CSV string and triggers a browser download using Blob + URL.createObjectURL. (d) Add a 'Saved Templates' section: store templates in localStorage via a new key 'reportTemplates' (array of {id, name, metrics, dateRange, filters}). Show saved templates as cards with 'Load' and 'Delete' buttons. Add a 'Save Template' button that prompts for a name and saves current selections. (e) Add a 'Schedule Reports' section with mock UI: a toggle to enable scheduling, frequency dropdown (Daily, Weekly, Monthly), email input field, and a 'Save Schedule' button that shows a toast/confirmation (purely UI, no backend). (f) Style the report preview as a table with alternating row colors.",
+    "For the Report Builder CSV export, generate columns dynamically based on selected metrics. For nurse pipeline: id, name, stage, score, cohort. For OET results: name, oetStatus, efSetScore. For placements: nurseName, facility, stage, matchScore. For revenue: month, amount. For cohort performance: cohort name, pass rate, placement rate, budget.",
+    "Add localStorage helpers for report templates: add getReportTemplates() and saveReportTemplates() functions to src/lib/storage.js following the existing pattern."
+  ],
+  "acceptance_criteria": [
+    "Cohort Comparison tab renders a radar chart showing cohort metrics vs targets",
+    "Bar charts display numeric comparisons for the cohort(s)",
+    "Report Builder shows metric selection checkboxes and filter dropdowns",
+    "Generating a report displays a preview data table",
+    "Export CSV button downloads a .csv file with appropriate data",
+    "Saved templates can be created, loaded, and deleted",
+    "Schedule UI is present with frequency/email fields (mock only)",
+    "Build passes with no errors"
+  ],
+  "verification": [
+    "Run `unset NODE_OPTIONS && npx vite build` - must complete without errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

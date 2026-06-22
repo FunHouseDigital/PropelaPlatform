@@ -208,3 +208,17 @@ export function getPlacements() {
 export function savePlacements(placements) {
   setData('placements', placements);
 }
+
+/**
+ * Get all report templates from localStorage.
+ */
+export function getReportTemplates() {
+  return getData('reportTemplates') || [];
+}
+
+/**
+ * Save all report templates to localStorage.
+ */
+export function saveReportTemplates(templates) {
+  setData('reportTemplates', templates);
+}
