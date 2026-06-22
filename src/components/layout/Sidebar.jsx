@@ -7,6 +7,7 @@ import {
   Mail,
   Briefcase,
   BarChart3,
+  Settings,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -17,6 +18,7 @@ const NAV_ITEMS = [
   { path: '/outreach', label: 'Outreach Log', icon: Mail },
   { path: '/placements', label: 'Placements', icon: Briefcase },
   { path: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function Sidebar() {
