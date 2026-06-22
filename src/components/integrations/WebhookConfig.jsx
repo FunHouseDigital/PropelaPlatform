@@ -26,22 +26,24 @@ export default function WebhookConfig() {
   const [showForm, setShowForm] = useState(false);
   const [formUrl, setFormUrl] = useState('');
   const [selectedEvents, setSelectedEvents] = useState([]);
+  const [formSecret, setFormSecret] = useState(() => generateSecret());
 
   const handleAddWebhook = useCallback(() => {
     if (!formUrl.trim() || selectedEvents.length === 0) return;
     const newWebhook = {
-      id: `wh-${String(webhooks.length + 1).padStart(3, '0')}`,
+      id: `wh-${Date.now()}`,
       url: formUrl.trim(),
       events: [...selectedEvents],
-      secret: generateSecret(),
+      secret: formSecret,
       status: 'active',
       createdAt: new Date().toISOString().split('.')[0],
     };
     updateWebhooks([...webhooks, newWebhook]);
     setFormUrl('');
     setSelectedEvents([]);
+    setFormSecret(generateSecret());
     setShowForm(false);
-  }, [webhooks, updateWebhooks, formUrl, selectedEvents]);
+  }, [webhooks, updateWebhooks, formUrl, selectedEvents, formSecret]);
 
   const handleDelete = useCallback((webhookId) => {
     updateWebhooks(webhooks.filter((w) => w.id !== webhookId));
@@ -118,7 +120,7 @@ export default function WebhookConfig() {
           </div>
           <div className="bg-white border border-gray-200 rounded-md p-3">
             <div className="text-xs font-medium text-gray-500 mb-1">Secret Key (auto-generated)</div>
-            <code className="text-xs font-mono text-gray-700">{generateSecret()}</code>
+            <code className="text-xs font-mono text-gray-700">{formSecret}</code>
           </div>
           <div className="flex gap-2">
             <button
@@ -128,7 +130,7 @@ export default function WebhookConfig() {
               Register
             </button>
             <button
-              onClick={() => { setShowForm(false); setFormUrl(''); setSelectedEvents([]); }}
+              onClick={() => { setShowForm(false); setFormUrl(''); setSelectedEvents([]); setFormSecret(generateSecret()); }}
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-300 transition-colors"
             >
               Cancel
