@@ -1,6 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Plus, Search, Phone, Mail, MessageCircle, MessageSquare, Filter, X } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+
+function generateId(prefix) {
+  return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+}
 
 const CHANNEL_ICONS = {
   Email: Mail,
@@ -31,6 +35,8 @@ export default function CommunicationLog() {
     notes: '',
     direction: 'outbound',
   });
+
+  const [displayCount, setDisplayCount] = useState(50);
 
   const nurseMap = useMemo(() => {
     const map = {};
@@ -75,7 +81,7 @@ export default function CommunicationLog() {
     if (!newComm.nurseId || !newComm.subject) return;
 
     const comm = {
-      id: `comm-${String(communications.length + 1).padStart(4, '0')}`,
+      id: generateId('comm'),
       ...newComm,
       date: new Date().toISOString().slice(0, 19),
       status: 'sent',
@@ -147,12 +153,13 @@ export default function CommunicationLog() {
 
       {/* Results count */}
       <p className="text-sm text-gray-500 mb-3">
-        Showing {filteredComms.length} of {communications.length} communications
+        Showing {Math.min(displayCount, filteredComms.length)} of {filteredComms.length} communications
+        {filteredComms.length !== communications.length && ` (${communications.length} total)`}
       </p>
 
       {/* Communications List */}
       <div className="space-y-2">
-        {filteredComms.slice(0, 50).map((comm) => {
+        {filteredComms.slice(0, displayCount).map((comm) => {
           const ChannelIcon = CHANNEL_ICONS[comm.channel] || MessageSquare;
           const channelColor = CHANNEL_COLORS[comm.channel] || 'bg-gray-100 text-gray-700';
 
@@ -195,6 +202,17 @@ export default function CommunicationLog() {
         })}
       </div>
 
+      {filteredComms.length > displayCount && (
+        <div className="text-center mt-4">
+          <button
+            onClick={() => setDisplayCount((prev) => prev + 50)}
+            className="px-4 py-2 text-sm font-medium text-[#5B2D8E] border border-[#5B2D8E]/30 rounded-lg hover:bg-[#5B2D8E]/5 transition-colors"
+          >
+            Load More ({filteredComms.length - displayCount} remaining)
+          </button>
+        </div>
+      )}
+
       {filteredComms.length === 0 && (
         <div className="text-center py-12 text-gray-400">
           <MessageSquare size={40} className="mx-auto mb-3 opacity-50" />
@@ -224,7 +242,7 @@ export default function CommunicationLog() {
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B2D8E]/20"
                 >
                   <option value="">Select a nurse...</option>
-                  {nurses.slice(0, 30).map((n) => (
+                  {[...nurses].sort((a, b) => a.fullName.localeCompare(b.fullName)).map((n) => (
                     <option key={n.id} value={n.id}>
                       {n.fullName}
                     </option>
