@@ -249,12 +249,12 @@ export function seedNotifications() {
     },
   };
 
-  // Generate notification history log (past 30 days)
+  // Generate notification history log (last 14 days for chart visibility)
   for (let i = 0; i < 60; i++) {
     const category = pick(CATEGORIES, rand);
     const severity = pick(SEVERITY_LEVELS, rand);
     const titleIdx = Math.floor(rand() * NOTIFICATION_TITLES[category].length);
-    const daysAgo = Math.floor(rand() * 30);
+    const daysAgo = Math.floor(rand() * 14);
     const date = new Date();
     date.setDate(date.getDate() - daysAgo);
     date.setHours(Math.floor(rand() * 24), Math.floor(rand() * 60), 0, 0);
