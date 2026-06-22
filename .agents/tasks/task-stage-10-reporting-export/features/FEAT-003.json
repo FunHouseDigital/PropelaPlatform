@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Implement the Scheduled Reports tab with scheduling UI, recipient configuration, format selection, and run history; and the Export Center tab with bulk data export, format options, filter application, and download history",
+  "status": "pending",
+  "steps": [
+    "Implement src/components/reports/ScheduledReports.jsx with: (a) A list/table of existing scheduled reports from AppContext (scheduledReports) showing name, report type, frequency, last run, status, recipients count. (b) Create Schedule button that opens a form/modal to configure a new scheduled report: name, report type dropdown, frequency (daily/weekly/monthly), recipient list (add/remove email inputs), format selection (PDF mock, CSV export, On-screen). (c) Run History section showing past executions from the scheduledReports data with timestamps, status (success/failed/pending), and format. (d) Enable/disable toggle per schedule. (e) Delete schedule functionality. (f) Persist changes through AppContext updateScheduledReports.",
+    "Implement src/components/reports/ExportCenter.jsx with: (a) Data type selection - cards/buttons for Nurses, Placements, Documents, Communications. (b) Format selection - CSV or JSON radio/button group. (c) Filter panel that shows relevant filters based on selected data type (e.g., for Nurses: cohort filter, stage filter, specialty filter; for Placements: facility filter, stage filter). (d) Export button that generates the file (CSV or JSON) from AppContext data with filters applied and triggers a download. (e) Download History section showing past exports from AppContext (exportHistory) with timestamp, data type, format, file size, and a re-download button. (f) Persist export history through AppContext updateExportHistory.",
+    "For the Export Center CSV generation, reuse the CSV generation pattern from the existing ReportBuilder in src/components/analytics/ReportBuilder.jsx (Blob creation, URL.createObjectURL, programmatic click). For JSON export, use JSON.stringify with pretty-printing and the same download pattern.",
+    "Style both components consistently with the existing UI patterns. Use the card-based layout with border-gray-200. Tables should match the report preview table style."
+  ],
+  "acceptance_criteria": [
+    "npm run build succeeds",
+    "npm run lint passes",
+    "Scheduled Reports tab displays list of schedules with frequency, recipients, format, status",
+    "Users can create new scheduled reports with all configuration options",
+    "Run history table shows past report executions",
+    "Export Center shows data type selection for Nurses, Placements, Documents, Communications",
+    "Format toggle between CSV and JSON works",
+    "Filters apply to exported data",
+    "Download generates actual file (CSV or JSON) from AppContext data",
+    "Download history log persists via localStorage"
+  ],
+  "verification": [
+    "Run npm run build and confirm exit code 0",
+    "Run npm run lint and confirm no errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

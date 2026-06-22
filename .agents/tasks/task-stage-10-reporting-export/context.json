@@ -1,0 +1,25 @@
+{
+  "project_type": "React + Vite SPA with localStorage persistence",
+  "language": "JavaScript (JSX)",
+  "build_system": "Vite with npm, @tailwindcss/vite plugin",
+  "test_framework": "No unit test framework configured - ESLint for linting",
+  "build_command": "npm run build",
+  "test_command": "npm run lint",
+  "verification_instructions": "1. Run npm run build to verify no compilation errors. 2. Run npm run lint to check for lint issues.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd /projects/sandbox/PropelaPlatform && npm install",
+  "environment_constraints": "GitHub integration available via kiro_powers github. No unit test runner (jest/vitest) configured - rely on build + lint for verification.",
+  "contribution_requirements": "Follow existing tabbed page pattern (see Communications.jsx, Analytics.jsx). Use Lucide React icons. Use Tailwind CSS v4 utility classes. Use localStorage via storage.js helpers. Use AppContext for global state. Brand color is #5B2D8E.",
+  "key_patterns": "Pages use tabbed navigation with TABS array and activeTab state. Components are in src/components/<feature>/. State is managed in AppContext with useState + useCallback update functions backed by localStorage get/save pairs in storage.js. Seed data is generated deterministically in src/data/seed*.js. Sidebar nav items are defined in NAV_ITEMS array in Sidebar.jsx. @dnd-kit is available for drag-and-drop. Recharts is available for charts.",
+  "relevant_files": [
+    "src/App.jsx",
+    "src/pages/Communications.jsx",
+    "src/pages/Analytics.jsx",
+    "src/components/analytics/ReportBuilder.jsx",
+    "src/components/layout/Sidebar.jsx",
+    "src/context/AppContext.jsx",
+    "src/lib/storage.js",
+    "src/data/seedCommunications.js"
+  ],
+  "directory_structure": "src/pages/ - page components with tabbed UI; src/components/<feature>/ - feature sub-components; src/context/AppContext.jsx - global state; src/lib/storage.js - localStorage CRUD helpers; src/data/ - seed data generators; src/components/layout/ - Layout and Sidebar"
+}
