@@ -1,20 +1,35 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Clock } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { searchAllEntities } from '../../lib/searchUtils';
 import SearchResult from './SearchResult';
 
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debouncedValue;
+}
+
 export default function CommandPalette({ isOpen, onClose }) {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef(null);
   const navigate = useNavigate();
-  const { nurses, placements, documents, cohorts, recentSearches, updateRecentSearches } = useAppContext();
+  const { nurses, placements, documents, cohorts, recentSearches, updateRecentSearches, recentlyViewed, updateRecentlyViewed } = useAppContext();
 
-  const results = query.trim()
-    ? searchAllEntities(query, { nurses, placements, documents, cohorts })
-    : [];
+  const debouncedQuery = useDebounce(query, 150);
+
+  const results = useMemo(
+    () =>
+      debouncedQuery.trim()
+        ? searchAllEntities(debouncedQuery, { nurses, placements, documents, cohorts })
+        : [],
+    [debouncedQuery, nurses, placements, documents, cohorts]
+  );
 
   const handleSelect = useCallback(
     (result) => {
@@ -25,12 +40,19 @@ export default function CommandPalette({ isOpen, onClose }) {
       ].slice(0, 10);
       updateRecentSearches(newSearches);
 
+      // Track in recently viewed
+      const newRecentlyViewed = [
+        { type: result.type, id: result.id, name: result.name, path: result.path, timestamp: Date.now() },
+        ...recentlyViewed.filter((item) => item.id !== result.id || item.type !== result.type),
+      ].slice(0, 10);
+      updateRecentlyViewed(newRecentlyViewed);
+
       navigate(result.path);
       onClose();
       setQuery('');
       setActiveIndex(0);
     },
-    [navigate, onClose, recentSearches, updateRecentSearches]
+    [navigate, onClose, recentSearches, updateRecentSearches, recentlyViewed, updateRecentlyViewed]
   );
 
   const handleRecentSelect = useCallback(

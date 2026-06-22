@@ -51,6 +51,10 @@ export function searchAllEntities(query, { nurses = [], placements = [], documen
   });
 
   // Search documents
+  // NOTE: Known limitation - Document results link to the /documents list page
+  // rather than an individual document detail page, because no detail routes
+  // exist for documents yet. Update path to `/documents/${doc.id}` when detail
+  // routes are added.
   documents.forEach((doc) => {
     const name = doc.name || doc.title || '';
     const searchFields = [name, doc.type || '', doc.category || '', doc.nurseName || '', doc.status || ''];
@@ -67,6 +71,10 @@ export function searchAllEntities(query, { nurses = [], placements = [], documen
   });
 
   // Search cohorts
+  // NOTE: Known limitation - Cohort results link to the /cohorts list page
+  // rather than an individual cohort detail page, because no detail routes
+  // exist for cohorts yet. Update path to `/cohorts/${cohort.id}` when detail
+  // routes are added.
   cohorts.forEach((cohort) => {
     const name = cohort.name || '';
     const searchFields = [name, cohort.status || '', cohort.description || ''];
