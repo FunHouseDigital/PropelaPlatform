@@ -24,6 +24,16 @@ import {
   saveDocumentTemplates,
   getVerificationQueue,
   saveVerificationQueue,
+  getCommunications,
+  saveCommunications,
+  getNotifications,
+  saveNotifications,
+  getCommEmailTemplates,
+  saveCommEmailTemplates,
+  getAlertRules,
+  saveAlertRules,
+  getAlertHistory,
+  saveAlertHistory,
 } from '../lib/storage';
 
 const AppContext = createContext(null);
@@ -41,6 +51,11 @@ export function AppProvider({ children }) {
   const [documents, setDocuments] = useState(() => getDocuments());
   const [documentTemplates, setDocumentTemplates] = useState(() => getDocumentTemplates());
   const [verificationQueue, setVerificationQueue] = useState(() => getVerificationQueue());
+  const [communications, setCommunications] = useState(() => getCommunications());
+  const [notifications, setNotifications] = useState(() => getNotifications());
+  const [commEmailTemplates, setCommEmailTemplates] = useState(() => getCommEmailTemplates());
+  const [alertRules, setAlertRules] = useState(() => getAlertRules());
+  const [alertHistory, setAlertHistory] = useState(() => getAlertHistory());
 
   // Update functions that write through to localStorage
   const updateNurses = useCallback((updatedNurses) => {
@@ -103,6 +118,31 @@ export function AppProvider({ children }) {
     saveVerificationQueue(updatedQueue);
   }, []);
 
+  const updateCommunications = useCallback((updatedCommunications) => {
+    setCommunications(updatedCommunications);
+    saveCommunications(updatedCommunications);
+  }, []);
+
+  const updateNotifications = useCallback((updatedNotifications) => {
+    setNotifications(updatedNotifications);
+    saveNotifications(updatedNotifications);
+  }, []);
+
+  const updateCommEmailTemplates = useCallback((updatedTemplates) => {
+    setCommEmailTemplates(updatedTemplates);
+    saveCommEmailTemplates(updatedTemplates);
+  }, []);
+
+  const updateAlertRules = useCallback((updatedRules) => {
+    setAlertRules(updatedRules);
+    saveAlertRules(updatedRules);
+  }, []);
+
+  const updateAlertHistory = useCallback((updatedHistory) => {
+    setAlertHistory(updatedHistory);
+    saveAlertHistory(updatedHistory);
+  }, []);
+
   const value = {
     nurses,
     facilities,
@@ -116,6 +156,11 @@ export function AppProvider({ children }) {
     documents,
     documentTemplates,
     verificationQueue,
+    communications,
+    notifications,
+    commEmailTemplates,
+    alertRules,
+    alertHistory,
     updateNurses,
     updateFacilities,
     updateCohorts,
@@ -128,6 +173,11 @@ export function AppProvider({ children }) {
     updateDocuments,
     updateDocumentTemplates,
     updateVerificationQueue,
+    updateCommunications,
+    updateNotifications,
+    updateCommEmailTemplates,
+    updateAlertRules,
+    updateAlertHistory,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
