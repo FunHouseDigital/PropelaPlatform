@@ -281,3 +281,45 @@ export const ORGANISATION_TYPES = [
   'NEI',
   'Health Facility',
 ];
+
+// Template Types (Section 10 - Outreach Templates)
+export const TEMPLATE_TYPES = [
+  'Cold outreach',
+  'Follow-up',
+  'Partnership ask',
+  'Info session invite',
+  'Thank you',
+  'Re-engagement',
+];
+
+// Template Channels
+export const TEMPLATE_CHANNELS = [
+  'Email',
+  'LinkedIn',
+  'WhatsApp',
+];
+
+// Template Statuses
+export const TEMPLATE_STATUSES = [
+  'Active',
+  'Archived',
+];
+
+// Outreach Outcomes (matching OutreachLogEntry.jsx OUTCOMES)
+export const OUTREACH_OUTCOMES = [
+  'No response',
+  'Bounced',
+  'Responded positive',
+  'Responded neutral',
+  'Declined',
+  'Session booked',
+  'Leads received',
+];
+
+// Acquisition Tracks
+export const ACQUISITION_TRACKS = [
+  'Organisations',
+  'Referral Network',
+  'Community Channels',
+  'Events',
+];
