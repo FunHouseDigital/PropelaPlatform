@@ -22,7 +22,7 @@ export default function ApiKeyManager() {
   const handleGenerate = useCallback(() => {
     if (!newKeyName.trim()) return;
     const newKey = {
-      id: `key-${String(apiKeys.length + 1).padStart(3, '0')}`,
+      id: `key-${Date.now()}`,
       name: newKeyName.trim(),
       key: generateUUID(),
       status: 'active',
