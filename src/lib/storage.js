@@ -137,7 +137,10 @@ export function initializeData() {
   }
 
   const activityFeed = getData('activityFeed');
-  if (!activityFeed || activityFeed.length === 0) {
+  const auditLog = getData('auditLog');
+  const userSessions = getData('userSessions');
+  const changeHistoryData = getData('changeHistory');
+  if (!activityFeed || activityFeed.length === 0 || !auditLog || auditLog.length === 0 || !userSessions || userSessions.length === 0 || !changeHistoryData || changeHistoryData.length === 0) {
     const seededAudit = seedAuditTrail();
     setData('activityFeed', seededAudit.activityFeed);
     setData('auditLog', seededAudit.auditLog);

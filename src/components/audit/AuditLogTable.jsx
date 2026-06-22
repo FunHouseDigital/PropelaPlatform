@@ -69,19 +69,24 @@ export default function AuditLogTable() {
   };
 
   const handleExportCSV = () => {
+    const escapeCSVField = (value) => {
+      const str = String(value ?? '');
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
     const headers = ['Timestamp', 'User', 'Action', 'Entity Type', 'Entity ID', 'IP Address', 'Details', 'Severity'];
     const rows = filteredAndSorted.map((entry) => [
-      entry.timestamp,
-      entry.user,
-      entry.action,
-      entry.entityType,
-      entry.entityId,
-      entry.ipAddress,
-      `"${entry.details.replace(/"/g, '""')}"`,
-      entry.severity,
+      escapeCSVField(entry.timestamp),
+      escapeCSVField(entry.user),
+      escapeCSVField(entry.action),
+      escapeCSVField(entry.entityType),
+      escapeCSVField(entry.entityId),
+      escapeCSVField(entry.ipAddress),
+      escapeCSVField(entry.details),
+      escapeCSVField(entry.severity),
     ]);
 
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const csvContent = [headers.map(escapeCSVField).join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

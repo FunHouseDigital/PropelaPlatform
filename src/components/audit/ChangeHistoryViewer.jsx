@@ -64,7 +64,7 @@ export default function ChangeHistoryViewer() {
       changeType: 'rollback_requested',
     };
 
-    updateChangeHistory([newEntry, ...changeHistory]);
+    updateChangeHistory((prev) => [newEntry, ...prev]);
     setRollbackModal(null);
   };
 
