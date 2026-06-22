@@ -21,7 +21,7 @@ import {
 } from 'recharts';
 import {
   GripVertical, Plus, Save, Maximize2, Minimize2,
-  LayoutGrid, Activity, TrendingUp, TrendingDown, Table2,
+  LayoutGrid, Activity, TrendingUp, Table2,
   ChevronDown, ChevronRight, X,
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
@@ -73,35 +73,31 @@ function SortableWidget({ widget, children }) {
 function KPIContent({ widget, nurses, placements }) {
   const { metric } = widget.config || {};
 
-  const { value, label, trend, change } = useMemo(() => {
+  const { value, label } = useMemo(() => {
     if (metric === 'totalNurses') {
       const total = nurses.length;
-      return { value: total, label: 'Total Nurses', trend: 'up', change: '+5%' };
+      return { value: total, label: 'Total Nurses' };
     }
     if (metric === 'activePlacements') {
       const active = placements.filter((p) => p.currentStage !== 'Completed' && p.currentStage !== 'Withdrawn').length;
-      return { value: active, label: 'Active Placements', trend: 'up', change: '+3%' };
+      return { value: active, label: 'Active Placements' };
     }
     if (metric === 'placedNurses') {
       const placed = nurses.filter((n) => n.pipelineStage === 'Placed').length;
-      return { value: placed, label: 'Placed Nurses', trend: 'up', change: '+8%' };
+      return { value: placed, label: 'Placed Nurses' };
     }
     if (metric === 'complianceRate') {
       const compliant = nurses.filter((n) => n.oetStatus === 'Passed').length;
       const rate = nurses.length > 0 ? Math.round((compliant / nurses.length) * 100) : 0;
-      return { value: `${rate}%`, label: 'Compliance Rate', trend: rate > 50 ? 'up' : 'down', change: rate > 50 ? '+2%' : '-1%' };
+      return { value: `${rate}%`, label: 'Compliance Rate' };
     }
-    return { value: 0, label: 'Metric', trend: 'up', change: '0%' };
+    return { value: 0, label: 'Metric' };
   }, [metric, nurses, placements]);
 
   return (
     <div className="flex flex-col items-center justify-center h-full py-4">
       <p className="text-3xl font-bold text-gray-900">{value}</p>
       <p className="text-xs text-gray-500 mt-1">{label}</p>
-      <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${trend === 'up' ? 'text-green-600' : 'text-red-500'}`}>
-        {trend === 'up' ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-        <span>{change}</span>
-      </div>
     </div>
   );
 }
