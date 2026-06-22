@@ -7,6 +7,7 @@ import AcquisitionHub from './pages/AcquisitionHub';
 import CohortManager from './pages/CohortManager';
 import OutreachLog from './pages/OutreachLog';
 import { initializeData } from './lib/storage';
+import { AppProvider } from './context/AppContext';
 
 export default function App() {
   useEffect(() => {
@@ -14,16 +15,18 @@ export default function App() {
   }, []);
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/nurses" element={<NurseDatabase />} />
-          <Route path="/acquisition" element={<AcquisitionHub />} />
-          <Route path="/cohorts" element={<CohortManager />} />
-          <Route path="/outreach" element={<OutreachLog />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <AppProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/nurses" element={<NurseDatabase />} />
+            <Route path="/acquisition" element={<AcquisitionHub />} />
+            <Route path="/cohorts" element={<CohortManager />} />
+            <Route path="/outreach" element={<OutreachLog />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AppProvider>
   );
 }
