@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Search, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { getFacilities, getReferrers, getCommunityChannels, getEvents } from '../../lib/storage';
+import { useAppContext } from '../../context/AppContext';
 import { OUTREACH_OUTCOMES, PREFERRED_CHANNELS, PROVINCES, ACQUISITION_TRACKS } from '../../lib/constants';
 
 function getOutcomeColor(outcome) {
@@ -25,6 +25,7 @@ function getTrackColor(track) {
 }
 
 export default function OutreachTable() {
+  const { facilities, referrers, communityChannels, events } = useAppContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
@@ -43,7 +44,6 @@ export default function OutreachTable() {
     const entries = [];
 
     // Organisations track
-    const facilities = getFacilities();
     facilities.forEach((f) => {
       (f.outreachLog || []).forEach((entry) => {
         entries.push({
@@ -58,7 +58,6 @@ export default function OutreachTable() {
     });
 
     // Referral Network track
-    const referrers = getReferrers();
     referrers.forEach((r) => {
       (r.outreachLog || []).forEach((entry) => {
         entries.push({
@@ -73,8 +72,7 @@ export default function OutreachTable() {
     });
 
     // Community Channels track
-    const channels = getCommunityChannels();
-    channels.forEach((c) => {
+    communityChannels.forEach((c) => {
       (c.outreachLog || []).forEach((entry) => {
         entries.push({
           ...entry,
@@ -88,7 +86,6 @@ export default function OutreachTable() {
     });
 
     // Events track
-    const events = getEvents();
     events.forEach((ev) => {
       (ev.outreachLog || []).forEach((entry) => {
         entries.push({
@@ -103,7 +100,7 @@ export default function OutreachTable() {
     });
 
     return entries;
-  }, []);
+  }, [facilities, referrers, communityChannels, events]);
 
   // Apply filters and search
   const filteredEntries = useMemo(() => {
