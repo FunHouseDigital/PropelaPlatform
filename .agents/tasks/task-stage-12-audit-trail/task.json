@@ -1,0 +1,7 @@
+{
+  "task_id": "task-stage-12-audit-trail",
+  "task_description": "Build Stage 12: Audit Trail & Activity Logging Module for Propela Ops platform. This module adds comprehensive activity tracking and audit logging with four main tabs: Activity Feed, Audit Log Table, User Session Tracking, and Change History per Entity.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

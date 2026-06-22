@@ -1,0 +1,24 @@
+{
+  "project_type": "React SPA with Vite bundler",
+  "language": "JavaScript (JSX)",
+  "build_system": "Vite with npm scripts",
+  "test_framework": "No test framework configured - validation via build",
+  "build_command": "cd /projects/sandbox/PropelaPlatform && npm run build",
+  "test_command": "cd /projects/sandbox/PropelaPlatform && npm run build",
+  "verification_instructions": "Run `npm run build` to confirm no compilation errors. The project has no unit test framework so build success is the primary verification.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd /projects/sandbox/PropelaPlatform && npm install",
+  "environment_constraints": "Open internet available. Node.js and npm pre-installed.",
+  "contribution_requirements": "Follow existing patterns: page component in src/pages/, components in src/components/<module>/, seed data in src/data/, storage helpers in src/lib/storage.js, context state in src/context/AppContext.jsx, route in App.jsx, nav item in Sidebar.jsx.",
+  "key_patterns": "Each module follows: (1) seed data file in src/data/ using seededRandom pattern, (2) getter/setter functions in src/lib/storage.js, (3) state + update functions in AppContext.jsx, (4) page component with tab navigation using TABS array pattern, (5) individual tab components in src/components/<module>/, (6) route in App.jsx, (7) nav link in Sidebar.jsx with Lucide icon. Tab UI uses gray-100 bg with active white bg and [#5B2D8E] text color. localStorage with 'propela_ops_' prefix.",
+  "relevant_files": [
+    "src/App.jsx",
+    "src/components/layout/Sidebar.jsx",
+    "src/context/AppContext.jsx",
+    "src/lib/storage.js",
+    "src/pages/Integrations.jsx",
+    "src/components/integrations/ApiEndpointSimulator.jsx",
+    "src/data/seedIntegrations.js"
+  ],
+  "directory_structure": "src/pages/ - page-level components | src/components/ - feature directories | src/context/ - AppContext global state | src/data/ - seed data generators | src/lib/ - utility functions including storage.js | src/hooks/ - custom hooks"
+}
