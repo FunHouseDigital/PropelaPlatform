@@ -29,7 +29,7 @@ function TemplatePreviewModal({ template, nurses, onClose }) {
     let content = template.content;
     // Replace placeholders with sample data
     const sampleData = {
-      '[NURSE_NAME]': selectedNurse ? nurses.find((n) => n.id === selectedNurse)?.name || 'Jane Doe' : 'Jane Doe',
+      '[NURSE_NAME]': selectedNurse ? nurses.find((n) => n.id === selectedNurse)?.fullName || 'Jane Doe' : 'Jane Doe',
       '[NURSE_ID]': selectedNurse || 'nurse-001',
       '[ROLE]': 'Registered Nurse',
       '[FACILITY_NAME]': 'NHS Trust Hospital',
@@ -112,7 +112,7 @@ function TemplatePreviewModal({ template, nurses, onClose }) {
             >
               <option value="">Select a nurse (optional)</option>
               {nurses.map((nurse) => (
-                <option key={nurse.id} value={nurse.id}>{nurse.name}</option>
+                <option key={nurse.id} value={nurse.id}>{nurse.fullName}</option>
               ))}
             </select>
           </div>
