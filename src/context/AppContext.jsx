@@ -16,6 +16,8 @@ import {
   saveOutreachTemplates,
   getPlacements,
   savePlacements,
+  getSettings,
+  saveSettings,
 } from '../lib/storage';
 
 const AppContext = createContext(null);
@@ -29,6 +31,7 @@ export function AppProvider({ children }) {
   const [events, setEvents] = useState(() => getEvents());
   const [outreachTemplates, setOutreachTemplates] = useState(() => getOutreachTemplates());
   const [placements, setPlacements] = useState(() => getPlacements());
+  const [settings, setSettings] = useState(() => getSettings());
 
   // Update functions that write through to localStorage
   const updateNurses = useCallback((updatedNurses) => {
@@ -71,6 +74,11 @@ export function AppProvider({ children }) {
     savePlacements(updatedPlacements);
   }, []);
 
+  const updateSettings = useCallback((updatedSettings) => {
+    setSettings(updatedSettings);
+    saveSettings(updatedSettings);
+  }, []);
+
   const value = {
     nurses,
     facilities,
@@ -80,6 +88,7 @@ export function AppProvider({ children }) {
     events,
     outreachTemplates,
     placements,
+    settings,
     updateNurses,
     updateFacilities,
     updateCohorts,
@@ -88,6 +97,7 @@ export function AppProvider({ children }) {
     updateEvents,
     updateOutreachTemplates,
     updatePlacements,
+    updateSettings,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
