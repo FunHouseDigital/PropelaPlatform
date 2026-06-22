@@ -1,0 +1,39 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Create branch, build the global search command palette (Cmd+K / Ctrl+K), Header component with breadcrumbs, quick filters and saved views system, smart suggestions, and integrate everything into the Layout. This is a single large feature encompassing the entire Stage 13 search and navigation module.",
+  "status": "in_progress",
+  "steps": [
+    "Create branch stage-13-search-navigation from stage-12-audit-trail",
+    "Create src/components/search/CommandPalette.jsx - Full-screen overlay command palette triggered by Cmd+K / Ctrl+K. Features: (1) search input with placeholder text showing shortcut hint, (2) fuzzy text matching across all entities (nurses by name/specialty/stage, placements by nurse/facility, documents by name/type, cohorts by name), (3) categorized results with entity type badges (Nurse, Placement, Document, Cohort), (4) keyboard navigation with arrow keys highlighting results and Enter to select/navigate, (5) recent searches list persisted in localStorage using getData/setData with key 'recentSearches', (6) close on Escape key or clicking backdrop. Use useAppContext() to access nurses, placements, documents, cohorts data. Use lucide-react icons (Search, X, Clock, ArrowRight). Style with Tailwind: dark overlay bg-black/50, centered white modal with rounded corners.",
+    "Create src/components/search/SearchResult.jsx - Individual search result row component showing: entity type badge (colored by type), primary text (entity name), secondary text (contextual info like stage/status), and navigation arrow. Each type gets a distinct badge color.",
+    "Create src/components/search/QuickFilters.jsx - Quick filter presets panel that can be embedded in module pages. Features: (1) predefined filter presets per module (e.g. 'Nurses awaiting documents' filters nurses whose document compliance is incomplete, 'Expiring placements' filters placements nearing end date, 'Pending verifications' for documents needing review), (2) ability to save current filter state as a named custom view stored in localStorage key 'savedViews', (3) filter badge counts showing number of matching results for each preset, (4) encode/decode filter state in URL query params using useSearchParams for shareable filter URLs. Store saved views as array of {id, name, module, filters} objects.",
+    "Create src/components/search/SavedViewsPanel.jsx - Panel showing saved custom filter views. Features: list of saved views with name and module, click to apply, delete button, empty state message.",
+    "Create src/components/search/SmartSuggestions.jsx - Recently viewed entities quick-access panel and contextual suggestions. Features: (1) track recently viewed entities in localStorage key 'recentlyViewed' (max 10 items with {type, id, name, path, timestamp}), (2) display as a dropdown/panel accessible from the header, (3) contextual action suggestions based on current page (e.g. on /nurses page suggest 'Add new nurse', on /documents suggest 'Upload document').",
+    "Create src/components/layout/Header.jsx - New header component to sit above the main content area in Layout. Features: (1) left side: dynamic breadcrumb trail using react-router-dom useLocation, showing clickable intermediate paths (e.g. Home > Nurses > Jane Smith), (2) right side: search trigger button showing 'Search... Cmd+K' text that opens CommandPalette, (3) recently viewed dropdown button. Breadcrumbs should be entity-aware - map route segments to human-readable labels using a route config mapping.",
+    "Create src/components/layout/Breadcrumbs.jsx - Standalone breadcrumbs component used by Header. Parse current pathname into segments, map each to a label and link. Handle entity-level breadcrumbs by looking up entity names from context (e.g. /nurses/123 shows 'Nurses > [nurse name]'). Use lucide-react ChevronRight as separator.",
+    "Update src/components/layout/Layout.jsx - Add the Header component between the Sidebar and Outlet. The header should be fixed at the top of the main content area (to the right of sidebar). Adjust the main content padding to account for the header height. Import and render CommandPalette at the Layout level so it is available on all pages.",
+    "Update src/context/AppContext.jsx - Add state and update functions for: (1) recentSearches (array, persisted), (2) savedViews (array, persisted), (3) recentlyViewed (array, persisted). Add corresponding localStorage helpers in src/lib/storage.js: getRecentSearches/saveRecentSearches, getSavedViews/saveSavedViews, getRecentlyViewed/saveRecentlyViewed.",
+    "Update src/lib/storage.js - Add getter/setter functions for recentSearches, savedViews, and recentlyViewed keys following the existing pattern of getData/setData wrappers.",
+    "Create src/lib/searchUtils.js - Utility functions for fuzzy search: (1) fuzzyMatch(query, text) that does case-insensitive substring matching, (2) searchAllEntities(query, {nurses, placements, documents, cohorts}) that returns categorized results array sorted by relevance, (3) getFilterPresets(module) returning predefined filter configs per module.",
+    "Verify build passes with npm run build, fix any import errors or lint issues."
+  ],
+  "acceptance_criteria": [
+    "Cmd+K / Ctrl+K opens a command palette overlay from any page",
+    "Typing in the command palette searches across nurses, placements, documents, and cohorts with categorized results",
+    "Arrow keys navigate results, Enter selects and navigates to the entity",
+    "Escape or backdrop click closes the palette",
+    "Recent searches are persisted in localStorage and shown when palette opens with empty query",
+    "Header component displays above main content with breadcrumbs on the left and search trigger on the right",
+    "Breadcrumbs show clickable path segments reflecting current route",
+    "Quick filters panel provides predefined filter presets with badge counts",
+    "Custom filter combinations can be saved as named views in localStorage",
+    "Recently viewed entities are tracked and accessible from the header",
+    "npm run build completes with zero errors"
+  ],
+  "verification": [
+    "Run npm run build and confirm exit code 0 with no errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

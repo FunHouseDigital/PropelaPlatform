@@ -637,3 +637,45 @@ export function saveChangeHistory(history) {
   setData('changeHistory', history);
 }
 
+/**
+ * Get recent searches from localStorage.
+ */
+export function getRecentSearches() {
+  return getData('recentSearches') || [];
+}
+
+/**
+ * Save recent searches to localStorage.
+ */
+export function saveRecentSearches(searches) {
+  setData('recentSearches', searches);
+}
+
+/**
+ * Get saved views from localStorage.
+ */
+export function getSavedViews() {
+  return getData('savedViews') || [];
+}
+
+/**
+ * Save saved views to localStorage.
+ */
+export function saveSavedViews(views) {
+  setData('savedViews', views);
+}
+
+/**
+ * Get recently viewed entities from localStorage.
+ */
+export function getRecentlyViewed() {
+  return getData('recentlyViewed') || [];
+}
+
+/**
+ * Save recently viewed entities to localStorage.
+ */
+export function saveRecentlyViewed(items) {
+  setData('recentlyViewed', items);
+}
+
