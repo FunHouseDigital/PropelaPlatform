@@ -8,6 +8,7 @@ import CohortManager from './pages/CohortManager';
 import OutreachLog from './pages/OutreachLog';
 import PlacementTracker from './pages/PlacementTracker';
 import Analytics from './pages/Analytics';
+import DocumentManagement from './pages/DocumentManagement';
 import Settings from './pages/Settings';
 import { initializeData } from './lib/storage';
 import { AppProvider } from './context/AppContext';
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="/outreach" element={<OutreachLog />} />
             <Route path="/placements" element={<PlacementTracker />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/documents" element={<DocumentManagement />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Routes>
