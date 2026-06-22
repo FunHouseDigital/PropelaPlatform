@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Puzzle,
   Shield,
+  Zap,
   Settings,
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
@@ -29,6 +30,7 @@ const NAV_ITEMS = [
   { path: '/communications', label: 'Communications', icon: MessageSquare },
   { path: '/integrations', label: 'Integrations', icon: Puzzle },
   { path: '/audit', label: 'Audit Trail', icon: Shield },
+  { path: '/automations', label: 'Automations', icon: Zap },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 

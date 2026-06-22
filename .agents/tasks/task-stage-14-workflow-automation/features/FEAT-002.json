@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Build the Rule Builder tab component with visual rule creation interface, condition/action pairs with AND/OR logic, drag-and-drop priority ordering, and enable/disable toggles.",
+  "status": "pending",
+  "steps": [
+    "Create src/components/automations/RuleBuilder.jsx - the main component for the Rule Builder tab. It displays a list of existing rules in priority order (cards showing rule name, description, trigger count, success rate, enabled toggle). Include a stats summary header showing total rules, active rules, total executions, and average success rate.",
+    "Implement drag-and-drop reordering using @dnd-kit/core and @dnd-kit/sortable (following existing patterns in the codebase - see package.json dependencies). Each rule card should be draggable to reorder priority. On reorder, update priority field and persist via updateAutomationRules.",
+    "Add enable/disable toggle per rule - a switch-style toggle on each rule card that updates the rule's enabled field and persists immediately.",
+    "Create a RuleEditorModal component (inline in same file or separate) that opens when creating/editing a rule. The modal should have: (a) Name and description fields; (b) Conditions section - condition groups connected by AND/OR logic operators. Each condition has a field selector (nurse status, document expiry, placement match, application stage), an operator (equals, not_equals, contains, greater_than, less_than, days_before, days_after), and a value input. Users can add multiple conditions and toggle the logic operator between groups; (c) Actions section - list of actions to perform when conditions are met. Each action has a type selector (Send Email, Update Status, Create Task, Add to Cohort, Trigger Alert) and type-specific parameter fields; (d) Save/Cancel buttons.",
+    "Wire RuleBuilder to AppContext via useAppContext() - use automationRules and updateAutomationRules. Add handlers for create rule, edit rule, delete rule, toggle enabled, and reorder."
+  ],
+  "acceptance_criteria": [
+    "npm run build succeeds with no errors",
+    "Rule Builder tab shows list of seeded rules with priority ordering",
+    "Each rule card shows name, description, trigger count, success rate, and enabled toggle",
+    "Drag-and-drop reorders rule priority",
+    "Clicking create/edit opens a modal with condition builder (AND/OR groups) and action builder",
+    "Rules can be created, edited, deleted, enabled/disabled, and reordered - all persisted to localStorage"
+  ],
+  "verification": [
+    "Run npm run build and confirm exit code 0 with no errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
