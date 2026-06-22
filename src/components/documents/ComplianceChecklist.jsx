@@ -36,7 +36,7 @@ function NurseComplianceRow({ nurse, complianceData, documents }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3">
-            <p className="text-sm font-medium text-gray-900 truncate">{nurse.name}</p>
+            <p className="text-sm font-medium text-gray-900 truncate">{nurse.fullName}</p>
             <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full shrink-0">
               {nurse.pipelineStage}
             </span>
@@ -123,7 +123,7 @@ export default function ComplianceChecklist() {
 
   const filteredData = useMemo(() => {
     return complianceData.filter(({ nurse, complianceData: cd }) => {
-      const matchesSearch = nurse.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = nurse.fullName.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStage = !stageFilter || nurse.pipelineStage === stageFilter;
       let matchesCompliance = true;
       if (complianceFilter === '0-50') matchesCompliance = cd.percentage < 50;

@@ -23,7 +23,7 @@ export default function VerificationWorkflow() {
       const doc = documents.find((d) => d.id === item.documentId);
       return {
         ...item,
-        nurseName: nurse?.name || 'Unknown',
+        nurseName: nurse?.fullName || 'Unknown',
         documentStatus: doc?.status || 'Unknown',
       };
     }).filter((item) => item.documentStatus === 'Pending');
@@ -39,7 +39,7 @@ export default function VerificationWorkflow() {
           allHistory.push({
             ...entry,
             documentType: doc.type,
-            nurseName: nurse?.name || 'Unknown',
+            nurseName: nurse?.fullName || 'Unknown',
             documentId: doc.id,
           });
         });
