@@ -44,6 +44,18 @@ import {
   saveDashboardLayouts,
   getActiveDashboardLayout,
   saveActiveDashboardLayout,
+  getIntegrations,
+  saveIntegrations,
+  getApiEndpoints,
+  saveApiEndpoints,
+  getApiKeys,
+  saveApiKeys,
+  getWebhooks,
+  saveWebhooks,
+  getWebhookDeliveryLog,
+  saveWebhookDeliveryLog,
+  getSyncStatus,
+  saveSyncStatus,
 } from '../lib/storage';
 
 const AppContext = createContext(null);
@@ -71,6 +83,12 @@ export function AppProvider({ children }) {
   const [exportHistory, setExportHistory] = useState(() => getExportHistory());
   const [dashboardLayouts, setDashboardLayouts] = useState(() => getDashboardLayouts());
   const [activeDashboardLayout, setActiveDashboardLayout] = useState(() => getActiveDashboardLayout());
+  const [integrations, setIntegrations] = useState(() => getIntegrations());
+  const [apiEndpoints, setApiEndpoints] = useState(() => getApiEndpoints());
+  const [apiKeys, setApiKeys] = useState(() => getApiKeys());
+  const [webhooks, setWebhooks] = useState(() => getWebhooks());
+  const [webhookDeliveryLog, setWebhookDeliveryLog] = useState(() => getWebhookDeliveryLog());
+  const [syncStatus, setSyncStatus] = useState(() => getSyncStatus());
 
   // Update functions that write through to localStorage
   const updateNurses = useCallback((updatedNurses) => {
@@ -183,6 +201,36 @@ export function AppProvider({ children }) {
     saveActiveDashboardLayout(updatedLayout);
   }, []);
 
+  const updateIntegrations = useCallback((updatedIntegrations) => {
+    setIntegrations(updatedIntegrations);
+    saveIntegrations(updatedIntegrations);
+  }, []);
+
+  const updateApiEndpoints = useCallback((updatedEndpoints) => {
+    setApiEndpoints(updatedEndpoints);
+    saveApiEndpoints(updatedEndpoints);
+  }, []);
+
+  const updateApiKeys = useCallback((updatedKeys) => {
+    setApiKeys(updatedKeys);
+    saveApiKeys(updatedKeys);
+  }, []);
+
+  const updateWebhooks = useCallback((updatedWebhooks) => {
+    setWebhooks(updatedWebhooks);
+    saveWebhooks(updatedWebhooks);
+  }, []);
+
+  const updateWebhookDeliveryLog = useCallback((updatedLog) => {
+    setWebhookDeliveryLog(updatedLog);
+    saveWebhookDeliveryLog(updatedLog);
+  }, []);
+
+  const updateSyncStatus = useCallback((updatedStatus) => {
+    setSyncStatus(updatedStatus);
+    saveSyncStatus(updatedStatus);
+  }, []);
+
   const value = {
     nurses,
     facilities,
@@ -206,6 +254,12 @@ export function AppProvider({ children }) {
     exportHistory,
     dashboardLayouts,
     activeDashboardLayout,
+    integrations,
+    apiEndpoints,
+    apiKeys,
+    webhooks,
+    webhookDeliveryLog,
+    syncStatus,
     updateNurses,
     updateFacilities,
     updateCohorts,
@@ -228,6 +282,12 @@ export function AppProvider({ children }) {
     updateExportHistory,
     updateDashboardLayouts,
     updateActiveDashboardLayout,
+    updateIntegrations,
+    updateApiEndpoints,
+    updateApiKeys,
+    updateWebhooks,
+    updateWebhookDeliveryLog,
+    updateSyncStatus,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

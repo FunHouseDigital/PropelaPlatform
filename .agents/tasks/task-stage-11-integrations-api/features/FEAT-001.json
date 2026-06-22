@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Set up the Integrations module infrastructure: seed data, storage functions, AppContext integration, route, sidebar nav item, and the Integrations page shell with four tabs (API Endpoints, Webhooks, Integrations, Data Sync).",
+  "status": "in_progress",
+  "steps": [
+    "Create src/data/seedIntegrations.js with deterministic seed data covering: (a) apiEndpoints - mock REST endpoints for nurses, placements, documents, communications with method/path/description/status/responseDelay/errorRate, (b) apiKeys - array of mock API keys with id/name/key/status/created/lastUsed, (c) webhooks - registered webhooks with id/url/events/secret/status/createdAt, (d) webhookDeliveryLog - webhook deliveries with id/webhookId/event/status/timestamp/responseCode/payload, (e) integrations - third-party integration cards (NHS Jobs, NMC Online, DBS Check Service, Visa Tracking) with id/name/provider/status/apiKey/syncFrequency/lastSync/syncHistory, (f) syncStatus - per-integration sync status objects with lastSync/status/conflicts. Use the seededRandom pattern from src/data/seedReports.js.",
+    "Add storage functions in src/lib/storage.js: getIntegrations/saveIntegrations, getApiEndpoints/saveApiEndpoints, getApiKeys/saveApiKeys, getWebhooks/saveWebhooks, getWebhookDeliveryLog/saveWebhookDeliveryLog, getSyncStatus/saveSyncStatus. Add initialization block in initializeData() that seeds integrations data if not present.",
+    "Add state to src/context/AppContext.jsx: import the new get/save functions, add useState for integrations, apiEndpoints, apiKeys, webhooks, webhookDeliveryLog, syncStatus. Add useCallback update functions for each. Add all to the context value object.",
+    "Create src/pages/Integrations.jsx page component with four tabs: 'API Endpoints' (icon: Server), 'Webhooks' (icon: Webhook), 'Integrations' (icon: Puzzle), 'Data Sync' (icon: RefreshCw). Follow the exact tab UI pattern from src/pages/Reports.jsx. Each tab renders a placeholder div for now.",
+    "Add route in src/App.jsx: import Integrations page and add <Route path='/integrations' element={<Integrations />} /> inside the Layout route.",
+    "Add navigation item in src/components/layout/Sidebar.jsx: import the Puzzle icon from lucide-react, add { path: '/integrations', label: 'Integrations', icon: Puzzle } to NAV_ITEMS array (between Communications and Settings).",
+    "Create a new git branch 'stage-11-integrations-api' from current HEAD and commit all changes with message 'feat: Stage 11 - Integrations module infrastructure (seed data, storage, context, routing, nav)'"
+  ],
+  "acceptance_criteria": [
+    "npm run build succeeds with zero errors",
+    "npm run lint passes with no errors",
+    "The /integrations route is registered in App.jsx",
+    "The sidebar shows an Integrations nav item with Puzzle icon",
+    "The Integrations page renders with four tabs that can be switched",
+    "Seed data is initialized in localStorage on first load",
+    "AppContext provides integrations state and update functions"
+  ],
+  "verification": [
+    "Run 'cd /projects/sandbox/PropelaPlatform && npm run build' and confirm it succeeds",
+    "Run 'cd /projects/sandbox/PropelaPlatform && npm run lint' and confirm no errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
