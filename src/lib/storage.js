@@ -5,6 +5,7 @@ import { seedReferrers, seedCommunityChannels, seedEvents } from '../data/seedAc
 import { seedOutreachTemplates } from '../data/seedOutreach';
 import { seedPlacements } from '../data/seedPlacements';
 import { seedSettings } from '../data/seedSettings';
+import { seedDocuments } from '../data/seedDocuments';
 
 const STORAGE_PREFIX = 'propela_ops_';
 
@@ -101,6 +102,14 @@ export function initializeData() {
   if (!settings) {
     const seededSettings = seedSettings();
     setData('settings', seededSettings);
+  }
+
+  const documents = getData('documents');
+  if (!documents || documents.length === 0) {
+    const seededDocs = seedDocuments();
+    setData('documents', seededDocs.documents);
+    setData('documentTemplates', seededDocs.templates);
+    setData('verificationQueue', seededDocs.verificationQueue);
   }
 }
 
@@ -242,4 +251,46 @@ export function getSettings() {
  */
 export function saveSettings(settings) {
   setData('settings', settings);
+}
+
+/**
+ * Get all documents from localStorage.
+ */
+export function getDocuments() {
+  return getData('documents') || [];
+}
+
+/**
+ * Save all documents to localStorage.
+ */
+export function saveDocuments(documents) {
+  setData('documents', documents);
+}
+
+/**
+ * Get all document templates from localStorage.
+ */
+export function getDocumentTemplates() {
+  return getData('documentTemplates') || [];
+}
+
+/**
+ * Save all document templates to localStorage.
+ */
+export function saveDocumentTemplates(templates) {
+  setData('documentTemplates', templates);
+}
+
+/**
+ * Get all verification queue items from localStorage.
+ */
+export function getVerificationQueue() {
+  return getData('verificationQueue') || [];
+}
+
+/**
+ * Save all verification queue items to localStorage.
+ */
+export function saveVerificationQueue(queue) {
+  setData('verificationQueue', queue);
 }

@@ -375,3 +375,56 @@ export const PIPELINE_STAGES_ORDER = [
 
 // Exit states (nurses who have left the active pipeline)
 export const EXIT_STATES = ['Placed', 'Deferred', 'Dropped Out', 'Recommended Pathway', 'Not Selected', "Didn't Qualify"];
+
+// Document Management Constants (Section 12)
+
+// Document Types
+export const DOCUMENT_TYPES = [
+  'Passport',
+  'Nursing Qualification',
+  'OET Certificate',
+  'IELTS Certificate',
+  'CBT Certificate',
+  'NMC Decision Letter',
+  'Visa Documents',
+  'References',
+];
+
+// Document Statuses
+export const DOCUMENT_STATUSES = [
+  'Pending',
+  'Verified',
+  'Expired',
+  'Rejected',
+];
+
+// Document Template Types
+export const DOCUMENT_TEMPLATE_TYPES = [
+  'Offer Letter',
+  'Reference Request Form',
+  'Compliance Certificate',
+];
+
+// Verification Actions
+export const VERIFICATION_ACTIONS = [
+  'Approved',
+  'Rejected',
+];
+
+// Compliance Required Documents - mapping pipeline stages to required document types
+export const COMPLIANCE_REQUIRED_DOCUMENTS = {
+  'Applied': ['Passport'],
+  'CV Submitted': ['Passport', 'Nursing Qualification'],
+  'CV + English Submitted': ['Passport', 'Nursing Qualification'],
+  'Under Review': ['Passport', 'Nursing Qualification'],
+  'Shortlisted - Yes': ['Passport', 'Nursing Qualification'],
+  'Shortlisted - Maybe': ['Passport', 'Nursing Qualification'],
+  'Selected for Cohort': ['Passport', 'Nursing Qualification', 'References'],
+  'Reserve': ['Passport', 'Nursing Qualification', 'References'],
+  'Cohort Confirmed': ['Passport', 'Nursing Qualification', 'References'],
+  'Training Active': ['Passport', 'Nursing Qualification', 'References'],
+  'OET Registered': ['Passport', 'Nursing Qualification', 'References'],
+  'OET Passed': ['Passport', 'Nursing Qualification', 'OET Certificate', 'References'],
+  'Placement Ready': ['Passport', 'Nursing Qualification', 'OET Certificate', 'CBT Certificate', 'NMC Decision Letter', 'References'],
+  'Placed': ['Passport', 'Nursing Qualification', 'OET Certificate', 'CBT Certificate', 'NMC Decision Letter', 'Visa Documents', 'References'],
+};
