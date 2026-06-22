@@ -258,9 +258,17 @@ export function AppProvider({ children }) {
     saveUserSessions(updatedSessions);
   }, []);
 
-  const updateChangeHistory = useCallback((updatedHistory) => {
-    setChangeHistory(updatedHistory);
-    saveChangeHistory(updatedHistory);
+  const updateChangeHistory = useCallback((updatedHistoryOrFn) => {
+    if (typeof updatedHistoryOrFn === 'function') {
+      setChangeHistory((prev) => {
+        const next = updatedHistoryOrFn(prev);
+        saveChangeHistory(next);
+        return next;
+      });
+    } else {
+      setChangeHistory(updatedHistoryOrFn);
+      saveChangeHistory(updatedHistoryOrFn);
+    }
   }, []);
 
   const value = {

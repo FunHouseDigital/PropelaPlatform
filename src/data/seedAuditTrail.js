@@ -167,13 +167,19 @@ export function seedAuditTrail() {
   // (c) User Sessions - 10 entries
   const userSessions = [];
   for (let i = 0; i < 10; i++) {
+    const loginTime = generateTimestamp(rand, 2025, 2025);
+    // Ensure lastActivity is after loginTime by adding a random offset (1-480 minutes)
+    const loginDate = new Date(loginTime);
+    const offsetMinutes = Math.floor(rand() * 480) + 1;
+    const lastActivityDate = new Date(loginDate.getTime() + offsetMinutes * 60000);
+    const lastActivity = lastActivityDate.toISOString().replace(/\.\d{3}Z$/, '').replace(/:\d{2}$/, ':00');
     userSessions.push({
       id: `sess-${String(i + 1).padStart(3, '0')}`,
       userId: `user-${String(i + 1).padStart(3, '0')}`,
       userName: pick(USERS, rand),
       role: pick(ROLES, rand),
-      loginTime: generateTimestamp(rand, 2025, 2025),
-      lastActivity: generateTimestamp(rand, 2025, 2025),
+      loginTime,
+      lastActivity,
       ipAddress: generateIpAddress(rand),
       userAgent: pick(USER_AGENTS, rand),
       status: pick(SESSION_STATUSES, rand),
