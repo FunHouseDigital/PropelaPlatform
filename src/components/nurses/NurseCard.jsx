@@ -144,6 +144,12 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
     onUpdate(updatedNurse);
   }, 500);
 
+  // Flush any pending debounced save before closing the card
+  const handleClose = () => {
+    debouncedUpdate.flush();
+    onClose();
+  };
+
   const updateField = (field, value, { debounce = false } = {}) => {
     const updated = { ...localNurse, [field]: value };
     // Recalculate derived fields
@@ -204,7 +210,7 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 pb-6">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/30" onClick={handleClose} />
       <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[calc(100vh-3rem)] flex flex-col">
         {/* Header - Always visible */}
         <div
@@ -258,7 +264,7 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
                 </div>
               </div>
             </div>
-            <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+            <button onClick={handleClose} className="p-1 hover:bg-gray-100 rounded">
               <X size={20} className="text-gray-500" />
             </button>
           </div>
