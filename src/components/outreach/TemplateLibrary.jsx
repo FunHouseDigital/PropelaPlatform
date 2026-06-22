@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Plus, X, Edit3, Trash2, Copy, Search, LayoutGrid, List } from 'lucide-react';
-import { getOutreachTemplates, saveOutreachTemplates } from '../../lib/storage';
+import { useAppContext } from '../../context/AppContext';
 import { TEMPLATE_TYPES, TEMPLATE_CHANNELS, TEMPLATE_STATUSES, ACQUISITION_TRACKS } from '../../lib/constants';
 
 function getTypeBadgeColor(type) {
@@ -36,7 +36,8 @@ const EMPTY_TEMPLATE = {
 };
 
 export default function TemplateLibrary() {
-  const [templates, setTemplates] = useState(() => getOutreachTemplates());
+  const { outreachTemplates, updateOutreachTemplates } = useAppContext();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('grid');
   const [typeFilter, setTypeFilter] = useState('All');
@@ -48,7 +49,7 @@ export default function TemplateLibrary() {
   const [formData, setFormData] = useState({ ...EMPTY_TEMPLATE });
 
   const filtered = useMemo(() => {
-    let result = [...templates];
+    let result = [...outreachTemplates];
 
     // Status filter
     if (statusFilter !== 'All') {
@@ -86,7 +87,7 @@ export default function TemplateLibrary() {
     });
 
     return result;
-  }, [templates, searchQuery, typeFilter, channelFilter, statusFilter, sortBy]);
+  }, [outreachTemplates, searchQuery, typeFilter, channelFilter, statusFilter, sortBy]);
 
   function openAddModal() {
     setEditingTemplate(null);
@@ -113,7 +114,7 @@ export default function TemplateLibrary() {
     e.preventDefault();
     let updated;
     if (editingTemplate) {
-      updated = templates.map((t) =>
+      updated = outreachTemplates.map((t) =>
         t.id === editingTemplate.id
           ? { ...t, ...formData }
           : t
@@ -121,23 +122,26 @@ export default function TemplateLibrary() {
     } else {
       const newTemplate = {
         ...formData,
-        id: `tpl-${Date.now()}`,
+        id: `tpl-${crypto.randomUUID()}`,
         timesUsed: 0,
         responseRate: 0,
         lastUsed: null,
         createdAt: new Date().toISOString(),
       };
-      updated = [newTemplate, ...templates];
+      updated = [newTemplate, ...outreachTemplates];
     }
-    setTemplates(updated);
-    saveOutreachTemplates(updated);
+    updateOutreachTemplates(updated);
     setShowModal(false);
   }
 
   function handleDelete(templateId) {
-    const updated = templates.filter((t) => t.id !== templateId);
-    setTemplates(updated);
-    saveOutreachTemplates(updated);
+    const template = outreachTemplates.find((t) => t.id === templateId);
+    const name = template ? template.name : 'this template';
+    if (!window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+      return;
+    }
+    const updated = outreachTemplates.filter((t) => t.id !== templateId);
+    updateOutreachTemplates(updated);
   }
 
   function toggleTrack(track) {
