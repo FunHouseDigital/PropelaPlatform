@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Zap, BookTemplate, ScrollText, CalendarClock } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
+import RuleBuilder from '../components/automations/RuleBuilder';
 
 const TABS = [
   { id: 'rule-builder', label: 'Rule Builder', icon: Zap },
@@ -47,32 +48,7 @@ export default function Automations() {
 
       {/* Tab Content */}
       {activeTab === 'rule-builder' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Automation Rules</h2>
-            <span className="text-sm text-gray-500">{automationRules.length} rules configured</span>
-          </div>
-          <div className="grid gap-4">
-            {automationRules.map((rule) => (
-              <div key={rule.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${rule.enabled ? 'bg-green-500' : 'bg-gray-300'}`} />
-                    <h3 className="font-medium text-gray-900">{rule.name}</h3>
-                  </div>
-                  <span className="text-xs text-gray-500">Priority: {rule.priority}</span>
-                </div>
-                <p className="text-sm text-gray-600 mb-3">{rule.description}</p>
-                <div className="flex items-center gap-4 text-xs text-gray-500">
-                  <span>Triggered: {rule.triggerCount}</span>
-                  <span className="text-green-600">Success: {rule.successCount}</span>
-                  <span className="text-red-600">Failed: {rule.failureCount}</span>
-                  <span>Actions: {rule.actions.length}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <RuleBuilder />
       )}
 
       {activeTab === 'templates' && (
