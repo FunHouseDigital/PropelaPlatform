@@ -6,6 +6,7 @@ import { seedOutreachTemplates } from '../data/seedOutreach';
 import { seedPlacements } from '../data/seedPlacements';
 import { seedSettings } from '../data/seedSettings';
 import { seedDocuments } from '../data/seedDocuments';
+import { seedCommunications } from '../data/seedCommunications';
 
 const STORAGE_PREFIX = 'propela_ops_';
 
@@ -110,6 +111,16 @@ export function initializeData() {
     setData('documents', seededDocs.documents);
     setData('documentTemplates', seededDocs.templates);
     setData('verificationQueue', seededDocs.verificationQueue);
+  }
+
+  const communications = getData('communications');
+  if (!communications || communications.length === 0) {
+    const seededComms = seedCommunications();
+    setData('communications', seededComms.communications);
+    setData('notifications', seededComms.notifications);
+    setData('commEmailTemplates', seededComms.emailTemplates);
+    setData('alertRules', seededComms.alertRules);
+    setData('alertHistory', seededComms.alertHistory);
   }
 }
 
@@ -293,4 +304,74 @@ export function getVerificationQueue() {
  */
 export function saveVerificationQueue(queue) {
   setData('verificationQueue', queue);
+}
+
+/**
+ * Get all communications from localStorage.
+ */
+export function getCommunications() {
+  return getData('communications') || [];
+}
+
+/**
+ * Save all communications to localStorage.
+ */
+export function saveCommunications(communications) {
+  setData('communications', communications);
+}
+
+/**
+ * Get all notifications from localStorage.
+ */
+export function getNotifications() {
+  return getData('notifications') || [];
+}
+
+/**
+ * Save all notifications to localStorage.
+ */
+export function saveNotifications(notifications) {
+  setData('notifications', notifications);
+}
+
+/**
+ * Get all communication email templates from localStorage.
+ */
+export function getCommEmailTemplates() {
+  return getData('commEmailTemplates') || [];
+}
+
+/**
+ * Save all communication email templates to localStorage.
+ */
+export function saveCommEmailTemplates(templates) {
+  setData('commEmailTemplates', templates);
+}
+
+/**
+ * Get all alert rules from localStorage.
+ */
+export function getAlertRules() {
+  return getData('alertRules') || [];
+}
+
+/**
+ * Save all alert rules to localStorage.
+ */
+export function saveAlertRules(rules) {
+  setData('alertRules', rules);
+}
+
+/**
+ * Get all alert history from localStorage.
+ */
+export function getAlertHistory() {
+  return getData('alertHistory') || [];
+}
+
+/**
+ * Save all alert history to localStorage.
+ */
+export function saveAlertHistory(history) {
+  setData('alertHistory', history);
 }

@@ -8,8 +8,10 @@ import {
   Briefcase,
   BarChart3,
   FileText,
+  MessageSquare,
   Settings,
 } from 'lucide-react';
+import { useAppContext } from '../../context/AppContext';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -20,11 +22,14 @@ const NAV_ITEMS = [
   { path: '/placements', label: 'Placements', icon: Briefcase },
   { path: '/analytics', label: 'Analytics', icon: BarChart3 },
   { path: '/documents', label: 'Documents', icon: FileText },
+  { path: '/communications', label: 'Communications', icon: MessageSquare },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function Sidebar() {
   const location = useLocation();
+  const { notifications } = useAppContext();
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-[220px] flex flex-col"
@@ -63,6 +68,11 @@ export default function Sidebar() {
             >
               <Icon size={20} strokeWidth={1.8} />
               <span>{item.label}</span>
+              {item.path === '/communications' && unreadCount > 0 && (
+                <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </NavLink>
           );
         })}
