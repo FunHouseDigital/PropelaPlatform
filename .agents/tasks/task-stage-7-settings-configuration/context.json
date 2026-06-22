@@ -1,0 +1,25 @@
+{
+  "project_type": "React SPA with Vite bundler and Tailwind CSS v4",
+  "language": "JavaScript (JSX)",
+  "build_system": "Vite - scripts in package.json: dev, build, lint, preview",
+  "test_framework": "No test framework configured - validation is via build and lint",
+  "build_command": "cd /projects/sandbox/PropelaPlatform && npm run build",
+  "test_command": "cd /projects/sandbox/PropelaPlatform && npm run lint",
+  "verification_instructions": "1. Run npm run build to confirm no compilation errors. 2. Run npm run lint to confirm no lint errors.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd /projects/sandbox/PropelaPlatform && npm install",
+  "environment_constraints": "Open internet available. Node.js runtime expected to be installed.",
+  "contribution_requirements": "Branch from current branch (stage-6-analytics-reporting-engine), create new branch stage-7-settings-configuration, commit all changes.",
+  "key_patterns": "1. Pages use tab navigation with TABS array, activeTab state, pill-style tab buttons. 2. Each page imports sub-components from src/components/featurename/ folder. 3. Sidebar uses NAV_ITEMS array with lucide icons and NavLink. 4. App.jsx has flat Route declarations inside a Layout wrapper. 5. localStorage persistence via src/lib/storage.js using getData/setData with STORAGE_PREFIX. 6. Seed data in src/data/seed*.js files exported as functions. 7. AppContext provides global state with get/save/update patterns per entity. 8. Brand color is #5B2D8E (purple). 9. @dnd-kit already installed for drag-and-drop functionality.",
+  "relevant_files": [
+    "src/App.jsx",
+    "src/components/layout/Sidebar.jsx",
+    "src/context/AppContext.jsx",
+    "src/lib/storage.js",
+    "src/pages/Analytics.jsx",
+    "src/pages/PlacementTracker.jsx",
+    "src/data/seedNurses.js",
+    "src/data/seedPlacements.js"
+  ],
+  "directory_structure": "src/pages/ - page-level components with tab navigation. src/components/ - feature folders (analytics/, placements/, etc.). src/data/ - seed data files (seedNurses.js, seedFacilities.js, etc.). src/lib/ - utility modules (storage.js). src/context/ - AppContext.jsx global state. src/hooks/ - custom hooks."
+}
