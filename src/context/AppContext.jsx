@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import {
   getNurses,
   saveNurses,
@@ -134,6 +134,7 @@ export function AppProvider({ children }) {
   const [notifAlertConfig, setNotifAlertConfig] = useState(() => getNotifAlertConfig());
   const [notificationLog, setNotificationLog] = useState(() => getNotificationLog());
   const [toastPreferences, setToastPreferences] = useState(() => getToastPreferences());
+  const [toasts, setToasts] = useState([]);
 
   // Update functions that write through to localStorage
   const updateNurses = useCallback((updatedNurses) => {
@@ -359,6 +360,20 @@ export function AppProvider({ children }) {
     saveToastPreferences(updatedPrefs);
   }, []);
 
+  const toastIdCounter = useRef(0);
+
+  const addToast = useCallback((notification) => {
+    toastIdCounter.current += 1;
+    const id = `ctx-toast-${toastIdCounter.current}`;
+    const newToast = { ...notification, id, createdAt: Date.now() };
+    setToasts((prev) => [newToast, ...prev]);
+    return id;
+  }, []);
+
+  const dismissToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
   const value = {
     nurses,
     facilities,
@@ -446,6 +461,9 @@ export function AppProvider({ children }) {
     updateNotifAlertConfig,
     updateNotificationLog,
     updateToastPreferences,
+    toasts,
+    addToast,
+    dismissToast,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
