@@ -4,6 +4,8 @@ import ApiEndpointSimulator from '../components/integrations/ApiEndpointSimulato
 import ApiKeyManager from '../components/integrations/ApiKeyManager';
 import WebhookConfig from '../components/integrations/WebhookConfig';
 import WebhookDeliveryLog from '../components/integrations/WebhookDeliveryLog';
+import IntegrationCards from '../components/integrations/IntegrationCards';
+import DataSyncDashboard from '../components/integrations/DataSyncDashboard';
 
 const TABS = [
   { id: 'api-endpoints', label: 'API Endpoints', icon: Server },
@@ -61,14 +63,10 @@ export default function Integrations() {
         </div>
       )}
       {activeTab === 'integrations' && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <p className="text-gray-500 text-sm">Third-party integrations management coming soon.</p>
-        </div>
+        <IntegrationCards />
       )}
       {activeTab === 'data-sync' && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <p className="text-gray-500 text-sm">Data synchronization management coming soon.</p>
-        </div>
+        <DataSyncDashboard />
       )}
     </div>
   );
