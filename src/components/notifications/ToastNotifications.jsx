@@ -75,54 +75,38 @@ function Toast({ toast, onDismiss, onView }) {
 }
 
 export default function ToastNotifications() {
-  const { toastPreferences, updateToastPreferences } = useAppContext();
+  const { toastPreferences, updateToastPreferences, toasts, addToast, dismissToast } = useAppContext();
   const [prefs, setPrefs] = useState(toastPreferences);
-  const [activeToasts, setActiveToasts] = useState([]);
   const [saved, setSaved] = useState(false);
-  const toastIdRef = useRef(0);
+  const demoCountRef = useRef(0);
   const timersRef = useRef({});
 
-  const dismissToast = useCallback((id) => {
-    setActiveToasts((prev) => prev.filter((t) => t.id !== id));
-    if (timersRef.current[id]) {
-      clearTimeout(timersRef.current[id]);
-      delete timersRef.current[id];
-    }
-  }, []);
+  // Visible toasts respect the max visible setting
+  const visibleToasts = toasts.slice(0, prefs.maxVisible);
 
-  const viewToast = useCallback((id) => {
-    dismissToast(id);
-  }, [dismissToast]);
-
-  const addToast = useCallback((notification) => {
-    toastIdRef.current += 1;
-    const id = `toast-${toastIdRef.current}`;
-    const newToast = { ...notification, id };
-
-    setActiveToasts((prev) => {
-      const updated = [newToast, ...prev];
-      // Respect max visible
-      if (updated.length > prefs.maxVisible) {
-        const removed = updated.slice(prefs.maxVisible);
-        removed.forEach((t) => {
-          if (timersRef.current[t.id]) {
-            clearTimeout(timersRef.current[t.id]);
-            delete timersRef.current[t.id];
-          }
-        });
-        return updated.slice(0, prefs.maxVisible);
+  // Set up auto-dismiss timers for new toasts
+  useEffect(() => {
+    toasts.forEach((toast) => {
+      if (!timersRef.current[toast.id]) {
+        const timer = setTimeout(() => {
+          dismissToast(toast.id);
+          delete timersRef.current[toast.id];
+        }, prefs.duration);
+        timersRef.current[toast.id] = timer;
       }
-      return updated;
     });
 
-    // Auto-dismiss timer
-    const timer = setTimeout(() => {
-      dismissToast(id);
-    }, prefs.duration);
-    timersRef.current[id] = timer;
-  }, [prefs.maxVisible, prefs.duration, dismissToast]);
+    // Cleanup timers for dismissed toasts
+    const activeIds = new Set(toasts.map((t) => t.id));
+    Object.keys(timersRef.current).forEach((id) => {
+      if (!activeIds.has(id)) {
+        clearTimeout(timersRef.current[id]);
+        delete timersRef.current[id];
+      }
+    });
+  }, [toasts, prefs.duration, dismissToast]);
 
-  // Cleanup timers on unmount
+  // Cleanup all timers on unmount
   useEffect(() => {
     return () => {
       Object.values(timersRef.current).forEach(clearTimeout);
@@ -130,9 +114,14 @@ export default function ToastNotifications() {
   }, []);
 
   const handleDemoTrigger = () => {
-    const notification = DEMO_NOTIFICATIONS[toastIdRef.current % DEMO_NOTIFICATIONS.length];
+    const notification = DEMO_NOTIFICATIONS[demoCountRef.current % DEMO_NOTIFICATIONS.length];
+    demoCountRef.current += 1;
     addToast(notification);
   };
+
+  const handleViewToast = useCallback((id) => {
+    dismissToast(id);
+  }, [dismissToast]);
 
   const handleSave = () => {
     updateToastPreferences(prefs);
@@ -275,16 +264,16 @@ export default function ToastNotifications() {
             <div className="relative min-h-[280px] border border-dashed border-gray-300 rounded-lg p-4 bg-white overflow-hidden">
               <p className="text-xs text-gray-400 text-center mb-4">Toast Preview Area</p>
               <div className="space-y-2">
-                {activeToasts.map((toast) => (
+                {visibleToasts.map((toast) => (
                   <Toast
                     key={toast.id}
                     toast={toast}
                     onDismiss={dismissToast}
-                    onView={viewToast}
+                    onView={handleViewToast}
                   />
                 ))}
               </div>
-              {activeToasts.length === 0 && (
+              {visibleToasts.length === 0 && (
                 <p className="text-xs text-gray-300 text-center mt-8">
                   No active toasts. Click the demo button above.
                 </p>
