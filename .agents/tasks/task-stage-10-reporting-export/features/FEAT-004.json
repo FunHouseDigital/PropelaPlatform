@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Implement the Dashboard Widgets tab with configurable dashboard, drag-and-drop widget arrangement, widget library, sizing options, and save/load layouts",
+  "status": "pending",
+  "steps": [
+    "Implement src/components/reports/DashboardWidgets.jsx with: (a) A configurable dashboard grid area where widgets are rendered based on the active layout from AppContext. (b) Widget Library panel/sidebar - a collapsible panel showing available widget types: KPI Card, Chart (bar/line/pie using Recharts), Table, Recent Activity. Users can drag widgets from the library onto the dashboard. (c) Each widget in the grid should be draggable for rearrangement using @dnd-kit/core and @dnd-kit/sortable. (d) Widget sizing controls - each widget can be toggled between small (1 col), medium (2 col), large (3 col) sizes via a size button on the widget header. (e) Save Layout button that persists the current arrangement to AppContext (updateActiveDashboardLayout). (f) Load Layout dropdown that lists saved layouts from AppContext (dashboardLayouts) and loads the selected one. (g) Layout name input + Save As New Layout button to create new named layouts.",
+    "Create individual widget components or a single configurable WidgetCard component that renders different content based on widget type: KPI Card - shows a single metric value with label, trend arrow, and percentage change (e.g., Total Nurses: 67, Active Placements: 12). Pull real counts from AppContext. Chart - renders a Recharts BarChart/LineChart/PieChart based on widget config (e.g., nurses by stage, placements by month). Table - renders a compact data table (e.g., recent nurses, top cohorts). Recent Activity - shows a feed of recent communications/notifications from AppContext.",
+    "The dashboard grid should use CSS Grid with 3 columns. Widget positions are tracked by order in the array. Size maps to grid column span (small=1, medium=2, large=3). Use @dnd-kit's DndContext with SortableContext to allow reordering widgets by dragging.",
+    "Provide 2-3 default widget configurations in the seed data so the dashboard loads with content on first visit. Default widgets: Total Nurses KPI, Pipeline Stage Chart, Active Placements KPI, Recent Activity feed.",
+    "Style the dashboard area with a subtle grid background or dashed borders for empty slots. Widget cards use bg-white rounded-xl border shadow-sm. Widget header has title, size toggle icon, and remove button."
+  ],
+  "acceptance_criteria": [
+    "npm run build succeeds",
+    "npm run lint passes",
+    "Dashboard Widgets tab shows a grid of widgets populated from seed data",
+    "Widget Library panel lists available widget types (KPI, Chart, Table, Recent Activity)",
+    "Widgets can be added to the dashboard from the library",
+    "Widgets can be reordered via drag-and-drop",
+    "Widget size can be toggled between small/medium/large",
+    "Save Layout persists current arrangement to localStorage",
+    "Load Layout dropdown shows saved layouts and loads them",
+    "KPI widgets show real data from AppContext",
+    "Chart widgets render Recharts visualizations with real data"
+  ],
+  "verification": [
+    "Run npm run build and confirm exit code 0",
+    "Run npm run lint and confirm no errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
