@@ -2,7 +2,7 @@
   "id": "FEAT-005",
   "type": "fix",
   "description": "Address code review issues #1, #2, #3, and #7: remove misleading hardcoded KPI trends, flatten nested data for CSV export, apply stored filters on re-download, and normalize layout persistence shape",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Fix Issue #1: In DashboardWidgets.jsx KPIContent, remove hardcoded '+5%', '+3%', '+8%' trend percentages or clearly label them as sample/placeholder data.",
     "Fix Issue #2: In ExportCenter.jsx, update CSV generation to flatten nested objects (prefix with parent key) instead of silently dropping them.",
@@ -22,5 +22,5 @@
     "Run unset NODE_OPTIONS && npx eslint src/components/reports/ src/lib/storage.js and confirm no errors"
   ],
   "blocked_reason": null,
-  "findings": null
+  "findings": "All 4 review issues addressed. Build and lint pass cleanly. Issue #1: removed hardcoded trend percentages from KPI widgets entirely (no historical data exists to compute them). Issue #2: added module-level flattenObject helper that recursively flattens nested objects with dot-notation keys and converts arrays to semicolon-separated strings; also collects headers from all rows to handle heterogeneous shapes. Issue #3: handleRedownload now applies entry.filters for nurses (stage/cohort/specialty) and placements (stage/facility) before regenerating. Issue #7: initializeData now stores the full layout object instead of just the ID string for activeDashboardLayout."
 }
