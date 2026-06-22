@@ -56,6 +56,14 @@ import {
   saveWebhookDeliveryLog,
   getSyncStatus,
   saveSyncStatus,
+  getActivityFeed,
+  saveActivityFeed,
+  getAuditLog,
+  saveAuditLog,
+  getUserSessions,
+  saveUserSessions,
+  getChangeHistory,
+  saveChangeHistory,
 } from '../lib/storage';
 
 const AppContext = createContext(null);
@@ -89,6 +97,10 @@ export function AppProvider({ children }) {
   const [webhooks, setWebhooks] = useState(() => getWebhooks());
   const [webhookDeliveryLog, setWebhookDeliveryLog] = useState(() => getWebhookDeliveryLog());
   const [syncStatus, setSyncStatus] = useState(() => getSyncStatus());
+  const [activityFeed, setActivityFeed] = useState(() => getActivityFeed());
+  const [auditLog, setAuditLog] = useState(() => getAuditLog());
+  const [userSessions, setUserSessions] = useState(() => getUserSessions());
+  const [changeHistory, setChangeHistory] = useState(() => getChangeHistory());
 
   // Update functions that write through to localStorage
   const updateNurses = useCallback((updatedNurses) => {
@@ -231,6 +243,26 @@ export function AppProvider({ children }) {
     saveSyncStatus(updatedStatus);
   }, []);
 
+  const updateActivityFeed = useCallback((updatedFeed) => {
+    setActivityFeed(updatedFeed);
+    saveActivityFeed(updatedFeed);
+  }, []);
+
+  const updateAuditLog = useCallback((updatedLog) => {
+    setAuditLog(updatedLog);
+    saveAuditLog(updatedLog);
+  }, []);
+
+  const updateUserSessions = useCallback((updatedSessions) => {
+    setUserSessions(updatedSessions);
+    saveUserSessions(updatedSessions);
+  }, []);
+
+  const updateChangeHistory = useCallback((updatedHistory) => {
+    setChangeHistory(updatedHistory);
+    saveChangeHistory(updatedHistory);
+  }, []);
+
   const value = {
     nurses,
     facilities,
@@ -260,6 +292,10 @@ export function AppProvider({ children }) {
     webhooks,
     webhookDeliveryLog,
     syncStatus,
+    activityFeed,
+    auditLog,
+    userSessions,
+    changeHistory,
     updateNurses,
     updateFacilities,
     updateCohorts,
@@ -288,6 +324,10 @@ export function AppProvider({ children }) {
     updateWebhooks,
     updateWebhookDeliveryLog,
     updateSyncStatus,
+    updateActivityFeed,
+    updateAuditLog,
+    updateUserSessions,
+    updateChangeHistory,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
