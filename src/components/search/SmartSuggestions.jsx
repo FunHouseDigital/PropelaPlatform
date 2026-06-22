@@ -4,7 +4,7 @@ import { Clock, Zap, ChevronRight } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { getContextualActions } from '../../lib/searchUtils';
 
-export default function SmartSuggestions({ isOpen, onClose }) {
+export default function SmartSuggestions({ isOpen, onClose, toggleButtonRef }) {
   const { recentlyViewed } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
@@ -14,6 +14,12 @@ export default function SmartSuggestions({ isOpen, onClose }) {
 
   useEffect(() => {
     function handleClickOutside(event) {
+      // Exclude the toggle button from outside-click detection to avoid
+      // the mousedown/click race condition where onClose fires before the
+      // toggle button's onClick, causing the panel to immediately re-open.
+      if (toggleButtonRef?.current && toggleButtonRef.current.contains(event.target)) {
+        return;
+      }
       if (panelRef.current && !panelRef.current.contains(event.target)) {
         onClose();
       }
@@ -22,7 +28,7 @@ export default function SmartSuggestions({ isOpen, onClose }) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, toggleButtonRef]);
 
   if (!isOpen) return null;
 
