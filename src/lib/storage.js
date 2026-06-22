@@ -144,6 +144,14 @@ export function initializeData() {
     setData('webhooks', seededIntegrations.webhooks);
     setData('webhookDeliveryLog', seededIntegrations.webhookDeliveryLog);
     setData('syncStatus', seededIntegrations.syncStatus);
+  } else {
+    // Re-seed any individually missing integration keys
+    const seededIntegrations = seedIntegrations();
+    if (!getData('apiEndpoints')) setData('apiEndpoints', seededIntegrations.apiEndpoints);
+    if (!getData('apiKeys')) setData('apiKeys', seededIntegrations.apiKeys);
+    if (!getData('webhooks')) setData('webhooks', seededIntegrations.webhooks);
+    if (!getData('webhookDeliveryLog')) setData('webhookDeliveryLog', seededIntegrations.webhookDeliveryLog);
+    if (!getData('syncStatus')) setData('syncStatus', seededIntegrations.syncStatus);
   }
 }
 
