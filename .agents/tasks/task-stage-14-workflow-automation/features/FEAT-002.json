@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Build the Rule Builder tab component with visual rule creation interface, condition/action pairs with AND/OR logic, drag-and-drop priority ordering, and enable/disable toggles.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create src/components/automations/RuleBuilder.jsx - the main component for the Rule Builder tab. It displays a list of existing rules in priority order (cards showing rule name, description, trigger count, success rate, enabled toggle). Include a stats summary header showing total rules, active rules, total executions, and average success rate.",
     "Implement drag-and-drop reordering using @dnd-kit/core and @dnd-kit/sortable (following existing patterns in the codebase - see package.json dependencies). Each rule card should be draggable to reorder priority. On reorder, update priority field and persist via updateAutomationRules.",
