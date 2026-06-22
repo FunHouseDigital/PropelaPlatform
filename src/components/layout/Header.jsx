@@ -1,0 +1,55 @@
+import { useState, useCallback } from 'react';
+import { Search, Sparkles } from 'lucide-react';
+import Breadcrumbs from './Breadcrumbs';
+import SmartSuggestions from '../search/SmartSuggestions';
+
+export default function Header({ onOpenSearch }) {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const toggleSuggestions = useCallback(() => {
+    setShowSuggestions((prev) => !prev);
+  }, []);
+
+  const closeSuggestions = useCallback(() => {
+    setShowSuggestions(false);
+  }, []);
+
+  return (
+    <header className="sticky top-0 z-30 h-14 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+      {/* Left: Breadcrumbs */}
+      <Breadcrumbs />
+
+      {/* Right: Search trigger and suggestions */}
+      <div className="flex items-center gap-2">
+        {/* Search Button */}
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:border-gray-300 transition-colors"
+        >
+          <Search size={14} />
+          <span className="hidden sm:inline">Search...</span>
+          <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs bg-white border border-gray-200 rounded text-gray-400 font-mono">
+            <span className="text-xs">⌘</span>K
+          </kbd>
+        </button>
+
+        {/* Smart Suggestions Toggle */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={toggleSuggestions}
+            className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors ${
+              showSuggestions
+                ? 'bg-blue-50 border-blue-200 text-blue-600'
+                : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
+            }`}
+          >
+            <Sparkles size={16} />
+          </button>
+          <SmartSuggestions isOpen={showSuggestions} onClose={closeSuggestions} />
+        </div>
+      </div>
+    </header>
+  );
+}
