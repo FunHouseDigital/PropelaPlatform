@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-005",
+  "type": "fix",
+  "description": "Address code review issues #1, #2, #3, and #7: remove misleading hardcoded KPI trends, flatten nested data for CSV export, apply stored filters on re-download, and normalize layout persistence shape",
+  "status": "in_progress",
+  "steps": [
+    "Fix Issue #1: In DashboardWidgets.jsx KPIContent, remove hardcoded '+5%', '+3%', '+8%' trend percentages or clearly label them as sample/placeholder data.",
+    "Fix Issue #2: In ExportCenter.jsx, update CSV generation to flatten nested objects (prefix with parent key) instead of silently dropping them.",
+    "Fix Issue #3: In ExportCenter.jsx handleRedownload, apply stored entry.filters when regenerating data.",
+    "Fix Issue #7: In storage.js initializeData, store the full layout object for activeDashboardLayout instead of just an ID string to normalize shape."
+  ],
+  "acceptance_criteria": [
+    "KPI widgets no longer show misleading percentage changes (or clearly label them as sample data)",
+    "CSV export includes flattened nested object fields with dot-notation headers",
+    "Re-download from history applies the originally stored filters",
+    "activeDashboardLayout is always initialized as a full layout object",
+    "npm run build succeeds",
+    "npm run lint passes on affected files"
+  ],
+  "verification": [
+    "Run unset NODE_OPTIONS && npx vite build and confirm exit code 0",
+    "Run unset NODE_OPTIONS && npx eslint src/components/reports/ src/lib/storage.js and confirm no errors"
+  ],
+  "blocked_reason": null,
+  "findings": null
+}
