@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Create the Document Management page with four tabs (Document Repository, Compliance Checklist, Document Templates, Verification Workflow), add route and sidebar nav item, and implement all tab components",
+  "status": "completed",
+  "steps": [
+    "Create src/pages/DocumentManagement.jsx as the main page component with four tabs following the PlacementTracker.jsx pattern: Document Repository (FileText icon), Compliance Checklist (ClipboardCheck icon), Templates (FileStack or FilePlus icon), Verification (ShieldCheck icon). Header: 'Document Management & Compliance'. Subtitle: 'Track nurse documents, manage compliance requirements, and verify submissions'.",
+    "Create src/components/documents/ directory for all sub-components",
+    "Create src/components/documents/DocumentRepository.jsx - Per-nurse document vault view. Show a list/grid of nurses (filterable by name, pipeline stage) with document count badges. Clicking a nurse opens their document vault showing all their documents with status badges (color-coded: green=verified, yellow=pending, red=expired, gray=rejected). Include a mock drag-and-drop upload zone (using @dnd-kit or a simple dropzone div with onDragOver/onDrop that creates a new document metadata record with status 'Pending' - no actual file upload). Each document card shows: document type, status badge, upload date, expiry date with countdown badge (red if <30 days, yellow if <90 days), and action buttons (view, delete). Include a nurse selector/filter at the top.",
+    "Create src/components/documents/ComplianceChecklist.jsx - Shows all nurses with their compliance status. For each nurse, calculate which documents are required based on their pipeline stage (using COMPLIANCE_REQUIRED_DOCUMENTS from constants). Show: nurse name, pipeline stage, compliance percentage (required docs that are verified / total required docs), visual progress bar (green gradient fill). Allow clicking a nurse to expand and see the full checklist with checkmarks for verified docs and X marks for missing/pending. Include filters for compliance percentage ranges and pipeline stages.",
+    "Create src/components/documents/DocumentTemplates.jsx - Template library showing cards for each template (offer letters, reference request forms, compliance certificates). Each card shows: template name, type badge, description, placeholder count. Clicking a template opens a preview modal showing the template content with placeholder text highlighted in yellow/amber (e.g. {{NURSE_NAME}}, {{DATE}}, {{FACILITY}}). Include a 'Download' button that creates a Blob with sample text content (replacing placeholders with sample data) and triggers a browser download. Include a 'Generate for Nurse' button that shows a nurse selector dropdown.",
+    "Create src/components/documents/VerificationWorkflow.jsx - Document review queue for admins. Show a table/list of documents pending verification (status='Pending'). Each row shows: nurse name, document type, submitted date, days waiting. Include Approve and Reject buttons with a notes textarea that appears on click. Approving changes document status to 'Verified' and adds an entry to verification history. Rejecting changes status to 'Rejected' with rejection notes. Include bulk selection checkboxes and a 'Bulk Approve' / 'Bulk Reject' action bar. Show a verification history log section below the queue showing recent verification actions (who verified, what document, when, action taken, notes).",
+    "Add route to src/App.jsx: import DocumentManagement from './pages/DocumentManagement' and add <Route path='/documents' element={<DocumentManagement />} /> inside the Layout route, positioned after /analytics and before /settings",
+    "Add nav item to src/components/layout/Sidebar.jsx: import FileText from lucide-react, add { path: '/documents', label: 'Documents', icon: FileText } to NAV_ITEMS array positioned after Analytics and before Settings"
+  ],
+  "acceptance_criteria": [
+    "npm run build succeeds with no errors",
+    "Navigating to /documents shows the Document Management page with four working tabs",
+    "Document Repository tab shows nurses with their documents and a working mock upload zone",
+    "Compliance Checklist tab shows per-nurse compliance percentages with progress bars based on pipeline stage requirements",
+    "Document Templates tab shows template cards with preview and mock download functionality",
+    "Verification Workflow tab shows pending documents with approve/reject actions and verification history",
+    "Sidebar shows 'Documents' link between Analytics and Settings with FileText icon",
+    "All components use Tailwind CSS with brand purple #5B2D8E for active states",
+    "All state changes persist through AppContext (documents, templates, verificationQueue)"
+  ],
+  "verification": [
+    "Run `npm run build` and confirm zero errors",
+    "Run `npm run lint` and confirm no critical issues"
+  ],
+  "blocked_reason": null,
+  "findings": "Build passes cleanly (npm run build succeeds). All new files pass linting with zero errors. Pre-existing lint errors in design-reference/ and other modules are unchanged. The DocumentManagement page follows the PlacementTracker.jsx tab pattern exactly. All four tabs render correctly: DocumentRepository (nurse list with document vault and drop zone), ComplianceChecklist (per-nurse compliance with progress bars), DocumentTemplates (cards with preview modal and download), VerificationWorkflow (pending queue with approve/reject/bulk actions and history). Route added after /analytics and before /settings. Sidebar nav item added with FileText icon between Analytics and Settings."
+}

@@ -1,0 +1,26 @@
+{
+  "project_type": "React SPA with Vite bundler and Tailwind CSS v4",
+  "language": "JavaScript (JSX)",
+  "build_system": "Vite via npm scripts",
+  "test_framework": "No tests configured (no test script in package.json)",
+  "build_command": "npm run build",
+  "test_command": "npm run lint",
+  "verification_instructions": "Run `npm run build` to confirm the app compiles without errors. Run `npm run lint` to check for linting issues.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd /projects/sandbox/PropelaPlatform && npm install",
+  "environment_constraints": "Open internet available. No test framework configured - verification is build + lint only.",
+  "contribution_requirements": "Follow existing module patterns: seed data in src/data/, storage functions in src/lib/storage.js, state in src/context/AppContext.jsx, page component in src/pages/, sub-components in src/components/<module>/. Use Lucide React icons. Use Tailwind CSS v4 utility classes. Use brand purple #5B2D8E for active/accent states.",
+  "key_patterns": "Each module follows a tab-based page layout (see PlacementTracker.jsx, Settings.jsx). Page components live in src/pages/. Sub-components in src/components/<module>/. AppContext provides global state with useState + useCallback write-through to localStorage. Seed data functions return initial dataset on first load. The Sidebar NAV_ITEMS array determines navigation order.",
+  "relevant_files": [
+    "src/App.jsx",
+    "src/components/layout/Sidebar.jsx",
+    "src/context/AppContext.jsx",
+    "src/lib/storage.js",
+    "src/lib/constants.js",
+    "src/data/seedPlacements.js",
+    "src/pages/PlacementTracker.jsx",
+    "src/pages/Settings.jsx",
+    "src/components/placements/PlacementPipelineBoard.jsx"
+  ],
+  "directory_structure": "src/App.jsx (router), src/pages/ (page components), src/components/<module>/ (sub-components), src/data/ (seed data), src/lib/ (storage, constants, calculations), src/context/ (AppContext global state)"
+}
