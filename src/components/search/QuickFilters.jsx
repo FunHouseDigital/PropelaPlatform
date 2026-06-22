@@ -35,11 +35,16 @@ export default function QuickFilters({ module, data = [], onFilter }) {
 
   const handleSaveView = () => {
     if (!viewName.trim()) return;
+    // Store both the preset ID (for display) and the resolved filter criteria
+    // (field + value) for durability. If preset definitions change, the resolved
+    // criteria ensure the saved view still applies the correct filter.
+    const activePreset = presets.find((p) => p.id === activeFilter);
     const newView = {
       id: `view-${Date.now()}`,
       name: viewName.trim(),
       module,
       filters: activeFilter ? { filter: activeFilter } : {},
+      resolvedCriteria: activePreset ? activePreset.filter : null,
     };
     const updated = [...savedViews, newView];
     updateSavedViews(updated);
