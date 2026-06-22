@@ -5,6 +5,7 @@ import {
   Building2,
   GraduationCap,
   Mail,
+  Briefcase,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -13,6 +14,7 @@ const NAV_ITEMS = [
   { path: '/acquisition', label: 'Acquisition Hub', icon: Building2 },
   { path: '/cohorts', label: 'Cohort Manager', icon: GraduationCap },
   { path: '/outreach', label: 'Outreach Log', icon: Mail },
+  { path: '/placements', label: 'Placements', icon: Briefcase },
 ];
 
 export default function Sidebar() {
