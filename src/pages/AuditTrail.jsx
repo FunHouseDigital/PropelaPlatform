@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import { Activity, FileText, Users, History } from 'lucide-react';
+import ActivityFeed from '../components/audit/ActivityFeed';
+import AuditLogTable from '../components/audit/AuditLogTable';
+import UserSessionTracker from '../components/audit/UserSessionTracker';
+import ChangeHistoryViewer from '../components/audit/ChangeHistoryViewer';
 
 const TABS = [
   { id: 'activity-feed', label: 'Activity Feed', icon: Activity },
@@ -44,30 +48,10 @@ export default function AuditTrail() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'activity-feed' && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Activity Feed</h2>
-          <p className="text-sm text-gray-500">Real-time feed of all system activities and user actions.</p>
-        </div>
-      )}
-      {activeTab === 'audit-log' && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Audit Log</h2>
-          <p className="text-sm text-gray-500">Comprehensive log of all system events with severity levels.</p>
-        </div>
-      )}
-      {activeTab === 'user-sessions' && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">User Sessions</h2>
-          <p className="text-sm text-gray-500">Monitor active user sessions and login activity.</p>
-        </div>
-      )}
-      {activeTab === 'change-history' && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Change History</h2>
-          <p className="text-sm text-gray-500">Track all data modifications with before and after values.</p>
-        </div>
-      )}
+      {activeTab === 'activity-feed' && <ActivityFeed />}
+      {activeTab === 'audit-log' && <AuditLogTable />}
+      {activeTab === 'user-sessions' && <UserSessionTracker />}
+      {activeTab === 'change-history' && <ChangeHistoryViewer />}
     </div>
   );
 }
