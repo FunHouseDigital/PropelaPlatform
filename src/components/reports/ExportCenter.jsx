@@ -42,6 +42,31 @@ function StatusBadge({ status }) {
   );
 }
 
+/**
+ * Flatten a single object's nested properties using dot-notation keys.
+ * Arrays are converted to semicolon-separated strings.
+ */
+function flattenObject(obj, prefix = '') {
+  const result = {};
+  for (const key of Object.keys(obj)) {
+    const fullKey = prefix ? `${prefix}.${key}` : key;
+    const val = obj[key];
+    if (val === null || val === undefined) {
+      result[fullKey] = '';
+    } else if (Array.isArray(val)) {
+      result[fullKey] = val.map((item) =>
+        typeof item === 'object' && item !== null ? JSON.stringify(item) : String(item)
+      ).join('; ');
+    } else if (typeof val === 'object') {
+      const nested = flattenObject(val, fullKey);
+      Object.assign(result, nested);
+    } else {
+      result[fullKey] = val;
+    }
+  }
+  return result;
+}
+
 export default function ExportCenter() {
   const {
     nurses, placements, documents, communications,
@@ -107,22 +132,33 @@ export default function ExportCenter() {
   }, [selectedDataType, filters, nurses, placements, documents, communications]);
 
   // Generate file content
-  const generateFileContent = useCallback((data) => {
+  const generateFileContent = useCallback((data, format) => {
     if (data.length === 0) return null;
 
-    if (selectedFormat === 'json') {
+    const exportFormat = format || selectedFormat;
+
+    if (exportFormat === 'json') {
       return JSON.stringify(data, null, 2);
     }
 
-    // CSV generation
-    const headers = Object.keys(data[0]).filter((key) => {
-      // Skip complex objects for CSV
-      const val = data[0][key];
-      return typeof val !== 'object' || val === null;
-    });
+    // CSV generation - flatten nested objects
+    const flatData = data.map((row) => flattenObject(row));
 
-    const csvRows = [headers.join(',')];
-    data.forEach((row) => {
+    // Collect all headers from all rows to handle heterogeneous shapes
+    const headerSet = new Set();
+    flatData.forEach((row) => {
+      Object.keys(row).forEach((key) => headerSet.add(key));
+    });
+    const headers = Array.from(headerSet);
+
+    const csvRows = [headers.map((h) => {
+      if (h.includes(',') || h.includes('"')) {
+        return `"${h.replace(/"/g, '""')}"`;
+      }
+      return h;
+    }).join(',')];
+
+    flatData.forEach((row) => {
       const values = headers.map((h) => {
         const val = row[h] !== undefined && row[h] !== null ? String(row[h]) : '';
         if (val.includes(',') || val.includes('"') || val.includes('\n')) {
@@ -143,7 +179,7 @@ export default function ExportCenter() {
     const data = getFilteredData();
     if (data.length === 0) return;
 
-    const content = generateFileContent(data);
+    const content = generateFileContent(data, selectedFormat);
     if (!content) return;
 
     const mimeType = selectedFormat === 'json' ? 'application/json' : 'text/csv';
@@ -175,9 +211,9 @@ export default function ExportCenter() {
     updateExportHistory([historyEntry, ...exportHistory]);
   }, [selectedDataType, selectedFormat, filters, getFilteredData, generateFileContent, exportHistory, updateExportHistory]);
 
-  // Re-download from history (regenerate file)
+  // Re-download from history (regenerate file with original filters)
   const handleRedownload = useCallback((entry) => {
-    // Re-generate from current data for the given type
+    // Re-generate from current data for the given type, applying stored filters
     let data;
     switch (entry.type) {
       case 'nurses':
@@ -198,28 +234,32 @@ export default function ExportCenter() {
 
     if (data.length === 0) return;
 
-    const format = entry.format.toLowerCase();
-    let content;
-    if (format === 'json') {
-      content = JSON.stringify(data, null, 2);
-    } else {
-      const headers = Object.keys(data[0]).filter((key) => {
-        const val = data[0][key];
-        return typeof val !== 'object' || val === null;
-      });
-      const csvRows = [headers.join(',')];
-      data.forEach((row) => {
-        const values = headers.map((h) => {
-          const val = row[h] !== undefined && row[h] !== null ? String(row[h]) : '';
-          if (val.includes(',') || val.includes('"') || val.includes('\n')) {
-            return `"${val.replace(/"/g, '""')}"`;
-          }
-          return val;
-        });
-        csvRows.push(values.join(','));
-      });
-      content = csvRows.join('\n');
+    // Apply the stored filters from the original export
+    const storedFilters = entry.filters || {};
+    if (entry.type === 'nurses') {
+      if (storedFilters.stage && storedFilters.stage !== 'All') {
+        data = data.filter((n) => n.pipelineStage === storedFilters.stage);
+      }
+      if (storedFilters.cohort && storedFilters.cohort !== 'All') {
+        data = data.filter((n) => n.cohortAssigned === storedFilters.cohort);
+      }
+      if (storedFilters.specialty && storedFilters.specialty !== 'All') {
+        data = data.filter((n) => n.primaryClinicalSpecialty === storedFilters.specialty);
+      }
+    } else if (entry.type === 'placements') {
+      if (storedFilters.stage && storedFilters.stage !== 'All') {
+        data = data.filter((p) => p.currentStage === storedFilters.stage);
+      }
+      if (storedFilters.facility && storedFilters.facility !== 'All') {
+        data = data.filter((p) => p.facilityName === storedFilters.facility);
+      }
     }
+
+    if (data.length === 0) return;
+
+    const format = entry.format.toLowerCase();
+    const content = generateFileContent(data, format);
+    if (!content) return;
 
     const mimeType = format === 'json' ? 'application/json' : 'text/csv';
     const extension = format === 'json' ? 'json' : 'csv';
@@ -234,7 +274,7 @@ export default function ExportCenter() {
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, [nurses, placements, documents, communications]);
+  }, [nurses, placements, documents, communications, generateFileContent]);
 
   const filteredCount = useMemo(() => {
     if (!selectedDataType) return 0;

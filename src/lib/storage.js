@@ -130,7 +130,8 @@ export function initializeData() {
     setData('scheduledReports', seededReports.scheduledReports);
     setData('exportHistory', seededReports.exportHistory);
     setData('dashboardLayouts', seededReports.dashboardLayouts);
-    setData('activeDashboardLayout', seededReports.dashboardLayouts[0]?.id || null);
+    // Store the full layout object for consistency (not just the ID string)
+    setData('activeDashboardLayout', seededReports.dashboardLayouts[0] || null);
   }
 }
 
@@ -448,15 +449,17 @@ export function saveDashboardLayouts(layouts) {
 }
 
 /**
- * Get active dashboard layout ID from localStorage.
+ * Get active dashboard layout from localStorage.
+ * Returns a full layout object (with id, name, widgets).
  */
 export function getActiveDashboardLayout() {
   return getData('activeDashboardLayout') || null;
 }
 
 /**
- * Save active dashboard layout ID to localStorage.
+ * Save active dashboard layout to localStorage.
+ * Accepts a full layout object (with id, name, widgets).
  */
-export function saveActiveDashboardLayout(layoutId) {
-  setData('activeDashboardLayout', layoutId);
+export function saveActiveDashboardLayout(layout) {
+  setData('activeDashboardLayout', layout);
 }
