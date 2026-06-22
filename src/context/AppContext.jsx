@@ -70,6 +70,14 @@ import {
   saveSavedViews,
   getRecentlyViewed,
   saveRecentlyViewed,
+  getAutomationRules,
+  saveAutomationRules,
+  getAutomationTemplates,
+  saveAutomationTemplates,
+  getExecutionLog,
+  saveExecutionLog,
+  getScheduledActions,
+  saveScheduledActions,
 } from '../lib/storage';
 
 const AppContext = createContext(null);
@@ -110,6 +118,10 @@ export function AppProvider({ children }) {
   const [recentSearches, setRecentSearches] = useState(() => getRecentSearches());
   const [savedViews, setSavedViews] = useState(() => getSavedViews());
   const [recentlyViewed, setRecentlyViewed] = useState(() => getRecentlyViewed());
+  const [automationRules, setAutomationRules] = useState(() => getAutomationRules());
+  const [automationTemplates, setAutomationTemplates] = useState(() => getAutomationTemplates());
+  const [executionLog, setExecutionLog] = useState(() => getExecutionLog());
+  const [scheduledActions, setScheduledActions] = useState(() => getScheduledActions());
 
   // Update functions that write through to localStorage
   const updateNurses = useCallback((updatedNurses) => {
@@ -295,6 +307,26 @@ export function AppProvider({ children }) {
     saveRecentlyViewed(updatedItems);
   }, []);
 
+  const updateAutomationRules = useCallback((updatedRules) => {
+    setAutomationRules(updatedRules);
+    saveAutomationRules(updatedRules);
+  }, []);
+
+  const updateAutomationTemplates = useCallback((updatedTemplates) => {
+    setAutomationTemplates(updatedTemplates);
+    saveAutomationTemplates(updatedTemplates);
+  }, []);
+
+  const updateExecutionLog = useCallback((updatedLog) => {
+    setExecutionLog(updatedLog);
+    saveExecutionLog(updatedLog);
+  }, []);
+
+  const updateScheduledActions = useCallback((updatedActions) => {
+    setScheduledActions(updatedActions);
+    saveScheduledActions(updatedActions);
+  }, []);
+
   const value = {
     nurses,
     facilities,
@@ -331,6 +363,10 @@ export function AppProvider({ children }) {
     recentSearches,
     savedViews,
     recentlyViewed,
+    automationRules,
+    automationTemplates,
+    executionLog,
+    scheduledActions,
     updateNurses,
     updateFacilities,
     updateCohorts,
@@ -366,6 +402,10 @@ export function AppProvider({ children }) {
     updateRecentSearches,
     updateSavedViews,
     updateRecentlyViewed,
+    updateAutomationRules,
+    updateAutomationTemplates,
+    updateExecutionLog,
+    updateScheduledActions,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

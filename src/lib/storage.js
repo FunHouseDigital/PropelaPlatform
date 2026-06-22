@@ -10,6 +10,7 @@ import { seedCommunications } from '../data/seedCommunications';
 import { seedReports } from '../data/seedReports';
 import { seedIntegrations } from '../data/seedIntegrations';
 import { seedAuditTrail } from '../data/seedAuditTrail';
+import { seedAutomations } from '../data/seedAutomations';
 
 const STORAGE_PREFIX = 'propela_ops_';
 
@@ -165,6 +166,15 @@ export function initializeData() {
     if (!getData('webhooks')) setData('webhooks', seededIntegrations.webhooks);
     if (!getData('webhookDeliveryLog')) setData('webhookDeliveryLog', seededIntegrations.webhookDeliveryLog);
     if (!getData('syncStatus')) setData('syncStatus', seededIntegrations.syncStatus);
+  }
+
+  const automationRules = getData('automationRules');
+  if (!automationRules || automationRules.length === 0) {
+    const seededAutomations = seedAutomations();
+    setData('automationRules', seededAutomations.automationRules);
+    setData('automationTemplates', seededAutomations.automationTemplates);
+    setData('executionLog', seededAutomations.executionLog);
+    setData('scheduledActions', seededAutomations.scheduledActions);
   }
 }
 
@@ -677,5 +687,61 @@ export function getRecentlyViewed() {
  */
 export function saveRecentlyViewed(items) {
   setData('recentlyViewed', items);
+}
+
+/**
+ * Get all automation rules from localStorage.
+ */
+export function getAutomationRules() {
+  return getData('automationRules') || [];
+}
+
+/**
+ * Save all automation rules to localStorage.
+ */
+export function saveAutomationRules(rules) {
+  setData('automationRules', rules);
+}
+
+/**
+ * Get all automation templates from localStorage.
+ */
+export function getAutomationTemplates() {
+  return getData('automationTemplates') || [];
+}
+
+/**
+ * Save all automation templates to localStorage.
+ */
+export function saveAutomationTemplates(templates) {
+  setData('automationTemplates', templates);
+}
+
+/**
+ * Get all execution log entries from localStorage.
+ */
+export function getExecutionLog() {
+  return getData('executionLog') || [];
+}
+
+/**
+ * Save all execution log entries to localStorage.
+ */
+export function saveExecutionLog(log) {
+  setData('executionLog', log);
+}
+
+/**
+ * Get all scheduled actions from localStorage.
+ */
+export function getScheduledActions() {
+  return getData('scheduledActions') || [];
+}
+
+/**
+ * Save all scheduled actions to localStorage.
+ */
+export function saveScheduledActions(actions) {
+  setData('scheduledActions', actions);
 }
 
