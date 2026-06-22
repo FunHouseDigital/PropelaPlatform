@@ -67,7 +67,7 @@ export default function CohortComparison() {
       const elapsed = now - trainingStart;
       const progressPct = Math.min(100, Math.max(0, Math.round((elapsed / totalDuration) * 100)));
       // If on track, adherence is high
-      timelineAdherence = Math.min(100, progressPct > 0 ? Math.round(80 + Math.random() * 15) : 50);
+      timelineAdherence = Math.min(100, progressPct > 0 ? Math.round(75 + progressPct * 0.2) : 50);
     }
 
     // Targets from cohort outcomes
