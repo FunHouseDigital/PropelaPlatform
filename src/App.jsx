@@ -14,6 +14,7 @@ import Reports from './pages/Reports';
 import Integrations from './pages/Integrations';
 import AuditTrail from './pages/AuditTrail';
 import Settings from './pages/Settings';
+import Automations from './pages/Automations';
 import { initializeData } from './lib/storage';
 import { AppProvider } from './context/AppContext';
 
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="/reports" element={<Reports />} />
             <Route path="/integrations" element={<Integrations />} />
             <Route path="/audit" element={<AuditTrail />} />
+            <Route path="/automations" element={<Automations />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Routes>

@@ -1,0 +1,24 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Build the Automation Templates tab, Execution Log tab, and Scheduled Actions tab components to complete the workflow automation module.",
+  "status": "pending",
+  "steps": [
+    "Create src/components/automations/AutomationTemplates.jsx - displays pre-built automation recipes as cards in a grid. Each card shows: template name, description, category badge, parameter summary, active/inactive status. Include: (a) one-click 'Activate' button to enable a template (sets isActive=true and persists); (b) 'Configure' button that opens an inline panel/modal to customize template parameters (e.g., days before expiry, notification recipients); (c) category filter tabs (e.g., Documents, Placements, Communications, Compliance); (d) Search/filter functionality.",
+    "Create src/components/automations/ExecutionLog.jsx - displays a real-time log table of all rule executions. Columns: Rule Name, Triggered At, Duration, Status (success/failure/skipped badge), Actions Executed, Error Details (expandable for failures). Include: (a) status filter buttons (All, Success, Failed, Skipped); (b) date range filter; (c) rule execution statistics cards at top (total executions, success rate, failures today, average duration); (d) manual re-run button for failed executions (simulates re-running by adding a new log entry with success status); (e) expandable rows showing full execution details.",
+    "Create src/components/automations/ScheduledActions.jsx - displays scheduled recurring automations. Include: (a) a list/table view showing rule name, cron expression in human-readable form, next run time, last run time, timezone, batch size, enabled status; (b) a simple calendar-style view showing upcoming scheduled actions for the next 7 days (grid with day columns and action rows); (c) enable/disable toggle per scheduled action; (d) timezone-aware display (show timezone badge on each item); (e) batch processing configuration (batch size input when editing); (f) Add/edit scheduled action form with cron expression helper (preset options like 'Daily at 9am', 'Every Monday', 'First of month', custom).",
+    "Import all three components in src/pages/Automations.jsx and wire them to their respective tabs."
+  ],
+  "acceptance_criteria": [
+    "npm run build succeeds with no errors",
+    "Automation Templates tab shows template cards with activate/configure functionality and category filtering",
+    "Execution Log tab shows log table with status filtering, statistics cards, and re-run button for failures",
+    "Scheduled Actions tab shows scheduled items with calendar view, timezone display, and enable/disable toggles",
+    "All data operations persist to localStorage via AppContext"
+  ],
+  "verification": [
+    "Run npm run build and confirm exit code 0 with no errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
