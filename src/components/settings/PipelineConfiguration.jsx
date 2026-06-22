@@ -96,11 +96,23 @@ export default function PipelineConfiguration() {
 
   const handleAdd = () => {
     const newId = `stage-${Date.now()}`;
-    setStages((prev) => [
-      ...prev,
-      { id: newId, name: 'New Stage', order: prev.length, defaultDuration: 7, slaThreshold: 14, notificationsEnabled: true },
-    ]);
-    setTransitionRules((prev) => ({ ...prev, [newId]: [] }));
+    setStages((prev) => {
+      // Add the new stage's id to the last existing stage's transitions so it's reachable
+      if (prev.length > 0) {
+        const lastStageId = prev[prev.length - 1].id;
+        setTransitionRules((rules) => ({
+          ...rules,
+          [lastStageId]: [...(rules[lastStageId] || []), newId],
+          [newId]: [],
+        }));
+      } else {
+        setTransitionRules((rules) => ({ ...rules, [newId]: [] }));
+      }
+      return [
+        ...prev,
+        { id: newId, name: 'New Stage', order: prev.length, defaultDuration: 7, slaThreshold: 14, notificationsEnabled: true },
+      ];
+    });
   };
 
   const handleTransitionToggle = (fromId, toId) => {
