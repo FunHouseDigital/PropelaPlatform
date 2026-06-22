@@ -2,6 +2,10 @@ import { useState, useMemo } from 'react';
 import { Mail, Plus, Eye, Send, Edit2, Trash2, X, Copy } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 
+function generateId(prefix) {
+  return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+}
+
 const CATEGORIES = ['Welcome', 'Status Update', 'Document Request', 'Placement Confirmation'];
 
 const SAMPLE_DATA = {
@@ -85,7 +89,7 @@ export default function EmailTemplates() {
       updateCommEmailTemplates(updated);
     } else {
       const newTemplate = {
-        id: `email-tmpl-${String(commEmailTemplates.length + 1).padStart(3, '0')}`,
+        id: generateId('email-tmpl'),
         ...editForm,
         variables,
         createdAt: now,
@@ -110,10 +114,10 @@ export default function EmailTemplates() {
 
     // Log to communication history
     const comm = {
-      id: `comm-${String(communications.length + 1).padStart(4, '0')}`,
+      id: generateId('comm'),
       nurseId: sendNurseId,
       channel: 'Email',
-      type: 'Status Update',
+      type: selectedTemplate.category || 'Status Update',
       subject: selectedTemplate.subject.replace(/\{\{nurse_name\}\}/g, nurseName),
       notes: `Sent via template: ${selectedTemplate.name}`,
       date: new Date().toISOString().slice(0, 19),
@@ -388,7 +392,7 @@ export default function EmailTemplates() {
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B2D8E]/20"
                 >
                   <option value="">Select a nurse...</option>
-                  {nurses.slice(0, 30).map((n) => (
+                  {[...nurses].sort((a, b) => a.fullName.localeCompare(b.fullName)).map((n) => (
                     <option key={n.id} value={n.id}>{n.fullName}</option>
                   ))}
                 </select>
