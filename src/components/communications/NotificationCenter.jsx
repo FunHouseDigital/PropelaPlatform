@@ -8,6 +8,9 @@ import {
   Check,
   CheckCheck,
   Filter,
+  Settings,
+  ToggleLeft,
+  ToggleRight,
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 
@@ -25,9 +28,10 @@ const PRIORITY_COLORS = {
 };
 
 export default function NotificationCenter() {
-  const { notifications, nurses, updateNotifications } = useAppContext();
+  const { notifications, nurses, notificationPreferences, updateNotifications, updateNotificationPreferences } = useAppContext();
   const [typeFilter, setTypeFilter] = useState('all');
   const [readFilter, setReadFilter] = useState('all');
+  const [showPreferences, setShowPreferences] = useState(false);
 
   const nurseMap = useMemo(() => {
     const map = {};
@@ -39,6 +43,9 @@ export default function NotificationCenter() {
 
   const filteredNotifications = useMemo(() => {
     let filtered = [...notifications];
+
+    // Filter by preferences (hide disabled categories)
+    filtered = filtered.filter((n) => notificationPreferences[n.type] !== false);
 
     if (typeFilter !== 'all') {
       filtered = filtered.filter((n) => n.type === typeFilter);
@@ -52,7 +59,7 @@ export default function NotificationCenter() {
 
     filtered.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
     return filtered;
-  }, [notifications, typeFilter, readFilter]);
+  }, [notifications, typeFilter, readFilter, notificationPreferences]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -66,6 +73,14 @@ export default function NotificationCenter() {
   function markAllAsRead() {
     const updated = notifications.map((n) => ({ ...n, read: true }));
     updateNotifications(updated);
+  }
+
+  function togglePreference(category) {
+    const updated = {
+      ...notificationPreferences,
+      [category]: !notificationPreferences[category],
+    };
+    updateNotificationPreferences(updated);
   }
 
   function getRelativeTime(timestamp) {
@@ -124,8 +139,53 @@ export default function NotificationCenter() {
             <CheckCheck size={16} />
             Mark all read
           </button>
+          <button
+            onClick={() => setShowPreferences(!showPreferences)}
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              showPreferences
+                ? 'bg-[#5B2D8E]/10 text-[#5B2D8E]'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Settings size={16} />
+            Preferences
+          </button>
         </div>
       </div>
+
+      {/* Notification Preferences */}
+      {showPreferences && (
+        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+          <h4 className="text-sm font-semibold text-gray-900 mb-3">Notification Preferences</h4>
+          <p className="text-xs text-gray-500 mb-3">Choose which notification categories you want to receive.</p>
+          <div className="space-y-3">
+            {Object.entries(TYPE_CONFIG).map(([key, config]) => {
+              const Icon = config.icon;
+              const enabled = notificationPreferences[key] !== false;
+              return (
+                <div key={key} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className={`p-1.5 rounded-lg ${config.color}`}>
+                      <Icon size={14} />
+                    </div>
+                    <span className="text-sm text-gray-700">{config.label}</span>
+                  </div>
+                  <button
+                    onClick={() => togglePreference(key)}
+                    title={enabled ? 'Disable' : 'Enable'}
+                  >
+                    {enabled ? (
+                      <ToggleRight size={24} className="text-[#5B2D8E]" />
+                    ) : (
+                      <ToggleLeft size={24} className="text-gray-400" />
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Notifications list */}
       <div className="space-y-2">
