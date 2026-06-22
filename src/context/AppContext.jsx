@@ -64,6 +64,12 @@ import {
   saveUserSessions,
   getChangeHistory,
   saveChangeHistory,
+  getRecentSearches,
+  saveRecentSearches,
+  getSavedViews,
+  saveSavedViews,
+  getRecentlyViewed,
+  saveRecentlyViewed,
 } from '../lib/storage';
 
 const AppContext = createContext(null);
@@ -101,6 +107,9 @@ export function AppProvider({ children }) {
   const [auditLog, setAuditLog] = useState(() => getAuditLog());
   const [userSessions, setUserSessions] = useState(() => getUserSessions());
   const [changeHistory, setChangeHistory] = useState(() => getChangeHistory());
+  const [recentSearches, setRecentSearches] = useState(() => getRecentSearches());
+  const [savedViews, setSavedViews] = useState(() => getSavedViews());
+  const [recentlyViewed, setRecentlyViewed] = useState(() => getRecentlyViewed());
 
   // Update functions that write through to localStorage
   const updateNurses = useCallback((updatedNurses) => {
@@ -271,6 +280,21 @@ export function AppProvider({ children }) {
     }
   }, []);
 
+  const updateRecentSearches = useCallback((updatedSearches) => {
+    setRecentSearches(updatedSearches);
+    saveRecentSearches(updatedSearches);
+  }, []);
+
+  const updateSavedViews = useCallback((updatedViews) => {
+    setSavedViews(updatedViews);
+    saveSavedViews(updatedViews);
+  }, []);
+
+  const updateRecentlyViewed = useCallback((updatedItems) => {
+    setRecentlyViewed(updatedItems);
+    saveRecentlyViewed(updatedItems);
+  }, []);
+
   const value = {
     nurses,
     facilities,
@@ -304,6 +328,9 @@ export function AppProvider({ children }) {
     auditLog,
     userSessions,
     changeHistory,
+    recentSearches,
+    savedViews,
+    recentlyViewed,
     updateNurses,
     updateFacilities,
     updateCohorts,
@@ -336,6 +363,9 @@ export function AppProvider({ children }) {
     updateAuditLog,
     updateUserSessions,
     updateChangeHistory,
+    updateRecentSearches,
+    updateSavedViews,
+    updateRecentlyViewed,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
