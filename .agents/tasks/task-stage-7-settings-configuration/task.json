@@ -1,0 +1,7 @@
+{
+  "task_id": "task-stage-7-settings-configuration",
+  "task_description": "Implement Stage 7: Settings & Configuration Module for Propela Ops. Includes Organization Settings, Pipeline Configuration (with drag-and-drop stage reordering), User Management (mock), Integration Settings (mock), and Notification Preferences. Creates /settings route with tabbed sub-sections, persists to localStorage.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}
