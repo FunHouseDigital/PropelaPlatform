@@ -8,6 +8,7 @@ import { seedSettings } from '../data/seedSettings';
 import { seedDocuments } from '../data/seedDocuments';
 import { seedCommunications } from '../data/seedCommunications';
 import { seedReports } from '../data/seedReports';
+import { seedIntegrations } from '../data/seedIntegrations';
 
 const STORAGE_PREFIX = 'propela_ops_';
 
@@ -132,6 +133,17 @@ export function initializeData() {
     setData('dashboardLayouts', seededReports.dashboardLayouts);
     // Store the full layout object for consistency (not just the ID string)
     setData('activeDashboardLayout', seededReports.dashboardLayouts[0] || null);
+  }
+
+  const integrations = getData('integrations');
+  if (!integrations || integrations.length === 0) {
+    const seededIntegrations = seedIntegrations();
+    setData('integrations', seededIntegrations.integrations);
+    setData('apiEndpoints', seededIntegrations.apiEndpoints);
+    setData('apiKeys', seededIntegrations.apiKeys);
+    setData('webhooks', seededIntegrations.webhooks);
+    setData('webhookDeliveryLog', seededIntegrations.webhookDeliveryLog);
+    setData('syncStatus', seededIntegrations.syncStatus);
   }
 }
 
@@ -463,3 +475,88 @@ export function getActiveDashboardLayout() {
 export function saveActiveDashboardLayout(layout) {
   setData('activeDashboardLayout', layout);
 }
+
+/**
+ * Get all integrations from localStorage.
+ */
+export function getIntegrations() {
+  return getData('integrations') || [];
+}
+
+/**
+ * Save all integrations to localStorage.
+ */
+export function saveIntegrations(integrations) {
+  setData('integrations', integrations);
+}
+
+/**
+ * Get all API endpoints from localStorage.
+ */
+export function getApiEndpoints() {
+  return getData('apiEndpoints') || [];
+}
+
+/**
+ * Save all API endpoints to localStorage.
+ */
+export function saveApiEndpoints(endpoints) {
+  setData('apiEndpoints', endpoints);
+}
+
+/**
+ * Get all API keys from localStorage.
+ */
+export function getApiKeys() {
+  return getData('apiKeys') || [];
+}
+
+/**
+ * Save all API keys to localStorage.
+ */
+export function saveApiKeys(keys) {
+  setData('apiKeys', keys);
+}
+
+/**
+ * Get all webhooks from localStorage.
+ */
+export function getWebhooks() {
+  return getData('webhooks') || [];
+}
+
+/**
+ * Save all webhooks to localStorage.
+ */
+export function saveWebhooks(webhooks) {
+  setData('webhooks', webhooks);
+}
+
+/**
+ * Get all webhook delivery log entries from localStorage.
+ */
+export function getWebhookDeliveryLog() {
+  return getData('webhookDeliveryLog') || [];
+}
+
+/**
+ * Save all webhook delivery log entries to localStorage.
+ */
+export function saveWebhookDeliveryLog(log) {
+  setData('webhookDeliveryLog', log);
+}
+
+/**
+ * Get sync status from localStorage.
+ */
+export function getSyncStatus() {
+  return getData('syncStatus') || {};
+}
+
+/**
+ * Save sync status to localStorage.
+ */
+export function saveSyncStatus(status) {
+  setData('syncStatus', status);
+}
+
