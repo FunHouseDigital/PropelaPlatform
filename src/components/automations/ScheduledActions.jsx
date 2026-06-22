@@ -208,8 +208,8 @@ export default function ScheduledActions() {
       updateScheduledActions(updated);
     } else {
       const newAction = {
-        id: `sched-${String(Date.now()).slice(-6)}`,
-        ruleId: `rule-new-${String(Date.now()).slice(-4)}`,
+        id: crypto.randomUUID(),
+        ruleId: crypto.randomUUID(),
         ...data,
         nextRunAt: new Date(Date.now() + 86400000).toISOString(),
         lastRunAt: null,
@@ -226,7 +226,7 @@ export default function ScheduledActions() {
     return { total, enabled };
   }, [scheduledActions]);
 
-  const next7Days = useMemo(() => getNext7Days(), []);
+  const next7Days = getNext7Days();
 
   const calendarData = useMemo(() => {
     return next7Days.map((day) => {
