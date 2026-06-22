@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Implement the full Report Builder tab with drag-and-drop field selection, report type selection, date range, grouping/aggregation options, report preview, and CSV export",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Implement src/components/reports/ReportBuilder.jsx with: (a) Report type selector - buttons or dropdown for nurse_pipeline_summary, compliance_status, placement_outcomes, cohort_progress, communication_activity. (b) Drag-and-drop field selection using @dnd-kit - a pool of available fields on the left (varies by report type) and a 'selected fields' drop zone on the right where users can reorder fields. (c) Date range selection with start/end date inputs. (d) Grouping/aggregation options as a select: by cohort, by stage, by facility, by month. (e) Generate Report button that computes report data from AppContext (nurses, cohorts, placements, communications). (f) Report preview table showing generated data. (g) Export CSV button that triggers a download. The component should use useAppContext() to access nurses, cohorts, placements, facilities, communications data.",
     "For the drag-and-drop field selection, use DndContext and SortableContext from @dnd-kit/core and @dnd-kit/sortable. Create a draggable field chip component. Available fields per report type: nurse_pipeline_summary (Name, Stage, Score, Cohort, Specialty, Source), compliance_status (Name, Compliance %, Missing Docs, Expiring Docs), placement_outcomes (Nurse, Facility, Stage, Match Score, Start Date), cohort_progress (Cohort Name, Pass Rate, Placement Rate, Budget), communication_activity (Nurse, Channel, Type, Date, Status).",
