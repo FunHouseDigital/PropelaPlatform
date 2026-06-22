@@ -1,10 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Search, Sparkles } from 'lucide-react';
 import Breadcrumbs from './Breadcrumbs';
 import SmartSuggestions from '../search/SmartSuggestions';
 
 export default function Header({ onOpenSearch }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const toggleButtonRef = useRef(null);
 
   const toggleSuggestions = useCallback(() => {
     setShowSuggestions((prev) => !prev);
@@ -37,6 +38,7 @@ export default function Header({ onOpenSearch }) {
         {/* Smart Suggestions Toggle */}
         <div className="relative">
           <button
+            ref={toggleButtonRef}
             type="button"
             onClick={toggleSuggestions}
             className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors ${
@@ -47,7 +49,7 @@ export default function Header({ onOpenSearch }) {
           >
             <Sparkles size={16} />
           </button>
-          <SmartSuggestions isOpen={showSuggestions} onClose={closeSuggestions} />
+          <SmartSuggestions isOpen={showSuggestions} onClose={closeSuggestions} toggleButtonRef={toggleButtonRef} />
         </div>
       </div>
     </header>
