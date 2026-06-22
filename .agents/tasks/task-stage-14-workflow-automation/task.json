@@ -1,0 +1,7 @@
+{
+  "task_id": "task-stage-14-workflow-automation",
+  "task_description": "Build Stage 14: Workflow Automation & Rules Engine Module with Rule Builder (visual rule creation with AND/OR conditions, drag-and-drop priority, enable/disable), Automation Templates (pre-built recipes with one-click activation), Execution Log (real-time log with statistics and re-run), and Scheduled Actions (cron scheduling with calendar view and timezone awareness)",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}
