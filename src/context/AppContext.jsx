@@ -36,6 +36,14 @@ import {
   saveAlertHistory,
   getNotificationPreferences,
   saveNotificationPreferences,
+  getScheduledReports,
+  saveScheduledReports,
+  getExportHistory,
+  saveExportHistory,
+  getDashboardLayouts,
+  saveDashboardLayouts,
+  getActiveDashboardLayout,
+  saveActiveDashboardLayout,
 } from '../lib/storage';
 
 const AppContext = createContext(null);
@@ -59,6 +67,10 @@ export function AppProvider({ children }) {
   const [alertRules, setAlertRules] = useState(() => getAlertRules());
   const [alertHistory, setAlertHistory] = useState(() => getAlertHistory());
   const [notificationPreferences, setNotificationPreferences] = useState(() => getNotificationPreferences());
+  const [scheduledReports, setScheduledReports] = useState(() => getScheduledReports());
+  const [exportHistory, setExportHistory] = useState(() => getExportHistory());
+  const [dashboardLayouts, setDashboardLayouts] = useState(() => getDashboardLayouts());
+  const [activeDashboardLayout, setActiveDashboardLayout] = useState(() => getActiveDashboardLayout());
 
   // Update functions that write through to localStorage
   const updateNurses = useCallback((updatedNurses) => {
@@ -151,6 +163,26 @@ export function AppProvider({ children }) {
     saveNotificationPreferences(updatedPreferences);
   }, []);
 
+  const updateScheduledReports = useCallback((updatedReports) => {
+    setScheduledReports(updatedReports);
+    saveScheduledReports(updatedReports);
+  }, []);
+
+  const updateExportHistory = useCallback((updatedHistory) => {
+    setExportHistory(updatedHistory);
+    saveExportHistory(updatedHistory);
+  }, []);
+
+  const updateDashboardLayouts = useCallback((updatedLayouts) => {
+    setDashboardLayouts(updatedLayouts);
+    saveDashboardLayouts(updatedLayouts);
+  }, []);
+
+  const updateActiveDashboardLayout = useCallback((updatedLayout) => {
+    setActiveDashboardLayout(updatedLayout);
+    saveActiveDashboardLayout(updatedLayout);
+  }, []);
+
   const value = {
     nurses,
     facilities,
@@ -170,6 +202,10 @@ export function AppProvider({ children }) {
     alertRules,
     alertHistory,
     notificationPreferences,
+    scheduledReports,
+    exportHistory,
+    dashboardLayouts,
+    activeDashboardLayout,
     updateNurses,
     updateFacilities,
     updateCohorts,
@@ -188,6 +224,10 @@ export function AppProvider({ children }) {
     updateAlertRules,
     updateAlertHistory,
     updateNotificationPreferences,
+    updateScheduledReports,
+    updateExportHistory,
+    updateDashboardLayouts,
+    updateActiveDashboardLayout,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
