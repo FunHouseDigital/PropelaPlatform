@@ -9,6 +9,7 @@ import { seedDocuments } from '../data/seedDocuments';
 import { seedCommunications } from '../data/seedCommunications';
 import { seedReports } from '../data/seedReports';
 import { seedIntegrations } from '../data/seedIntegrations';
+import { seedAuditTrail } from '../data/seedAuditTrail';
 
 const STORAGE_PREFIX = 'propela_ops_';
 
@@ -133,6 +134,15 @@ export function initializeData() {
     setData('dashboardLayouts', seededReports.dashboardLayouts);
     // Store the full layout object for consistency (not just the ID string)
     setData('activeDashboardLayout', seededReports.dashboardLayouts[0] || null);
+  }
+
+  const activityFeed = getData('activityFeed');
+  if (!activityFeed || activityFeed.length === 0) {
+    const seededAudit = seedAuditTrail();
+    setData('activityFeed', seededAudit.activityFeed);
+    setData('auditLog', seededAudit.auditLog);
+    setData('userSessions', seededAudit.userSessions);
+    setData('changeHistory', seededAudit.changeHistory);
   }
 
   const integrations = getData('integrations');
@@ -566,5 +576,61 @@ export function getSyncStatus() {
  */
 export function saveSyncStatus(status) {
   setData('syncStatus', status);
+}
+
+/**
+ * Get activity feed from localStorage.
+ */
+export function getActivityFeed() {
+  return getData('activityFeed') || [];
+}
+
+/**
+ * Save activity feed to localStorage.
+ */
+export function saveActivityFeed(feed) {
+  setData('activityFeed', feed);
+}
+
+/**
+ * Get audit log from localStorage.
+ */
+export function getAuditLog() {
+  return getData('auditLog') || [];
+}
+
+/**
+ * Save audit log to localStorage.
+ */
+export function saveAuditLog(log) {
+  setData('auditLog', log);
+}
+
+/**
+ * Get user sessions from localStorage.
+ */
+export function getUserSessions() {
+  return getData('userSessions') || [];
+}
+
+/**
+ * Save user sessions to localStorage.
+ */
+export function saveUserSessions(sessions) {
+  setData('userSessions', sessions);
+}
+
+/**
+ * Get change history from localStorage.
+ */
+export function getChangeHistory() {
+  return getData('changeHistory') || [];
+}
+
+/**
+ * Save change history to localStorage.
+ */
+export function saveChangeHistory(history) {
+  setData('changeHistory', history);
 }
 

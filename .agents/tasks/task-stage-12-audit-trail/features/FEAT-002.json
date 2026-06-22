@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Implement all four tab components: ActivityFeed (filterable global activity stream with real-time animation and expandable detail view), AuditLogTable (searchable/sortable/paginated table with CSV export), UserSessionTracker (active sessions display with timeline visualization), and ChangeHistoryViewer (per-entity change history with diff view and rollback mock).",
+  "status": "pending",
+  "steps": [
+    "Create src/components/audit/ActivityFeed.jsx: Display activity entries from context sorted by timestamp (newest first). Include filter bar with dropdowns for action type, user, entity type, and a date range picker. Implement real-time appearance animation using CSS keyframe (slideIn/fadeIn) on new entries. Each entry shows: icon based on action type, timestamp (relative like '2 hours ago'), user name, action description, entity link. Entries are expandable on click to show before/after state details in a formatted diff-style view. Use the Lucide icons relevant to each action type.",
+    "Create src/components/audit/AuditLogTable.jsx: Full-width table with columns: Timestamp, User, Action, Entity Type, Entity ID, IP Address, Details. Include a search bar that filters across all text fields. Column headers are clickable for sorting (asc/desc with indicator arrow). Pagination at bottom with configurable page size (10/25/50/100 selector). Export to CSV button in the header area that generates and downloads a CSV file of the current filtered/sorted view. Use the table styling consistent with other tables in the app (gray header row, alternating row colors, hover state).",
+    "Create src/components/audit/UserSessionTracker.jsx: Display cards for each active/idle session showing: user avatar placeholder (initials), user name, role, login time, last activity timestamp, session duration (calculated), IP address, status badge (green for active, yellow for idle, gray for expired). Include a session timeline visualization using a horizontal bar chart or timeline showing session start/end with Recharts. Show summary stats at top: total active sessions, average session duration, currently idle count.",
+    "Create src/components/audit/ChangeHistoryViewer.jsx: Filter/search by entity type and entity name. Display grouped by entity with each change showing: timestamp, user who made the change, change type badge (create/update/delete with color coding). Diff view showing field-level changes in a table format: Field | Old Value | New Value with old values in red/strikethrough and new values in green. Include a 'Rollback' button per change that shows a confirmation modal ('Are you sure you want to rollback this change?') - on confirm, it does NOT actually rollback but logs a new change history entry of type 'rollback_requested' with the details.",
+    "Update src/pages/AuditTrail.jsx to import and render the four real components in their respective tabs instead of placeholder content."
+  ],
+  "acceptance_criteria": [
+    "npm run build succeeds with no errors",
+    "Activity Feed tab shows filterable activity entries with expand/collapse functionality",
+    "Audit Log tab shows a searchable, sortable, paginated table with CSV export button",
+    "User Sessions tab shows session cards with status badges and a timeline visualization",
+    "Change History tab shows entity changes with diff view (old/new values) and rollback button that triggers confirmation modal",
+    "All components read data from AppContext",
+    "CSS animations are present for new activity feed entries"
+  ],
+  "verification": [
+    "cd /projects/sandbox/PropelaPlatform && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
