@@ -1,0 +1,25 @@
+{
+  "project_type": "React SPA with Vite bundler and Tailwind CSS v4",
+  "language": "JavaScript (JSX)",
+  "build_system": "Vite via npm scripts",
+  "test_framework": "None configured (no test runner in package.json)",
+  "build_command": "npm run build",
+  "test_command": "npm run build (no test runner, use build as verification)",
+  "verification_instructions": "Run npm run build to confirm no compilation errors. Verify the /notifications route renders with all four tabs.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "npm install in /projects/sandbox/PropelaPlatform",
+  "environment_constraints": "No test framework. Verification is build-only. localStorage-based persistence.",
+  "contribution_requirements": "Follow existing patterns: tab-based page layout, AppContext for state, storage.js helpers for persistence, seed data in src/data/, components in src/components/{module}/, page in src/pages/",
+  "key_patterns": "Pages use tab navigation with TABS array, icons from lucide-react, AppContext for all state, useCallback update functions that persist to localStorage, seed data uses seededRandom for determinism, Tailwind CSS v4 utility classes, primary color #5B2D8E",
+  "relevant_files": [
+    "src/App.jsx",
+    "src/lib/storage.js",
+    "src/context/AppContext.jsx",
+    "src/components/layout/Sidebar.jsx",
+    "src/pages/Automations.jsx",
+    "src/data/seedCommunications.js",
+    "src/components/communications/NotificationCenter.jsx",
+    "src/components/communications/AutomatedAlerts.jsx"
+  ],
+  "directory_structure": "src/pages/ has one file per module, src/components/{module}/ has sub-components, src/data/ has seed files, src/lib/ has storage utilities, src/context/ has AppContext"
+}
