@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Create the Audit Trail module infrastructure: seed data, storage helpers, AppContext integration, route, sidebar nav item, and the main AuditTrail page component with tab navigation for Activity Feed, Audit Log, User Sessions, and Change History tabs.",
+  "status": "in_progress",
+  "steps": [
+    "Create src/data/seedAuditTrail.js with deterministic seed data using the seededRandom pattern from seedIntegrations.js. Generate: (a) activityFeed - 50+ activity entries with fields: id, timestamp, user, action (nurse.created, document.uploaded, placement.assigned, etc.), entityType (nurse/placement/document/cohort/communication), entityId, entityName, details object with before/after state, ipAddress (mock 192.168.x.x format). (b) auditLog - 80+ system event entries with fields: id, timestamp, user, action, entityType, entityId, ipAddress, details string, severity (info/warning/critical). (c) userSessions - 8-10 mock sessions with fields: id, userId, userName, role, loginTime, lastActivity, ipAddress, userAgent, status (active/idle/expired). (d) changeHistory - 30+ change records with fields: id, entityType, entityId, entityName, timestamp, user, changes array (each with field, oldValue, newValue), changeType (create/update/delete).",
+    "Add to src/lib/storage.js: import { seedAuditTrail } from '../data/seedAuditTrail'; Add getter/setter pairs: getActivityFeed/saveActivityFeed, getAuditLog/saveAuditLog, getUserSessions/saveUserSessions, getChangeHistory/saveChangeHistory. Add initialization block in initializeData() following the integrations pattern (check if activityFeed exists, if not seed all audit data).",
+    "Add to src/context/AppContext.jsx: import the new getter/setter functions, add state variables (activityFeed, auditLog, userSessions, changeHistory), add update callbacks (updateActivityFeed, updateAuditLog, updateUserSessions, updateChangeHistory), expose all in the context value object.",
+    "Create src/pages/AuditTrail.jsx with the same tab navigation pattern as Integrations.jsx. Tabs: Activity Feed (Activity icon), Audit Log (FileText icon), User Sessions (Users icon), Change History (History icon). Use placeholder content for each tab initially (simple div with tab name).",
+    "Add the /audit route in src/App.jsx importing AuditTrail page.",
+    "Add nav item in src/components/layout/Sidebar.jsx with path '/audit', label 'Audit Trail', and Shield icon from lucide-react. Place it after Integrations and before Settings in the nav order."
+  ],
+  "acceptance_criteria": [
+    "npm run build succeeds with no errors",
+    "The /audit route is registered in App.jsx",
+    "Sidebar shows 'Audit Trail' nav item with Shield icon between Integrations and Settings",
+    "AuditTrail page renders with 4 working tab buttons",
+    "Seed data generates deterministic activity feed, audit log, user sessions, and change history entries",
+    "AppContext exposes activityFeed, auditLog, userSessions, changeHistory state and their update functions"
+  ],
+  "verification": [
+    "cd /projects/sandbox/PropelaPlatform && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
