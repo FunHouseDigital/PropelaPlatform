@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Implement all four tab components: ActivityFeed (filterable global activity stream with real-time animation and expandable detail view), AuditLogTable (searchable/sortable/paginated table with CSV export), UserSessionTracker (active sessions display with timeline visualization), and ChangeHistoryViewer (per-entity change history with diff view and rollback mock).",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create src/components/audit/ActivityFeed.jsx: Display activity entries from context sorted by timestamp (newest first). Include filter bar with dropdowns for action type, user, entity type, and a date range picker. Implement real-time appearance animation using CSS keyframe (slideIn/fadeIn) on new entries. Each entry shows: icon based on action type, timestamp (relative like '2 hours ago'), user name, action description, entity link. Entries are expandable on click to show before/after state details in a formatted diff-style view. Use the Lucide icons relevant to each action type.",
     "Create src/components/audit/AuditLogTable.jsx: Full-width table with columns: Timestamp, User, Action, Entity Type, Entity ID, IP Address, Details. Include a search bar that filters across all text fields. Column headers are clickable for sorting (asc/desc with indicator arrow). Pagination at bottom with configurable page size (10/25/50/100 selector). Export to CSV button in the header area that generates and downloads a CSV file of the current filtered/sorted view. Use the table styling consistent with other tables in the app (gray header row, alternating row colors, hover state).",
