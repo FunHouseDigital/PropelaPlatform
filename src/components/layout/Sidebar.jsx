@@ -13,6 +13,7 @@ import {
   Puzzle,
   Shield,
   Zap,
+  Bell,
   Settings,
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
@@ -31,13 +32,15 @@ const NAV_ITEMS = [
   { path: '/integrations', label: 'Integrations', icon: Puzzle },
   { path: '/audit', label: 'Audit Trail', icon: Shield },
   { path: '/automations', label: 'Automations', icon: Zap },
+  { path: '/notifications', label: 'Notifications', icon: Bell },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function Sidebar() {
   const location = useLocation();
-  const { notifications } = useAppContext();
+  const { notifications, notificationAlerts } = useAppContext();
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const notifUnreadCount = notificationAlerts.filter((n) => !n.read).length;
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-[220px] flex flex-col"
@@ -79,6 +82,11 @@ export default function Sidebar() {
               {item.path === '/communications' && unreadCount > 0 && (
                 <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
                   {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+              {item.path === '/notifications' && notifUnreadCount > 0 && (
+                <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                  {notifUnreadCount > 99 ? '99+' : notifUnreadCount}
                 </span>
               )}
             </NavLink>
