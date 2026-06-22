@@ -2,6 +2,10 @@ import { useState, useMemo } from 'react';
 import { AlertTriangle, Plus, ToggleLeft, ToggleRight, Clock, Trash2, Edit2, X, History } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 
+function generateId(prefix) {
+  return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+}
+
 const TRIGGER_OPTIONS = [
   { value: 'document_expiry', label: 'Document Expiry Warning', field: 'days_before', fieldLabel: 'Days Before Expiry', unit: 'days' },
   { value: 'compliance_drop', label: 'Compliance Score Drop', field: 'threshold_percent', fieldLabel: 'Threshold Percentage', unit: '%' },
@@ -84,7 +88,7 @@ export default function AutomatedAlerts() {
       updateAlertRules(updated);
     } else {
       const newRule = {
-        id: `alert-rule-${String(alertRules.length + 1).padStart(3, '0')}`,
+        id: generateId('alert-rule'),
         name,
         trigger: ruleForm.trigger,
         field: triggerOption.field,
