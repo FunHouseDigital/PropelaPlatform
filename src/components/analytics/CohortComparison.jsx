@@ -24,7 +24,7 @@ export default function CohortComparison() {
 
     // Get nurses in this cohort
     const cohortNurses = nurses.filter(
-      (n) => n.cohortAssigned === 'Cohort 1' || n.cohortAssigned === selectedCohort.name
+      (n) => n.cohortAssigned === selectedCohort.name
     );
     const totalInCohort = cohortNurses.length || 1;
 

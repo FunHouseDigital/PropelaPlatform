@@ -67,20 +67,27 @@ export default function ReportBuilder() {
     if (filters.source !== 'All') {
       result = result.filter((n) => n.source === filters.source);
     }
+    if (dateRange.start) {
+      result = result.filter((n) => n.submittedAt >= dateRange.start);
+    }
+    if (dateRange.end) {
+      result = result.filter((n) => n.submittedAt <= dateRange.end);
+    }
     return result;
-  }, [nurses, filters]);
+  }, [nurses, filters, dateRange]);
 
   // Generate report data
   const generateReport = useCallback(() => {
     if (selectedMetrics.length === 0) return;
 
-    const data = { columns: [], rows: [] };
+    const data = { columns: ['Metric Type'], rows: [] };
 
     if (selectedMetrics.includes('nursePipeline')) {
       data.columns.push(...['ID', 'Name', 'Stage', 'Score', 'Cohort']);
       filteredNurses.forEach((n) => {
         data.rows.push({
           type: 'nursePipeline',
+          'Metric Type': 'Nurse Pipeline',
           ID: n.id,
           Name: n.fullName,
           Stage: n.pipelineStage,
@@ -96,6 +103,7 @@ export default function ReportBuilder() {
       filteredNurses.forEach((n) => {
         data.rows.push({
           type: 'oetResults',
+          'Metric Type': 'OET Results',
           Name: n.fullName,
           'OET Status': n.oetStatus || 'Pending',
           'EfSet Score': n.efSetScore || 'N/A',
@@ -109,6 +117,7 @@ export default function ReportBuilder() {
       placements.forEach((p) => {
         data.rows.push({
           type: 'placementOutcomes',
+          'Metric Type': 'Placement Outcomes',
           Nurse: p.nurseName,
           Facility: p.facilityName,
           'Placement Stage': p.currentStage,
@@ -126,6 +135,7 @@ export default function ReportBuilder() {
       months.forEach((month, idx) => {
         data.rows.push({
           type: 'revenue',
+          'Metric Type': 'Revenue',
           Month: month,
           'Amount (GBP)': Math.floor(placedCount * 5000 * (0.2 + idx * 0.18)),
         });
@@ -136,7 +146,7 @@ export default function ReportBuilder() {
       data.columns.push('Cohort Name', 'Pass Rate (%)', 'Placement Rate (%)', 'Budget (ZAR)');
       cohorts.forEach((c) => {
         const cohortNurses = nurses.filter(
-          (n) => n.cohortAssigned === 'Cohort 1' || n.cohortAssigned === c.name
+          (n) => n.cohortAssigned === c.name
         );
         const totalInCohort = cohortNurses.length || 1;
         const passRate = Math.round(
@@ -147,6 +157,7 @@ export default function ReportBuilder() {
         );
         data.rows.push({
           type: 'cohortPerformance',
+          'Metric Type': 'Cohort Performance',
           'Cohort Name': c.name,
           'Pass Rate (%)': passRate,
           'Placement Rate (%)': placeRate,
@@ -168,6 +179,7 @@ export default function ReportBuilder() {
         .forEach(([source, count]) => {
           data.rows.push({
             type: 'acquisitionSources',
+            'Metric Type': 'Acquisition Sources',
             Source: source,
             Count: count,
             'Percentage (%)': Math.round((count / total) * 100),
@@ -207,7 +219,7 @@ export default function ReportBuilder() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }, [previewData]);
 
   // Save template

@@ -5,15 +5,7 @@ import {
 } from 'recharts';
 import { TrendingUp, Users, Clock, DollarSign, Target, Activity, Filter } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
-
-const EXIT_STATES = ['Placed', 'Deferred', 'Dropped Out', 'Recommended Pathway', 'Not Selected', "Didn't Qualify"];
-
-const PIPELINE_STAGES_ORDER = [
-  'Applied', 'CV Submitted', 'CV + English Submitted', 'Under Review',
-  'Shortlisted - Yes', 'Shortlisted - Maybe', 'Selected for Cohort', 'Reserve',
-  'Cohort Confirmed', 'Training Active', 'OET Registered', 'OET Passed',
-  'OET Failed', 'Placement Ready', 'Placed',
-];
+import { PIPELINE_STAGES_ORDER, EXIT_STATES } from '../../lib/constants';
 
 const DATE_RANGES = [
   { label: 'Last 30 days', value: 30 },
@@ -38,18 +30,21 @@ function StatCard({ icon: Icon, label, value, subtext, color, bgColor, sparkData
         </div>
       </div>
       {sparkData && sparkData.length > 0 && (
-        <div className="mt-3 h-10">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={sparkData}>
-              <Line
-                type="monotone"
-                dataKey="v"
-                stroke="#5B2D8E"
-                strokeWidth={1.5}
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="mt-3">
+          <div className="h-10">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={sparkData}>
+                <Line
+                  type="monotone"
+                  dataKey="v"
+                  stroke="#5B2D8E"
+                  strokeWidth={1.5}
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="text-[10px] text-gray-400 italic mt-0.5">Illustrative</p>
         </div>
       )}
     </div>
