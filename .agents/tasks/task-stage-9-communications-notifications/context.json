@@ -1,0 +1,25 @@
+{
+  "project_type": "React SPA with localStorage persistence - nursing ops platform",
+  "language": "JavaScript (JSX)",
+  "build_system": "Vite 8 with @vitejs/plugin-react and @tailwindcss/vite plugin",
+  "test_framework": "No test framework configured - verification via build only",
+  "build_command": "npm run build",
+  "test_command": "npm run build",
+  "verification_instructions": "Run npm run build from the project root and confirm zero errors. Optionally run npm run lint for static analysis.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "npm install in /projects/sandbox/PropelaPlatform",
+  "environment_constraints": "No backend - all data stored in localStorage. No test framework. Verification is limited to successful Vite build.",
+  "contribution_requirements": "Follow existing module patterns: page in src/pages/, components in src/components/<module>/, seed data in src/data/, storage helpers in src/lib/storage.js, state in src/context/AppContext.jsx, route in src/App.jsx, nav item in src/components/layout/Sidebar.jsx",
+  "key_patterns": "Tabbed page layout (see DocumentManagement.jsx), purple gradient sidebar with lucide-react icons, useAppContext() hook for global state, getData/setData wrappers in storage.js, seeded data with deterministic pseudo-random generator, write-through to localStorage via useCallback update functions in AppProvider",
+  "relevant_files": [
+    "src/App.jsx",
+    "src/components/layout/Sidebar.jsx",
+    "src/context/AppContext.jsx",
+    "src/lib/storage.js",
+    "src/pages/DocumentManagement.jsx",
+    "src/components/documents/DocumentRepository.jsx",
+    "src/data/seedDocuments.js",
+    "src/data/seedOutreach.js"
+  ],
+  "directory_structure": "src/pages/ - page-level components; src/components/<module>/ - sub-components per module; src/data/ - seed data generators; src/lib/ - utility functions (storage.js); src/context/ - global state (AppContext.jsx); src/components/layout/ - Layout.jsx + Sidebar.jsx"
+}
