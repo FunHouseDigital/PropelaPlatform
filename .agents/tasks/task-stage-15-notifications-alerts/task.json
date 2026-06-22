@@ -1,0 +1,7 @@
+{
+  "task_id": "task-stage-15-notifications-alerts",
+  "task_description": "Build the Notifications & Alerts System module (Stage 15) including Notification Center, Alert Configuration, Toast Notifications, and Notification History with search/analytics. Add /notifications route, sidebar link, seed data, and all supporting components.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001"],
+  "blocked_reason": null
+}

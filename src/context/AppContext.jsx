@@ -78,6 +78,14 @@ import {
   saveExecutionLog,
   getScheduledActions,
   saveScheduledActions,
+  getNotificationAlerts,
+  saveNotificationAlerts,
+  getNotifAlertConfig,
+  saveNotifAlertConfig,
+  getNotificationLog,
+  saveNotificationLog,
+  getToastPreferences,
+  saveToastPreferences,
 } from '../lib/storage';
 
 const AppContext = createContext(null);
@@ -122,6 +130,10 @@ export function AppProvider({ children }) {
   const [automationTemplates, setAutomationTemplates] = useState(() => getAutomationTemplates());
   const [executionLog, setExecutionLog] = useState(() => getExecutionLog());
   const [scheduledActions, setScheduledActions] = useState(() => getScheduledActions());
+  const [notificationAlerts, setNotificationAlerts] = useState(() => getNotificationAlerts());
+  const [notifAlertConfig, setNotifAlertConfig] = useState(() => getNotifAlertConfig());
+  const [notificationLog, setNotificationLog] = useState(() => getNotificationLog());
+  const [toastPreferences, setToastPreferences] = useState(() => getToastPreferences());
 
   // Update functions that write through to localStorage
   const updateNurses = useCallback((updatedNurses) => {
@@ -327,6 +339,26 @@ export function AppProvider({ children }) {
     saveScheduledActions(updatedActions);
   }, []);
 
+  const updateNotificationAlerts = useCallback((updatedAlerts) => {
+    setNotificationAlerts(updatedAlerts);
+    saveNotificationAlerts(updatedAlerts);
+  }, []);
+
+  const updateNotifAlertConfig = useCallback((updatedConfig) => {
+    setNotifAlertConfig(updatedConfig);
+    saveNotifAlertConfig(updatedConfig);
+  }, []);
+
+  const updateNotificationLog = useCallback((updatedLog) => {
+    setNotificationLog(updatedLog);
+    saveNotificationLog(updatedLog);
+  }, []);
+
+  const updateToastPreferences = useCallback((updatedPrefs) => {
+    setToastPreferences(updatedPrefs);
+    saveToastPreferences(updatedPrefs);
+  }, []);
+
   const value = {
     nurses,
     facilities,
@@ -367,6 +399,10 @@ export function AppProvider({ children }) {
     automationTemplates,
     executionLog,
     scheduledActions,
+    notificationAlerts,
+    notifAlertConfig,
+    notificationLog,
+    toastPreferences,
     updateNurses,
     updateFacilities,
     updateCohorts,
@@ -406,6 +442,10 @@ export function AppProvider({ children }) {
     updateAutomationTemplates,
     updateExecutionLog,
     updateScheduledActions,
+    updateNotificationAlerts,
+    updateNotifAlertConfig,
+    updateNotificationLog,
+    updateToastPreferences,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

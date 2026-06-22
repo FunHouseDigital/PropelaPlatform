@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Create the Notifications & Alerts module with all components, seed data, routing, and sidebar navigation. This includes: Notification Center (inbox with read/unread, categories, mark as read/unread, mark all read, delete, date grouping), Alert Configuration (configurable rules with severity levels, delivery channels, quiet hours, per-category enable/disable), Toast Notifications system (real-time toast popups, auto-dismiss, action buttons, queue management), and Notification History (searchable history, date range filtering, category/severity filtering, CSV export mock, analytics chart).",
+  "status": "in_progress",
+  "steps": [
+    "Create branch stage-15-notifications-alerts from stage-14-workflow-automation",
+    "Create src/data/seedNotifications.js with expanded notification seed data including: notifications with categories (system_alert, task_update, document_expiry, placement_match, compliance_warning), severity levels (info, warning, critical), timestamps spread across Today/Yesterday/This Week/Older groupings, and alert configuration rules with severity and delivery channel preferences",
+    "Create src/components/notifications/ directory with these components: NotificationInbox.jsx (centralized inbox with read/unread status, category filtering, mark as read/unread, mark all as read, delete notifications, date grouping by Today/Yesterday/This Week/Older), AlertConfiguration.jsx (user-configurable alert rules with severity levels info/warning/critical, delivery channel preferences in-app/email/SMS mock, quiet hours configuration, per-category enable/disable), ToastNotifications.jsx (real-time toast popup system with auto-dismiss configurable duration, action buttons View/Dismiss, toast queue management with max visible and stacking), NotificationHistory.jsx (full searchable history, date range filtering, category and severity filtering, export notification log as mock CSV download, notification analytics chart using Recharts showing notifications per day)",
+    "Create src/pages/Notifications.jsx as the top-level page component with four tabs: Notification Center, Alert Configuration, Toast Demo, Notification History - following the exact pattern from src/pages/Automations.jsx",
+    "Update src/data/seedNotifications.js to be imported in src/lib/storage.js - add import and initialization block for notification module data (notificationAlerts, notificationAlertConfig, notificationHistory, toastPreferences)",
+    "Update src/lib/storage.js to import seedNotifications and add storage helpers for the new notification module keys, and add initialization in initializeData()",
+    "Update src/context/AppContext.jsx to add state and update functions for new notification module data (notificationAlerts, notificationAlertConfig, notificationHistory, toastPreferences)",
+    "Update src/App.jsx to import Notifications page and add Route path='/notifications'",
+    "Update src/components/layout/Sidebar.jsx to add Notifications nav item with Bell icon and unread badge, positioned before Settings in the NAV_ITEMS array"
+  ],
+  "acceptance_criteria": [
+    "npm run build completes without errors",
+    "The /notifications route is registered in App.jsx",
+    "Sidebar shows a 'Notifications' link with Bell icon",
+    "NotificationInbox component supports: read/unread toggle, mark all as read, delete, category filter, date grouping (Today, Yesterday, This Week, Older)",
+    "AlertConfiguration component supports: severity levels (info, warning, critical), delivery channels (in-app, email, SMS), quiet hours, per-category enable/disable",
+    "ToastNotifications component provides: auto-dismiss with configurable duration, View/Dismiss action buttons, max visible queue management",
+    "NotificationHistory component provides: search, date range filter, category/severity filter, mock CSV export, Recharts bar/line chart for notifications per day"
+  ],
+  "verification": [
+    "Run npm run build and confirm zero errors",
+    "Verify the Notifications page imports and route exist in App.jsx",
+    "Verify the Sidebar.jsx includes the notifications link"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

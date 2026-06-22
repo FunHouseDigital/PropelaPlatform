@@ -11,6 +11,7 @@ import { seedReports } from '../data/seedReports';
 import { seedIntegrations } from '../data/seedIntegrations';
 import { seedAuditTrail } from '../data/seedAuditTrail';
 import { seedAutomations } from '../data/seedAutomations';
+import { seedNotifications as seedNotificationsModule } from '../data/seedNotifications';
 
 const STORAGE_PREFIX = 'propela_ops_';
 
@@ -175,6 +176,15 @@ export function initializeData() {
     setData('automationTemplates', seededAutomations.automationTemplates);
     setData('executionLog', seededAutomations.executionLog);
     setData('scheduledActions', seededAutomations.scheduledActions);
+  }
+
+  const notificationAlerts = getData('notificationAlerts');
+  if (!notificationAlerts || notificationAlerts.length === 0) {
+    const seededNotifs = seedNotificationsModule();
+    setData('notificationAlerts', seededNotifs.notificationAlerts);
+    setData('notifAlertConfig', seededNotifs.notifAlertConfig);
+    setData('notificationLog', seededNotifs.notificationLog);
+    setData('toastPreferences', seededNotifs.toastPreferences);
   }
 }
 
@@ -743,5 +753,61 @@ export function getScheduledActions() {
  */
 export function saveScheduledActions(actions) {
   setData('scheduledActions', actions);
+}
+
+/**
+ * Get notification alerts (expanded inbox) from localStorage.
+ */
+export function getNotificationAlerts() {
+  return getData('notificationAlerts') || [];
+}
+
+/**
+ * Save notification alerts (expanded inbox) to localStorage.
+ */
+export function saveNotificationAlerts(alerts) {
+  setData('notificationAlerts', alerts);
+}
+
+/**
+ * Get notification alert configuration from localStorage.
+ */
+export function getNotifAlertConfig() {
+  return getData('notifAlertConfig') || { rules: [], quietHours: { enabled: false, startTime: '22:00', endTime: '07:00', timezone: 'Europe/London', exceptCritical: true } };
+}
+
+/**
+ * Save notification alert configuration to localStorage.
+ */
+export function saveNotifAlertConfig(config) {
+  setData('notifAlertConfig', config);
+}
+
+/**
+ * Get notification log (history) from localStorage.
+ */
+export function getNotificationLog() {
+  return getData('notificationLog') || [];
+}
+
+/**
+ * Save notification log (history) to localStorage.
+ */
+export function saveNotificationLog(log) {
+  setData('notificationLog', log);
+}
+
+/**
+ * Get toast preferences from localStorage.
+ */
+export function getToastPreferences() {
+  return getData('toastPreferences') || { enabled: true, duration: 5000, maxVisible: 3, position: 'top-right', showForCategories: [], playSoundOnCritical: true };
+}
+
+/**
+ * Save toast preferences to localStorage.
+ */
+export function saveToastPreferences(prefs) {
+  setData('toastPreferences', prefs);
 }
 
