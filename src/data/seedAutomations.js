@@ -269,12 +269,24 @@ export function seedAutomations() {
   const scheduledActions = [];
   for (let i = 0; i < 8; i++) {
     const ruleIndex = Math.floor(rand() * automationRules.length);
+    // Generate relative nextRunAt dates so the calendar view shows data out of the box
+    let nextRunAt;
+    if (i < 4) {
+      // First 4 items get relative dates within the next 7 days
+      const daysAhead = [1, 2, 4, 6][i];
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + daysAhead);
+      futureDate.setHours(Math.floor(rand() * 12) + 6, Math.floor(rand() * 60), 0, 0);
+      nextRunAt = futureDate.toISOString().replace(/\.\d{3}Z$/, '');
+    } else {
+      nextRunAt = generateTimestamp(rand, 2025, 2025);
+    }
     scheduledActions.push({
       id: `sched-${String(i + 1).padStart(3, '0')}`,
       ruleId: automationRules[ruleIndex].id,
       ruleName: automationRules[ruleIndex].name,
       cronExpression: CRON_EXPRESSIONS[i],
-      nextRunAt: generateTimestamp(rand, 2025, 2025),
+      nextRunAt,
       lastRunAt: generateTimestamp(rand, 2025, 2025),
       timezone: pick(TIMEZONES, rand),
       enabled: rand() > 0.2,
