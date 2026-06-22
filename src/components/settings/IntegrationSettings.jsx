@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Key, Webhook, Link2, Upload, Download, Save, Plus, Send } from 'lucide-react';
 
@@ -18,6 +18,8 @@ export default function IntegrationSettings() {
   const [integrations, setIntegrations] = useState([...settings.integrations]);
   const [saved, setSaved] = useState(false);
   const [webhookTested, setWebhookTested] = useState(false);
+  const [importMessage, setImportMessage] = useState('');
+  const fileInputRef = useRef(null);
 
   const handleGenerateKey = () => {
     const newKey = {
@@ -60,8 +62,25 @@ export default function IntegrationSettings() {
     );
   };
 
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImportMessage('File imported successfully');
+      setTimeout(() => setImportMessage(''), 3000);
+    }
+    // Reset input so same file can be selected again
+    e.target.value = '';
+  };
+
   const handleExport = () => {
-    const csvContent = 'data:text/csv;charset=utf-8,Name,Email,Role,Status\nAya Nkosi,aya@propela.co.za,Admin,Active\nJames Okafor,james@propela.co.za,Manager,Active';
+    const users = settings.users || [];
+    const header = 'Name,Email,Role,Status';
+    const rows = users.map((u) => `${u.name},${u.email},${u.role},${u.status}`);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [header, ...rows].join('\n');
     const link = document.createElement('a');
     link.setAttribute('href', encodeURI(csvContent));
     link.setAttribute('download', 'propela_export.csv');
@@ -228,10 +247,26 @@ export default function IntegrationSettings() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <h4 className="text-sm font-medium text-gray-700 mb-2">Import Data</h4>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#5B2D8E]/40 transition-colors cursor-pointer">
+            <div
+              onClick={handleImportClick}
+              className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#5B2D8E]/40 transition-colors cursor-pointer"
+            >
               <Upload size={24} className="mx-auto text-gray-400 mb-2" />
-              <p className="text-sm text-gray-500">Drop CSV file here or click to browse</p>
-              <p className="text-xs text-gray-400 mt-1">Supports .csv and .xlsx formats</p>
+              {importMessage ? (
+                <p className="text-sm text-green-600 font-medium">{importMessage}</p>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-500">Drop CSV file here or click to browse</p>
+                  <p className="text-xs text-gray-400 mt-1">Supports .csv and .xlsx formats</p>
+                </>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.xlsx"
+                onChange={handleFileSelected}
+                className="hidden"
+              />
             </div>
           </div>
           <div>
