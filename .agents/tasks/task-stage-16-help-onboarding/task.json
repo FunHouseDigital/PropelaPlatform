@@ -1,0 +1,7 @@
+{
+  "task_id": "task-stage-16-help-onboarding",
+  "task_description": "Build Stage 16: Help & Onboarding Module for Propela Ops. This includes a Knowledge Base with searchable FAQ, Onboarding Wizard with multi-step flow, Contextual Help tooltips, and Feature Tour system. All integrated with the existing route/sidebar/context/storage patterns.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001"],
+  "blocked_reason": null
+}
