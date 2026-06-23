@@ -21,6 +21,7 @@ const Settings = lazy(() => import('./pages/Settings'));
 const Automations = lazy(() => import('./pages/Automations'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const Help = lazy(() => import('./pages/Help'));
+const StatusPage = lazy(() => import('./pages/StatusPage'));
 
 export default function App() {
   useEffect(() => {
@@ -49,6 +50,7 @@ export default function App() {
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/help" element={<Help />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/status" element={<StatusPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
