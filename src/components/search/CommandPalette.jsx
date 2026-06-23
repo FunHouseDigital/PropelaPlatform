@@ -11,6 +11,7 @@ export default function CommandPalette({ isOpen, onClose }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef(null);
   const paletteRef = useRef(null);
+  const previousFocusRef = useRef(null);
   const navigate = useNavigate();
   const { nurses, placements, documents, cohorts, recentSearches, updateRecentSearches, recentlyViewed, updateRecentlyViewed } = useAppContext();
 
@@ -92,8 +93,24 @@ export default function CommandPalette({ isOpen, onClose }) {
   );
 
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
+    if (isOpen) {
+      previousFocusRef.current = document.activeElement;
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }
+  }, [isOpen]);
+
+  // Restore focus when closing
+  useEffect(() => {
+    if (!isOpen && previousFocusRef.current) {
+      const elementToRestore = previousFocusRef.current;
+      previousFocusRef.current = null;
+      setTimeout(() => {
+        if (elementToRestore && typeof elementToRestore.focus === 'function') {
+          elementToRestore.focus();
+        }
+      }, 0);
     }
   }, [isOpen]);
 

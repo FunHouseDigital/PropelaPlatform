@@ -14,8 +14,30 @@ const SHORTCUTS = [
 export default function KeyboardShortcutsPanel({ isOpen, onClose }) {
   const panelRef = useRef(null);
   const closeButtonRef = useRef(null);
+  const previousFocusRef = useRef(null);
 
   const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform || '');
+
+  // Save the previously focused element when opening
+  useEffect(() => {
+    if (isOpen) {
+      previousFocusRef.current = document.activeElement;
+    }
+  }, [isOpen]);
+
+  // Restore focus when closing
+  useEffect(() => {
+    if (!isOpen && previousFocusRef.current) {
+      const elementToRestore = previousFocusRef.current;
+      previousFocusRef.current = null;
+      // Use setTimeout to ensure the element is focusable after the panel unmounts
+      setTimeout(() => {
+        if (elementToRestore && typeof elementToRestore.focus === 'function') {
+          elementToRestore.focus();
+        }
+      }, 0);
+    }
+  }, [isOpen]);
 
   // Focus trap
   useEffect(() => {

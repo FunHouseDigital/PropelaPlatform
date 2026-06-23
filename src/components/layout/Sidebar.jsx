@@ -48,10 +48,10 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
   const notifUnreadCount = notificationAlerts.filter((n) => !n.read).length;
 
   const sidebarClasses = isMobile
-    ? `fixed left-0 top-0 h-screen w-[220px] flex flex-col z-50 transition-transform duration-300 ${
+    ? `fixed start-0 top-0 h-screen w-[220px] flex flex-col z-50 transition-transform duration-300 ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
       }`
-    : 'fixed left-0 top-0 h-screen w-[220px] flex flex-col';
+    : 'fixed start-0 top-0 h-screen w-[220px] flex flex-col';
 
   return (
     <aside

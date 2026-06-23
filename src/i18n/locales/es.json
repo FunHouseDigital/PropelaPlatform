@@ -94,14 +94,19 @@
   "accessibility": {
     "highContrast": "Modo de Alto Contraste",
     "highContrastDescription": "Aumentar el contraste de color para mejor legibilidad",
+    "enhancesVisibility": "Mejora la visibilidad del texto, bordes y controles",
     "reducedMotion": "Reducir Movimiento",
     "reducedMotionDescription": "Desactiva animaciones y transiciones suaves",
+    "motionDescription": "Reducir o desactivar animaciones y transiciones para usuarios sensibles al movimiento.",
     "fontSize": "Tama\u00f1o de Fuente",
+    "fontSizeDescription": "Ajustar el tama\u00f1o de fuente base en toda la aplicaci\u00f3n para mejorar la legibilidad.",
     "fontSizeSmall": "Peque\u00f1o",
     "fontSizeMedium": "Mediano",
     "fontSizeLarge": "Grande",
     "enableHighContrast": "Activar Alto Contraste",
-    "motionPreferences": "Preferencias de Movimiento"
+    "motionPreferences": "Preferencias de Movimiento",
+    "saveChanges": "Guardar Cambios",
+    "saved": "\u00a1Guardado!"
   },
   "notifications": {
     "toast": {
