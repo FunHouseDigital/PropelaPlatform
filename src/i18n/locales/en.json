@@ -1,0 +1,136 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "close": "Close",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "loading": "Loading...",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "reset": "Reset",
+    "export": "Export",
+    "import": "Import",
+    "download": "Download",
+    "upload": "Upload",
+    "yes": "Yes",
+    "no": "No",
+    "all": "All",
+    "none": "None",
+    "actions": "Actions",
+    "status": "Status",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "date": "Date",
+    "type": "Type",
+    "description": "Description",
+    "noResults": "No results found",
+    "savedSuccessfully": "Saved successfully"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "nurseDatabase": "Nurse Database",
+    "acquisitionHub": "Acquisition Hub",
+    "cohortManager": "Cohort Manager",
+    "outreachLog": "Outreach Log",
+    "placements": "Placements",
+    "analytics": "Analytics",
+    "reports": "Reports",
+    "documents": "Documents",
+    "communications": "Communications",
+    "integrations": "Integrations",
+    "auditTrail": "Audit Trail",
+    "automations": "Automations",
+    "notifications": "Notifications",
+    "help": "Help",
+    "settings": "Settings"
+  },
+  "settings": {
+    "title": "Settings & Configuration",
+    "description": "Manage organization settings, pipeline, users, integrations, and notifications",
+    "tabs": {
+      "organization": "Organization",
+      "pipeline": "Pipeline",
+      "users": "Users",
+      "integrations": "Integrations",
+      "notifications": "Notifications",
+      "accessibility": "Accessibility"
+    },
+    "organization": {
+      "name": "Organization Name",
+      "address": "Address",
+      "website": "Website"
+    },
+    "language": {
+      "title": "Language & Region",
+      "description": "Choose your preferred language. The interface will update to display content in the selected language.",
+      "selectLanguage": "Select Language",
+      "currentLanguage": "Current language"
+    }
+  },
+  "pages": {
+    "dashboard": {
+      "title": "Dashboard",
+      "description": "Overview of key metrics and activity"
+    },
+    "nurses": {
+      "title": "Nurse Database",
+      "description": "Manage nurse profiles and credentials"
+    },
+    "acquisition": {
+      "title": "Acquisition Hub",
+      "description": "Track and manage nurse acquisition pipeline"
+    },
+    "analytics": {
+      "title": "Analytics",
+      "description": "Data insights and performance metrics"
+    },
+    "reports": {
+      "title": "Reports",
+      "description": "Generate and view reports"
+    }
+  },
+  "accessibility": {
+    "highContrast": "High Contrast Mode",
+    "highContrastDescription": "Increase color contrast for better readability",
+    "reducedMotion": "Reduce Motion",
+    "reducedMotionDescription": "Disables animations and smooth transitions",
+    "fontSize": "Font Size",
+    "fontSizeSmall": "Small",
+    "fontSizeMedium": "Medium",
+    "fontSizeLarge": "Large",
+    "enableHighContrast": "Enable High Contrast",
+    "motionPreferences": "Motion Preferences"
+  },
+  "notifications": {
+    "toast": {
+      "success": "Success",
+      "error": "Error",
+      "warning": "Warning",
+      "info": "Information"
+    },
+    "severity": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "markAsRead": "Mark as read",
+    "markAllRead": "Mark all as read",
+    "noNotifications": "No notifications"
+  },
+  "search": {
+    "placeholder": "Search...",
+    "resultsFor": "Results for \"{{query}}\"",
+    "noResults": "No results found for \"{{query}}\"",
+    "recentSearches": "Recent searches",
+    "clearRecent": "Clear recent",
+    "typeToSearch": "Type to search..."
+  }
+}

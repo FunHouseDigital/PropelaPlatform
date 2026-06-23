@@ -1,0 +1,131 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "close": "Cerrar",
+    "edit": "Editar",
+    "add": "Agregar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "loading": "Cargando...",
+    "confirm": "Confirmar",
+    "back": "Atr\u00e1s",
+    "next": "Siguiente",
+    "submit": "Enviar",
+    "reset": "Restablecer",
+    "export": "Exportar",
+    "import": "Importar",
+    "download": "Descargar",
+    "upload": "Subir",
+    "yes": "S\u00ed",
+    "no": "No",
+    "all": "Todos",
+    "none": "Ninguno",
+    "actions": "Acciones",
+    "status": "Estado",
+    "name": "Nombre",
+    "email": "Correo electr\u00f3nico",
+    "phone": "Tel\u00e9fono",
+    "date": "Fecha",
+    "type": "Tipo",
+    "description": "Descripci\u00f3n",
+    "noResults": "No se encontraron resultados",
+    "savedSuccessfully": "Guardado exitosamente"
+  },
+  "navigation": {
+    "dashboard": "Panel",
+    "nurseDatabase": "Base de Enfermeras",
+    "acquisitionHub": "Centro de Adquisici\u00f3n",
+    "cohortManager": "Gestor de Cohortes",
+    "outreachLog": "Registro de Alcance",
+    "placements": "Colocaciones",
+    "analytics": "An\u00e1lisis",
+    "reports": "Informes",
+    "documents": "Documentos",
+    "communications": "Comunicaciones",
+    "integrations": "Integraciones",
+    "auditTrail": "Registro de Auditor\u00eda",
+    "automations": "Automatizaciones",
+    "notifications": "Notificaciones",
+    "help": "Ayuda",
+    "settings": "Configuraci\u00f3n"
+  },
+  "settings": {
+    "title": "Configuraci\u00f3n",
+    "description": "Administre la configuraci\u00f3n de la organizaci\u00f3n, pipeline, usuarios, integraciones y notificaciones",
+    "tabs": {
+      "organization": "Organizaci\u00f3n",
+      "pipeline": "Pipeline",
+      "users": "Usuarios",
+      "integrations": "Integraciones",
+      "notifications": "Notificaciones",
+      "accessibility": "Accesibilidad"
+    },
+    "language": {
+      "title": "Idioma y Regi\u00f3n",
+      "description": "Elija su idioma preferido. La interfaz se actualizar\u00e1 para mostrar el contenido en el idioma seleccionado.",
+      "selectLanguage": "Seleccionar Idioma",
+      "currentLanguage": "Idioma actual"
+    }
+  },
+  "pages": {
+    "dashboard": {
+      "title": "Panel",
+      "description": "Resumen de m\u00e9tricas clave y actividad"
+    },
+    "nurses": {
+      "title": "Base de Enfermeras",
+      "description": "Administrar perfiles y credenciales de enfermeras"
+    },
+    "acquisition": {
+      "title": "Centro de Adquisici\u00f3n",
+      "description": "Rastrear y gestionar el pipeline de adquisici\u00f3n"
+    },
+    "analytics": {
+      "title": "An\u00e1lisis",
+      "description": "Informaci\u00f3n de datos y m\u00e9tricas de rendimiento"
+    },
+    "reports": {
+      "title": "Informes",
+      "description": "Generar y ver informes"
+    }
+  },
+  "accessibility": {
+    "highContrast": "Modo de Alto Contraste",
+    "highContrastDescription": "Aumentar el contraste de color para mejor legibilidad",
+    "reducedMotion": "Reducir Movimiento",
+    "reducedMotionDescription": "Desactiva animaciones y transiciones suaves",
+    "fontSize": "Tama\u00f1o de Fuente",
+    "fontSizeSmall": "Peque\u00f1o",
+    "fontSizeMedium": "Mediano",
+    "fontSizeLarge": "Grande",
+    "enableHighContrast": "Activar Alto Contraste",
+    "motionPreferences": "Preferencias de Movimiento"
+  },
+  "notifications": {
+    "toast": {
+      "success": "\u00c9xito",
+      "error": "Error",
+      "warning": "Advertencia",
+      "info": "Informaci\u00f3n"
+    },
+    "severity": {
+      "critical": "Cr\u00edtico",
+      "high": "Alto",
+      "medium": "Medio",
+      "low": "Bajo"
+    },
+    "markAsRead": "Marcar como le\u00eddo",
+    "markAllRead": "Marcar todo como le\u00eddo",
+    "noNotifications": "Sin notificaciones"
+  },
+  "search": {
+    "placeholder": "Buscar...",
+    "resultsFor": "Resultados para \"{{query}}\"",
+    "noResults": "No se encontraron resultados para \"{{query}}\"",
+    "recentSearches": "B\u00fasquedas recientes",
+    "clearRecent": "Limpiar recientes",
+    "typeToSearch": "Escriba para buscar..."
+  }
+}
