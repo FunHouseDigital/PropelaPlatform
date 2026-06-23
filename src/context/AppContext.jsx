@@ -1,3 +1,104 @@
+/**
+ * @typedef {Object} AppContextValue
+ * @property {Array} nurses - List of nurse records
+ * @property {Array} facilities - List of facility records
+ * @property {Array} cohorts - List of cohort records
+ * @property {Array} referrers - List of referrer records
+ * @property {Array} communityChannels - List of community channel records
+ * @property {Array} events - List of event records
+ * @property {Array} outreachTemplates - List of outreach template records
+ * @property {Array} placements - List of placement records
+ * @property {Object} settings - Application settings object
+ * @property {Array} documents - List of document records
+ * @property {Array} documentTemplates - List of document template records
+ * @property {Array} verificationQueue - List of verification queue items
+ * @property {Array} communications - List of communication records
+ * @property {Array} notifications - List of notification records
+ * @property {Array} commEmailTemplates - List of communication email templates
+ * @property {Array} alertRules - List of alert rule configurations
+ * @property {Array} alertHistory - List of alert history entries
+ * @property {Object} notificationPreferences - User notification preferences
+ * @property {Array} scheduledReports - List of scheduled report configs
+ * @property {Array} exportHistory - List of export history entries
+ * @property {Array} dashboardLayouts - List of dashboard layout configs
+ * @property {string|null} activeDashboardLayout - Currently active dashboard layout ID
+ * @property {Array} integrations - List of integration configs
+ * @property {Array} apiEndpoints - List of API endpoint definitions
+ * @property {Array} apiKeys - List of API key records
+ * @property {Array} webhooks - List of webhook configs
+ * @property {Array} webhookDeliveryLog - List of webhook delivery log entries
+ * @property {Object} syncStatus - Current sync status object
+ * @property {Array} activityFeed - List of activity feed entries
+ * @property {Array} auditLog - List of audit log entries
+ * @property {Array} userSessions - List of user session records
+ * @property {Array} changeHistory - List of change history entries
+ * @property {Array} recentSearches - List of recent search queries
+ * @property {Array} savedViews - List of saved view configs
+ * @property {Array} recentlyViewed - List of recently viewed items
+ * @property {Array} automationRules - List of automation rule configs
+ * @property {Array} automationTemplates - List of automation templates
+ * @property {Array} executionLog - List of automation execution log entries
+ * @property {Array} scheduledActions - List of scheduled action configs
+ * @property {Array} notificationAlerts - List of notification alert items
+ * @property {Object} notifAlertConfig - Notification alert configuration
+ * @property {Array} notificationLog - List of notification log entries
+ * @property {Object} toastPreferences - Toast notification preferences
+ * @property {Array} helpArticles - List of help article records
+ * @property {Object} onboardingState - Current onboarding state
+ * @property {Object} tourState - Current tour/walkthrough state
+ * @property {Object} articleVotes - Article vote tallies
+ * @property {Function} updateNurses - Updates the nurses list
+ * @property {Function} updateFacilities - Updates the facilities list
+ * @property {Function} updateCohorts - Updates the cohorts list
+ * @property {Function} updateReferrers - Updates the referrers list
+ * @property {Function} updateCommunityChannels - Updates community channels
+ * @property {Function} updateEvents - Updates the events list
+ * @property {Function} updateOutreachTemplates - Updates outreach templates
+ * @property {Function} updatePlacements - Updates the placements list
+ * @property {Function} updateSettings - Updates application settings
+ * @property {Function} updateDocuments - Updates the documents list
+ * @property {Function} updateDocumentTemplates - Updates document templates
+ * @property {Function} updateVerificationQueue - Updates verification queue
+ * @property {Function} updateCommunications - Updates communications list
+ * @property {Function} updateNotifications - Updates notifications list
+ * @property {Function} updateCommEmailTemplates - Updates email templates
+ * @property {Function} updateAlertRules - Updates alert rules
+ * @property {Function} updateAlertHistory - Updates alert history
+ * @property {Function} updateNotificationPreferences - Updates notification preferences
+ * @property {Function} updateScheduledReports - Updates scheduled reports
+ * @property {Function} updateExportHistory - Updates export history
+ * @property {Function} updateDashboardLayouts - Updates dashboard layouts
+ * @property {Function} updateActiveDashboardLayout - Updates active dashboard layout
+ * @property {Function} updateIntegrations - Updates integrations
+ * @property {Function} updateApiEndpoints - Updates API endpoints
+ * @property {Function} updateApiKeys - Updates API keys
+ * @property {Function} updateWebhooks - Updates webhooks
+ * @property {Function} updateWebhookDeliveryLog - Updates webhook delivery log
+ * @property {Function} updateSyncStatus - Updates sync status
+ * @property {Function} updateActivityFeed - Updates activity feed
+ * @property {Function} updateAuditLog - Updates audit log
+ * @property {Function} updateUserSessions - Updates user sessions
+ * @property {Function} updateChangeHistory - Updates change history
+ * @property {Function} updateRecentSearches - Updates recent searches
+ * @property {Function} updateSavedViews - Updates saved views
+ * @property {Function} updateRecentlyViewed - Updates recently viewed items
+ * @property {Function} updateAutomationRules - Updates automation rules
+ * @property {Function} updateAutomationTemplates - Updates automation templates
+ * @property {Function} updateExecutionLog - Updates execution log
+ * @property {Function} updateScheduledActions - Updates scheduled actions
+ * @property {Function} updateNotificationAlerts - Updates notification alerts
+ * @property {Function} updateNotifAlertConfig - Updates notification alert config
+ * @property {Function} updateNotificationLog - Updates notification log
+ * @property {Function} updateToastPreferences - Updates toast preferences
+ * @property {Function} updateHelpArticles - Updates help articles
+ * @property {Function} updateOnboardingState - Updates onboarding state
+ * @property {Function} updateTourState - Updates tour state
+ * @property {Function} updateArticleVotes - Updates article votes
+ * @property {Array} toasts - Current active toast notifications
+ * @property {Function} addToast - Adds a new toast notification, returns its ID
+ * @property {Function} dismissToast - Dismisses a toast by ID
+ */
+
 import { createContext, useContext, useState, useCallback, useRef } from 'react';
 import {
   getNurses,

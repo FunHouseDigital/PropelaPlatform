@@ -3,9 +3,13 @@ import { onLCP, onFID, onCLS, onTTFB, onINP } from 'web-vitals'
 
 /**
  * Custom hook that tracks Core Web Vitals metrics using the web-vitals library.
+ * Registers callbacks for LCP, FID, CLS, TTFB, and INP metrics and optionally
+ * logs them in development mode and creates Performance API marks/measures.
  *
  * @param {Object} [options] - Configuration options
- * @param {Function} [options.onReport] - Optional callback invoked with each metric report
+ * @param {Function} [options.onReport] - Optional callback invoked with each metric report.
+ *   Receives a web-vitals Metric object with properties: name, value, rating, id, delta, entries.
+ * @returns {void} This hook does not return a value; it registers side effects only.
  */
 export function useWebVitals(options = {}) {
   const { onReport } = options
@@ -54,9 +58,12 @@ export function useWebVitals(options = {}) {
 
 /**
  * Utility to create performance marks and measures for critical operations.
+ * Returns an object with start() and end() methods to bracket the operation.
+ * In development mode, logs the measured duration to the console.
  *
  * @param {string} operationName - Name of the operation to measure
- * @returns {{ start: Function, end: Function }} Object with start/end functions
+ * @returns {{ start: () => void, end: () => void }} Object with start/end functions
+ *   to bracket the measured operation
  */
 export function createPerformanceMark(operationName) {
   const markStart = `${operationName}-start`
