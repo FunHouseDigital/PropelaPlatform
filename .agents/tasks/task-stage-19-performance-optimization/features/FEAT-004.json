@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "feat",
   "description": "Memoization and rendering optimizations: wrap PlacementCard and DocumentCard with React.memo, optimize AppContext value with useMemo, add a useVirtualList hook for the nurse database, and ensure debounced search is used in NurseDatabase and OutreachTable search inputs.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Wrap PlacementCard (src/components/placements/PlacementCard.jsx) with React.memo. The component is a simple presentational card - add memo around the default export. Add a custom comparison function that checks placement.id, placement.nurseName, placement.daysInStage, placement.matchScore, placement.specialty, placement.targetCountry, placement.facilityName.",
     "Extract DocumentCard from src/components/documents/DocumentRepository.jsx into its own file or wrap the existing local function with React.memo. Since it is a local function component inside DocumentRepository.jsx, the simplest approach is to wrap it with React.memo inline.",

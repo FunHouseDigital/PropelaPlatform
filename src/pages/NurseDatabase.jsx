@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { getNurses, saveNurses } from '../lib/storage';
 import { calculateReadinessStatus } from '../lib/calculations';
+import { useDebouncedValue } from '../hooks/useDebounce';
 import GalleryView from '../components/nurses/GalleryView';
 import PipelineView from '../components/nurses/PipelineView';
 import CohortView from '../components/nurses/CohortView';
@@ -49,6 +50,8 @@ export default function NurseDatabase() {
   const [selectedNurse, setSelectedNurse] = useState(null);
   const [selectedCohort, setSelectedCohort] = useState('Cohort 1');
 
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
+
   // Get unique cohort names
   const cohorts = useMemo(() => {
     const set = new Set();
@@ -63,8 +66,8 @@ export default function NurseDatabase() {
     let result = [...allNurses];
 
     // Search
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
+    if (debouncedSearchQuery.trim()) {
+      const q = debouncedSearchQuery.toLowerCase().trim();
       result = result.filter(
         (n) =>
           n.fullName.toLowerCase().includes(q) ||
@@ -118,7 +121,7 @@ export default function NurseDatabase() {
     });
 
     return result;
-  }, [allNurses, searchQuery, filters, sortOrder]);
+  }, [allNurses, debouncedSearchQuery, filters, sortOrder]);
 
   const handleUpdateNurse = useCallback(
     (updatedNurse) => {

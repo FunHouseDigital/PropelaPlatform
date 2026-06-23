@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { MapPin, Clock, Target } from 'lucide-react';
@@ -17,7 +18,22 @@ function getInitials(name) {
     .slice(0, 2);
 }
 
-export default function PlacementCard({ placement, onClick }) {
+function areEqual(prevProps, nextProps) {
+  const prev = prevProps.placement;
+  const next = nextProps.placement;
+  return (
+    prev.id === next.id &&
+    prev.nurseName === next.nurseName &&
+    prev.daysInStage === next.daysInStage &&
+    prev.matchScore === next.matchScore &&
+    prev.specialty === next.specialty &&
+    prev.targetCountry === next.targetCountry &&
+    prev.facilityName === next.facilityName &&
+    prevProps.onClick === nextProps.onClick
+  );
+}
+
+const PlacementCard = memo(function PlacementCard({ placement, onClick }) {
   const {
     attributes,
     listeners,
@@ -76,4 +92,6 @@ export default function PlacementCard({ placement, onClick }) {
       </div>
     </div>
   );
-}
+}, areEqual);
+
+export default PlacementCard;
