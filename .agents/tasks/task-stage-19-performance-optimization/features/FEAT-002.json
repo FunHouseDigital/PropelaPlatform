@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Bundle optimization: add chunk splitting config to vite.config.js (manual chunks for vendor libs), integrate rollup-plugin-visualizer for bundle analysis, and add a useWebVitals hook for performance monitoring with Web Vitals tracking (LCP, FID, CLS, TTFB, INP).",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Update vite.config.js: add build.rollupOptions.output.manualChunks configuration to split vendor libraries into separate chunks - 'vendor-react' (react, react-dom), 'vendor-recharts' (recharts), 'vendor-lucide' (lucide-react), 'vendor-dnd' (@dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities), 'vendor-router' (react-router-dom)",
     "Add rollup-plugin-visualizer to vite.config.js as an optional plugin (conditionally enabled via ANALYZE env var or a separate 'build:analyze' script) so it generates stats.html",
