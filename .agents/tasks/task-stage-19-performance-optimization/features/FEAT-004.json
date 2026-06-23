@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Memoization and rendering optimizations: wrap PlacementCard and DocumentCard with React.memo, optimize AppContext value with useMemo, add a useVirtualList hook for the nurse database, and ensure debounced search is used in NurseDatabase and OutreachTable search inputs.",
+  "status": "pending",
+  "steps": [
+    "Wrap PlacementCard (src/components/placements/PlacementCard.jsx) with React.memo. The component is a simple presentational card - add memo around the default export. Add a custom comparison function that checks placement.id, placement.nurseName, placement.daysInStage, placement.matchScore, placement.specialty, placement.targetCountry, placement.facilityName.",
+    "Extract DocumentCard from src/components/documents/DocumentRepository.jsx into its own file or wrap the existing local function with React.memo. Since it is a local function component inside DocumentRepository.jsx, the simplest approach is to wrap it with React.memo inline.",
+    "In src/context/AppContext.jsx, wrap the context value object with useMemo. The dependency array should include all state values and update functions. Since all update functions are already useCallback-wrapped (stable refs), memoizing the value object prevents unnecessary re-renders of consumers when unrelated state changes.",
+    "Create src/hooks/useVirtualList.js - a lightweight virtualization hook for long lists. It should accept: items array, itemHeight (px), containerHeight (px), overscan (default 5). Return: visibleItems (sliced array), totalHeight, offsetY, containerProps (onScroll handler and style). This provides windowed rendering without external dependencies.",
+    "In src/pages/NurseDatabase.jsx, apply the useDebounce hook (from src/hooks/useDebounce.js) to the search input. Currently setSearchQuery is called directly on every keystroke - add a useDebouncedSearch pattern: keep the input controlled with local state but debounce the value used for filtering (use a simple useState + useEffect debounce pattern like CommandPalette does, or use the existing useDebounce hook in value-debounce mode by creating a useDebouncedValue wrapper).",
+    "In src/components/outreach/OutreachTable.jsx, similarly debounce the searchQuery state so filtering only occurs after typing pauses (300ms).",
+    "Add a useDebouncedValue helper to src/hooks/useDebounce.js (as a named export alongside the existing callback-style useDebounce) that debounces a value - similar to the local one in CommandPalette.jsx but reusable. Signature: useDebouncedValue(value, delay) returns debouncedValue.",
+    "Update CommandPalette.jsx to import useDebouncedValue from src/hooks/useDebounce.js instead of defining its own local useDebounce function."
+  ],
+  "acceptance_criteria": [
+    "PlacementCard is wrapped with React.memo with a custom areEqual comparator",
+    "DocumentCard inside DocumentRepository.jsx is wrapped with React.memo",
+    "AppContext value is memoized with useMemo",
+    "src/hooks/useVirtualList.js exists and exports a useVirtualList hook",
+    "src/hooks/useDebounce.js exports both useDebounce (callback-style) and useDebouncedValue (value-style)",
+    "NurseDatabase.jsx uses debounced search value for filtering",
+    "OutreachTable.jsx uses debounced search value for filtering",
+    "CommandPalette.jsx imports useDebouncedValue from hooks instead of defining local useDebounce",
+    "npm run build succeeds",
+    "npm test passes"
+  ],
+  "verification": [
+    "npm run build",
+    "npm test"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

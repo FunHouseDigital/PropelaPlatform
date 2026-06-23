@@ -1,0 +1,31 @@
+{
+  "project_type": "React SPA with Vite bundler and Tailwind CSS v4",
+  "language": "JavaScript (JSX, no TypeScript)",
+  "build_system": "Vite 8 with @vitejs/plugin-react and @tailwindcss/vite plugins",
+  "test_framework": "Vitest with React Testing Library (jsdom environment), Playwright for e2e",
+  "build_command": "npm run build",
+  "test_command": "npm test",
+  "verification_instructions": "1. Run npm run build to verify bundle builds successfully. 2. Run npm test to verify all existing tests pass. 3. Run npm run lint to verify linting passes.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "npm install",
+  "environment_constraints": "Network access available for npm installs. No Docker daemon needed.",
+  "contribution_requirements": "All code is .jsx (no TypeScript). Uses flat ESLint config. Vitest config is in vitest.config.js (separate from vite.config.js).",
+  "key_patterns": "React.lazy for all routes in App.jsx. AppContext provides global state with useCallback-wrapped update functions. useDebounce hook exists at src/hooks/useDebounce.js (callback-style). CommandPalette has its own local useDebounce (value-style). NurseCard is a complex editing overlay - not a pure list item. PlacementCard is a simpler card used in sortable lists. DocumentCard is a local function component inside DocumentRepository.jsx. useMemoizedComputation hook exists for stable memoization.",
+  "relevant_files": [
+    "vite.config.js",
+    "vitest.config.js",
+    "eslint.config.js",
+    "package.json",
+    "src/App.jsx",
+    "src/context/AppContext.jsx",
+    "src/hooks/useDebounce.js",
+    "src/hooks/useMemoizedComputation.js",
+    "src/components/nurses/NurseCard.jsx",
+    "src/components/placements/PlacementCard.jsx",
+    "src/components/documents/DocumentRepository.jsx",
+    "src/components/search/CommandPalette.jsx",
+    "src/pages/NurseDatabase.jsx",
+    "src/components/outreach/OutreachTable.jsx"
+  ],
+  "directory_structure": "src/App.jsx (entry with lazy routes), src/context/ (AppContext), src/hooks/ (useDebounce, useMemoizedComputation, useMediaQuery, useOnlineStatus, useAcquisitionCRUD), src/components/ (subdirectories per feature area), src/pages/ (page-level components), src/lib/ (utilities, storage, constants), src/data/ (seed data), src/test/ (test setup and factories)"
+}
