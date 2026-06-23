@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react'
-import { onLCP, onFID, onCLS, onTTFB, onINP } from 'web-vitals'
+import { onLCP, onCLS, onTTFB, onINP } from 'web-vitals'
 
 /**
  * Custom hook that tracks Core Web Vitals metrics using the web-vitals library.
- * Registers callbacks for LCP, FID, CLS, TTFB, and INP metrics and optionally
+ * Registers callbacks for LCP, CLS, TTFB, and INP metrics and optionally
  * logs them in development mode and creates Performance API marks/measures.
  *
  * @param {Object} [options] - Configuration options
@@ -49,7 +49,6 @@ export function useWebVitals(options = {}) {
     }
 
     onLCP(handleMetric)
-    onFID(handleMetric)
     onCLS(handleMetric)
     onTTFB(handleMetric)
     onINP(handleMetric)
