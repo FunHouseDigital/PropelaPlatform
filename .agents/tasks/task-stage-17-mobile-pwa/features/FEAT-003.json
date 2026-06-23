@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Responsive Components and Performance Optimizations - Convert route imports to React.lazy with Suspense, add responsive component utilities (mobile-friendly modals, responsive tables as cards, collapsible filter panels, virtual scrolling hook), and memoized expensive computations.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Refactor src/App.jsx: Convert all 16 page imports to use React.lazy(() => import('./pages/PageName')). Wrap the <Routes> in <Suspense fallback={<LoadingSpinner />}>. Create a simple LoadingSpinner component inline or as src/components/layout/LoadingSpinner.jsx (centered spinner with propela-purple color, animate-spin).",
     "Create src/components/ui/ResponsiveModal.jsx: A modal wrapper that is centered dialog on desktop (max-w-lg, rounded-lg, with backdrop) but becomes full-screen on mobile (inset-0, no border-radius). Accept props: isOpen, onClose, title, children, size ('sm'|'md'|'lg'|'full'). Use fixed positioning, z-50, smooth fade-in animation. Close button is always 44px touch target.",
@@ -30,5 +30,5 @@
     "npm run lint"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "React 19 strict lint rules (react-hooks/refs) disallow accessing refs inside useMemo. Simplified useMemoizedComputation to use JSON.stringify of deps as the useMemo dependency directly without refs. All 16 page chunks appear in the build output confirming code splitting works. Pre-existing lint errors exist in design-reference/ and other source files but none from our changes."
 }
