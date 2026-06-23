@@ -16,6 +16,7 @@ import {
   Bell,
   HelpCircle,
   Settings,
+  X,
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 
@@ -38,33 +39,52 @@ const NAV_ITEMS = [
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose, isMobile }) {
   const location = useLocation();
   const { notifications, notificationAlerts } = useAppContext();
   const unreadCount = notifications.filter((n) => !n.read).length;
   const notifUnreadCount = notificationAlerts.filter((n) => !n.read).length;
 
+  const sidebarClasses = isMobile
+    ? `fixed left-0 top-0 h-screen w-[220px] flex flex-col z-50 transition-transform duration-300 ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      }`
+    : 'fixed left-0 top-0 h-screen w-[220px] flex flex-col';
+
   return (
-    <aside className="fixed left-0 top-0 h-screen w-[220px] flex flex-col"
+    <aside
+      className={sidebarClasses}
       style={{
         background: 'linear-gradient(180deg, #5B2D8E 0%, #3D1D5E 100%)',
       }}
     >
-      {/* Logo */}
-      <div className="px-5 pt-6 pb-2">
-        <div className="flex items-center gap-2">
-          <span className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white font-bold text-sm">
-            P
-          </span>
-          <span className="text-white font-semibold text-lg tracking-tight">
-            propela
-          </span>
+      {/* Logo and Close Button */}
+      <div className="px-5 pt-6 pb-2 flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white font-bold text-sm">
+              P
+            </span>
+            <span className="text-white font-semibold text-lg tracking-tight">
+              propela
+            </span>
+          </div>
+          <p className="text-white/50 text-[11px] mt-1 ml-10">Ops</p>
         </div>
-        <p className="text-white/50 text-[11px] mt-1 ml-10">Ops</p>
+        {isMobile && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-white/70 hover:text-white transition-colors rounded-lg"
+            aria-label="Close sidebar"
+          >
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 mt-6 px-3">
+      <nav className="flex-1 mt-6 px-3 overflow-y-auto">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
@@ -73,7 +93,8 @@ export default function Sidebar() {
             <NavLink
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm font-medium transition-all duration-150
+              onClick={isMobile ? onClose : undefined}
+              className={`flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg mb-1 text-sm font-medium transition-all duration-150
                 ${isActive
                   ? 'bg-white/15 text-white'
                   : 'text-white/70 hover:bg-white/8 hover:text-white'
