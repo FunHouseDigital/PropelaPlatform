@@ -10,6 +10,7 @@ export default function CommandPalette({ isOpen, onClose }) {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef(null);
+  const paletteRef = useRef(null);
   const navigate = useNavigate();
   const { nurses, placements, documents, cohorts, recentSearches, updateRecentSearches, recentlyViewed, updateRecentlyViewed } = useAppContext();
 
@@ -22,6 +23,13 @@ export default function CommandPalette({ isOpen, onClose }) {
         : [],
     [debouncedQuery, nurses, placements, documents, cohorts]
   );
+
+  // Live region announcement text
+  const liveAnnouncement = useMemo(() => {
+    if (!query.trim()) return '';
+    if (results.length === 0) return 'No results found';
+    return `${results.length} result${results.length === 1 ? '' : 's'} found`;
+  }, [results.length, query]);
 
   const handleSelect = useCallback(
     (result) => {
@@ -93,7 +101,45 @@ export default function CommandPalette({ isOpen, onClose }) {
     setActiveIndex(0);
   }, [query]);
 
+  // Focus trap
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleFocusTrap = (e) => {
+      if (e.key !== 'Tab') return;
+
+      const focusableElements = paletteRef.current?.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusableElements || focusableElements.length === 0) return;
+
+      const first = focusableElements[0];
+      const last = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleFocusTrap);
+    return () => document.removeEventListener('keydown', handleFocusTrap);
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  const activeItemId = results.length > 0
+    ? `command-palette-result-${activeIndex}`
+    : recentSearches.length > 0
+      ? `command-palette-recent-${activeIndex}`
+      : undefined;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]">
@@ -105,13 +151,20 @@ export default function CommandPalette({ isOpen, onClose }) {
           setQuery('');
           setActiveIndex(0);
         }}
+        aria-hidden="true"
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden">
+      <div
+        ref={paletteRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette search"
+        className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden"
+      >
         {/* Search Input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200">
-          <Search size={18} className="text-gray-400 shrink-0" />
+          <Search size={18} className="text-gray-400 shrink-0" aria-hidden="true" />
           <input
             ref={inputRef}
             type="text"
@@ -120,6 +173,12 @@ export default function CommandPalette({ isOpen, onClose }) {
             onKeyDown={handleKeyDown}
             placeholder="Search nurses, placements, documents... (Esc to close)"
             className="flex-1 text-sm text-gray-900 placeholder-gray-400 outline-none bg-transparent"
+            aria-label="Search"
+            aria-activedescendant={activeItemId}
+            aria-controls="command-palette-results"
+            role="combobox"
+            aria-expanded="true"
+            aria-autocomplete="list"
           />
           {query && (
             <button
@@ -129,14 +188,20 @@ export default function CommandPalette({ isOpen, onClose }) {
                 inputRef.current?.focus();
               }}
               className="text-gray-400 hover:text-gray-600"
+              aria-label="Clear search"
             >
               <X size={16} />
             </button>
           )}
         </div>
 
+        {/* Live region for screen reader announcements */}
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {liveAnnouncement}
+        </div>
+
         {/* Results */}
-        <div className="max-h-80 overflow-y-auto">
+        <div id="command-palette-results" role="listbox" className="max-h-80 overflow-y-auto">
           {query.trim() && results.length > 0 && (
             <div>
               {results.map((result, index) => (
@@ -145,6 +210,7 @@ export default function CommandPalette({ isOpen, onClose }) {
                   result={result}
                   isActive={index === activeIndex}
                   onClick={() => handleSelect(result)}
+                  id={`command-palette-result-${index}`}
                 />
               ))}
             </div>
@@ -164,7 +230,10 @@ export default function CommandPalette({ isOpen, onClose }) {
               {recentSearches.map((recent, index) => (
                 <button
                   key={`recent-${index}`}
+                  id={`command-palette-recent-${index}`}
                   type="button"
+                  role="option"
+                  aria-selected={index === activeIndex}
                   onClick={() => handleRecentSelect(recent)}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
                     index === activeIndex ? 'bg-blue-50' : 'hover:bg-gray-50'
@@ -187,8 +256,8 @@ export default function CommandPalette({ isOpen, onClose }) {
 
         {/* Footer */}
         <div className="px-4 py-2 border-t border-gray-200 flex items-center gap-4 text-xs text-gray-400">
-          <span><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-500 font-mono">↑↓</kbd> navigate</span>
-          <span><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-500 font-mono">↵</kbd> select</span>
+          <span><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-500 font-mono">&#x2191;&#x2193;</kbd> navigate</span>
+          <span><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-500 font-mono">&#x21B5;</kbd> select</span>
           <span><kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-500 font-mono">esc</kbd> close</span>
         </div>
       </div>

@@ -7,12 +7,15 @@ const TYPE_COLORS = {
   Cohort: 'bg-purple-100 text-purple-700',
 };
 
-export default function SearchResult({ result, isActive, onClick }) {
+export default function SearchResult({ result, isActive, onClick, id }) {
   const badgeColor = TYPE_COLORS[result.type] || 'bg-gray-100 text-gray-700';
 
   return (
     <button
       type="button"
+      id={id}
+      role="option"
+      aria-selected={isActive}
       onClick={onClick}
       className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
         isActive ? 'bg-blue-50' : 'hover:bg-gray-50'
