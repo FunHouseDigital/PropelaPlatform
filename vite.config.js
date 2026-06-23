@@ -15,7 +15,33 @@ export default defineConfig({
         brotliSize: true,
       }),
   ].filter(Boolean),
+  define: {
+    __BUILD_TIMESTAMP__: JSON.stringify(new Date().toISOString()),
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '0.0.0'),
+    __GIT_COMMIT_HASH__: JSON.stringify(process.env.GIT_COMMIT_HASH || 'unknown'),
+  },
   build: {
+    // Generate hidden source maps for error tracking (not exposed to users)
+    sourcemap: 'hidden',
+    // Inline assets smaller than 4kb as base64
+    assetsInlineLimit: 4096,
+    // Enable CSS code splitting for better caching
+    cssCodeSplit: true,
+    // Terser minification options
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+      format: {
+        comments: false,
+      },
+    },
+    // Module preload configuration
+    modulePreload: {
+      polyfill: true,
+    },
     rollupOptions: {
       output: {
         manualChunks(id) {

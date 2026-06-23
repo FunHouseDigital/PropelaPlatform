@@ -7,6 +7,7 @@ import CommandPalette from '../search/CommandPalette';
 import OnboardingWizard from '../help/OnboardingWizard';
 import OfflineBanner from './OfflineBanner';
 import InstallPrompt from './InstallPrompt';
+import UpdateNotification from './UpdateNotification';
 import LoadingSpinner from './LoadingSpinner';
 import KeyboardShortcutsPanel from '../accessibility/KeyboardShortcutsPanel';
 import useMediaQuery from '../../hooks/useMediaQuery';
@@ -124,6 +125,7 @@ export default function Layout() {
       <CommandPalette isOpen={isCommandPaletteOpen} onClose={closeSearch} />
       <KeyboardShortcutsPanel isOpen={isShortcutsPanelOpen} onClose={() => setIsShortcutsPanelOpen(false)} />
       <OnboardingWizard />
+      <UpdateNotification />
     </div>
   );
 }
