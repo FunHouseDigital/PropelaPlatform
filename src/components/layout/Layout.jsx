@@ -50,6 +50,11 @@ export default function Layout() {
         setIsCommandPaletteOpen((prev) => !prev);
       }
       if (e.shiftKey && e.key === '?') {
+        // Don't fire inside text inputs, textareas, or contentEditable elements
+        const tag = e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) {
+          return;
+        }
         e.preventDefault();
         setIsShortcutsPanelOpen((prev) => !prev);
       }

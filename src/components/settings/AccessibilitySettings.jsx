@@ -1,15 +1,17 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../../context/AppContext';
 import { Save, Eye, Monitor, Type } from 'lucide-react';
 import LanguageSwitcher from './LanguageSwitcher';
 
 const FONT_SIZES = [
-  { id: 'small', label: 'Small', description: '14px base' },
-  { id: 'medium', label: 'Medium', description: '16px base (default)' },
-  { id: 'large', label: 'Large', description: '18px base' },
+  { id: 'small', labelKey: 'accessibility.fontSizeSmall', description: '14px base' },
+  { id: 'medium', labelKey: 'accessibility.fontSizeMedium', description: '16px base (default)' },
+  { id: 'large', labelKey: 'accessibility.fontSizeLarge', description: '18px base' },
 ];
 
 export default function AccessibilitySettings() {
+  const { t } = useTranslation();
   const { settings, updateSettings } = useAppContext();
   const accessibility = settings.accessibility || {};
   const [form, setForm] = useState({
@@ -43,16 +45,15 @@ export default function AccessibilitySettings() {
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <Eye size={20} className="text-[#5B2D8E]" />
-          High Contrast Mode
+          {t('accessibility.highContrast')}
         </h3>
         <p className="text-sm text-gray-500 mb-4">
-          Increase color contrast for better readability. This applies WCAG AAA-compliant contrast
-          ratios, thicker borders, and enhanced focus indicators throughout the interface.
+          {t('accessibility.highContrastDescription')}
         </p>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-700">Enable High Contrast</p>
-            <p className="text-xs text-gray-500">Enhances visibility of text, borders, and controls</p>
+            <p className="text-sm font-medium text-gray-700">{t('accessibility.enableHighContrast')}</p>
+            <p className="text-xs text-gray-500">{t('accessibility.enhancesVisibility')}</p>
           </div>
           <button
             type="button"
@@ -76,15 +77,15 @@ export default function AccessibilitySettings() {
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <Monitor size={20} className="text-[#5B2D8E]" />
-          Motion Preferences
+          {t('accessibility.motionPreferences')}
         </h3>
         <p className="text-sm text-gray-500 mb-4">
-          Reduce or disable animations and transitions for users who are sensitive to motion.
+          {t('accessibility.motionDescription')}
         </p>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-700">Reduce Motion</p>
-            <p className="text-xs text-gray-500">Disables animations and smooth transitions</p>
+            <p className="text-sm font-medium text-gray-700">{t('accessibility.reducedMotion')}</p>
+            <p className="text-xs text-gray-500">{t('accessibility.reducedMotionDescription')}</p>
           </div>
           <button
             type="button"
@@ -108,10 +109,10 @@ export default function AccessibilitySettings() {
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <Type size={20} className="text-[#5B2D8E]" />
-          Font Size
+          {t('accessibility.fontSize')}
         </h3>
         <p className="text-sm text-gray-500 mb-4">
-          Adjust the base font size across the application for improved readability.
+          {t('accessibility.fontSizeDescription')}
         </p>
         <div className="flex gap-3">
           {FONT_SIZES.map((size) => (
@@ -124,7 +125,7 @@ export default function AccessibilitySettings() {
                   : 'border-gray-300 text-gray-600 hover:border-gray-400'
               }`}
             >
-              <div className="font-medium">{size.label}</div>
+              <div className="font-medium">{t(size.labelKey)}</div>
               <div className="text-xs text-gray-500 mt-0.5">{size.description}</div>
             </button>
           ))}
@@ -138,7 +139,7 @@ export default function AccessibilitySettings() {
           className="flex items-center gap-2 px-5 py-2.5 bg-[#5B2D8E] text-white rounded-lg text-sm font-medium hover:bg-[#4a2574] transition-colors"
         >
           <Save size={16} />
-          {saved ? 'Saved!' : 'Save Changes'}
+          {saved ? t('accessibility.saved') : t('accessibility.saveChanges')}
         </button>
       </div>
 

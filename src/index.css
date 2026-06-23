@@ -150,6 +150,17 @@ html[data-reduced-motion='true'] *::after {
   scroll-behavior: auto !important;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Font Size Classes */
 html.font-size-small {
   font-size: 14px;
@@ -166,11 +177,6 @@ html.font-size-large {
 /* RTL Layout Foundation */
 [dir='rtl'] {
   direction: rtl;
-}
-
-[dir='rtl'] .fixed.left-0 {
-  left: auto;
-  right: 0;
 }
 
 [dir='rtl'] .-translate-x-full {

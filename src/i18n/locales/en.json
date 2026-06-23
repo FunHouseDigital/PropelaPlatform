@@ -99,14 +99,19 @@
   "accessibility": {
     "highContrast": "High Contrast Mode",
     "highContrastDescription": "Increase color contrast for better readability",
+    "enhancesVisibility": "Enhances visibility of text, borders, and controls",
     "reducedMotion": "Reduce Motion",
     "reducedMotionDescription": "Disables animations and smooth transitions",
+    "motionDescription": "Reduce or disable animations and transitions for users who are sensitive to motion.",
     "fontSize": "Font Size",
+    "fontSizeDescription": "Adjust the base font size across the application for improved readability.",
     "fontSizeSmall": "Small",
     "fontSizeMedium": "Medium",
     "fontSizeLarge": "Large",
     "enableHighContrast": "Enable High Contrast",
-    "motionPreferences": "Motion Preferences"
+    "motionPreferences": "Motion Preferences",
+    "saveChanges": "Save Changes",
+    "saved": "Saved!"
   },
   "notifications": {
     "toast": {
