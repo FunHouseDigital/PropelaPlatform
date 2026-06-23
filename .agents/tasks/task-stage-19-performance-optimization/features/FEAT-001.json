@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-001",
+  "type": "chore",
+  "description": "Install all new dependencies and verify baseline build/tests pass before making any code changes.",
+  "status": "in_progress",
+  "steps": [
+    "Install production dependencies: web-vitals",
+    "Install dev dependencies: rollup-plugin-visualizer, eslint-plugin-jsx-a11y, eslint-plugin-import, prettier, husky, lint-staged",
+    "Run 'npm run build' to verify baseline still works",
+    "Run 'npm test' to verify all existing tests pass",
+    "Run 'npm run lint' to verify linting passes"
+  ],
+  "acceptance_criteria": [
+    "All packages are installed and listed in package.json",
+    "npm run build succeeds without errors",
+    "npm test passes all existing tests",
+    "npm run lint passes"
+  ],
+  "verification": [
+    "npm run build",
+    "npm test",
+    "npm run lint"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

@@ -1,0 +1,7 @@
+{
+  "task_id": "task-stage-19-performance-optimization",
+  "task_description": "Stage 19: Performance Optimization & Code Quality - Bundle optimization with manual chunks, Web Vitals tracking, ESLint/Prettier/husky tooling, and React memoization/virtualization/debouncing improvements.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}

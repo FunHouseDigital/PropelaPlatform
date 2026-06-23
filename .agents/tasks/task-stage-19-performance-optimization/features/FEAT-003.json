@@ -1,0 +1,36 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Code quality tooling: enhance ESLint with jsx-a11y and import ordering plugins, add Prettier config, add husky + lint-staged config files, and add JSDoc annotations to key interfaces/contexts.",
+  "status": "pending",
+  "steps": [
+    "Update eslint.config.js to add eslint-plugin-jsx-a11y (accessibility rules) and eslint-plugin-import (import ordering). Use flat config format. For import plugin, configure import/order rule to enforce groups: builtin, external, internal, parent, sibling, index. Set jsx-a11y to recommended.",
+    "Create .prettierrc.json with consistent formatting config: singleQuote: true, semi: true, tabWidth: 2, trailingComma: 'es5', printWidth: 100, jsxSingleQuote: false, bracketSpacing: true",
+    "Create .prettierignore with: dist, node_modules, coverage, stats.html",
+    "Add a 'format' script to package.json: prettier --write src/",
+    "Add a 'format:check' script to package.json: prettier --check src/",
+    "Create .husky/pre-commit file (just the config file content - do not run husky install or git hooks setup). Content should run npx lint-staged.",
+    "Add lint-staged config to package.json: { '*.{js,jsx}': ['eslint --fix', 'prettier --write'], '*.{json,md}': ['prettier --write'] }",
+    "Add JSDoc annotations to src/context/AppContext.jsx - add @typedef for the context shape (key state and update function types) at the top of the file",
+    "Add JSDoc annotations to src/hooks/useWebVitals.js (the hook created in FEAT-002) - document params and return type",
+    "Run npm run lint to verify the new ESLint config works (fix any auto-fixable issues that arise from new rules, suppress non-critical issues that would require large refactoring with eslint-disable comments if necessary)"
+  ],
+  "acceptance_criteria": [
+    "eslint.config.js includes jsx-a11y and import plugins in flat config format",
+    ".prettierrc.json exists with the specified config",
+    ".prettierignore exists",
+    ".husky/pre-commit file exists with lint-staged command",
+    "package.json has lint-staged config, format script, and format:check script",
+    "AppContext.jsx has JSDoc typedef for the context value shape",
+    "npm run lint passes (or only has warnings, no errors)",
+    "npm run build succeeds",
+    "npm test passes"
+  ],
+  "verification": [
+    "npm run lint",
+    "npm run build",
+    "npm test"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

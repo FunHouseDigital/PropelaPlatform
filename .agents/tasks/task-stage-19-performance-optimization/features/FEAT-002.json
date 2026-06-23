@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Bundle optimization: add chunk splitting config to vite.config.js (manual chunks for vendor libs), integrate rollup-plugin-visualizer for bundle analysis, and add a useWebVitals hook for performance monitoring with Web Vitals tracking (LCP, FID, CLS, TTFB, INP).",
+  "status": "pending",
+  "steps": [
+    "Update vite.config.js: add build.rollupOptions.output.manualChunks configuration to split vendor libraries into separate chunks - 'vendor-react' (react, react-dom), 'vendor-recharts' (recharts), 'vendor-lucide' (lucide-react), 'vendor-dnd' (@dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities), 'vendor-router' (react-router-dom)",
+    "Add rollup-plugin-visualizer to vite.config.js as an optional plugin (conditionally enabled via ANALYZE env var or a separate 'build:analyze' script) so it generates stats.html",
+    "Add a 'build:analyze' script to package.json: ANALYZE=true vite build",
+    "Create src/hooks/useWebVitals.js - a custom hook that uses the web-vitals library to track LCP, FID, CLS, TTFB, and INP. The hook should accept an optional onReport callback and log metrics in development mode. Include performance marks/measures for critical operations.",
+    "Create src/lib/performanceBudget.js - a configuration file defining performance budgets (e.g., LCP < 2.5s, FID < 100ms, CLS < 0.1, bundle size limits). Export the budget config object.",
+    "Add React Profiler integration utility at src/lib/reactProfiler.js - a wrapper component that only activates in development mode, logging render times for wrapped components."
+  ],
+  "acceptance_criteria": [
+    "npm run build produces separate vendor chunks (vendor-react, vendor-recharts, vendor-lucide, vendor-dnd, vendor-router visible in dist/assets/)",
+    "Running ANALYZE=true npm run build or npm run build:analyze generates a stats.html file",
+    "src/hooks/useWebVitals.js exports a useWebVitals hook that initializes web-vitals tracking",
+    "src/lib/performanceBudget.js exports a PERFORMANCE_BUDGET config object with thresholds for LCP, FID, CLS, TTFB, INP",
+    "src/lib/reactProfiler.js exports a DevProfiler component",
+    "npm run build still succeeds",
+    "npm test still passes"
+  ],
+  "verification": [
+    "npm run build && ls dist/assets/ | grep vendor",
+    "npm test"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
