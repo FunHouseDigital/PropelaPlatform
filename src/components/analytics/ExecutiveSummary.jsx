@@ -6,6 +6,7 @@ import {
 import { TrendingUp, Users, Clock, DollarSign, Target, Activity, Filter } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { PIPELINE_STAGES_ORDER, EXIT_STATES } from '../../lib/constants';
+import { ACCESSIBLE_CHART_COLORS } from '../../lib/chartAccessibility';
 
 const DATE_RANGES = [
   { label: 'Last 30 days', value: 30 },
@@ -14,7 +15,7 @@ const DATE_RANGES = [
   { label: 'All Time', value: null },
 ];
 
-const FUNNEL_COLORS = ['#5B2D8E', '#7C3AED', '#8B5CF6', '#A78BFA', '#10B981'];
+const FUNNEL_COLORS = ACCESSIBLE_CHART_COLORS;
 
 function StatCard({ icon: Icon, label, value, subtext, color, bgColor, sparkData }) {
   return (

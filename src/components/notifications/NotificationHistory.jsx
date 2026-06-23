@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Search, Download, Calendar, Filter, BarChart3 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAppContext } from '../../context/AppContext';
+import { ACCESSIBLE_CHART_COLORS } from '../../lib/chartAccessibility';
 
 const CATEGORIES = [
   { id: 'all', label: 'All Categories' },
@@ -164,7 +165,7 @@ export default function NotificationHistory() {
                   border: '1px solid #e5e7eb',
                 }}
               />
-              <Bar dataKey="count" fill="#5B2D8E" radius={[4, 4, 0, 0]} name="Notifications" />
+              <Bar dataKey="count" fill={ACCESSIBLE_CHART_COLORS[0]} radius={[4, 4, 0, 0]} name="Notifications" />
             </BarChart>
           </ResponsiveContainer>
         </div>

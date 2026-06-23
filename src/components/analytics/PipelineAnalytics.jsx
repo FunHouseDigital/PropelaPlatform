@@ -6,6 +6,7 @@ import {
 import { AlertTriangle, Activity, TrendingDown } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { PIPELINE_STAGES_ORDER, EXIT_STATES } from '../../lib/constants';
+import { ACCESSIBLE_CHART_COLORS } from '../../lib/chartAccessibility';
 
 const EXIT_STAGES = ['Not Selected', "Didn't Qualify", 'Deferred', 'Dropped Out', 'Recommended Pathway'];
 
@@ -30,11 +31,7 @@ function getStatusLabel(status) {
   return 'Bottleneck';
 }
 
-const FUNNEL_GRADIENT = [
-  '#5B2D8E', '#6D3FA0', '#7C3AED', '#8B5CF6', '#9B6DF7',
-  '#A78BFA', '#B39DFB', '#C4B5FD', '#D8CCFE', '#E9E0FF',
-  '#A78BFA', '#8B5CF6', '#7C3AED', '#5B2D8E', '#10B981',
-];
+const FUNNEL_GRADIENT = ACCESSIBLE_CHART_COLORS;
 
 export default function PipelineAnalytics() {
   const { nurses } = useAppContext();

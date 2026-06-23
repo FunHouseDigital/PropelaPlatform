@@ -10,6 +10,7 @@ import InstallPrompt from './InstallPrompt';
 import LoadingSpinner from './LoadingSpinner';
 import KeyboardShortcutsPanel from '../accessibility/KeyboardShortcutsPanel';
 import useMediaQuery from '../../hooks/useMediaQuery';
+import { useAppContext } from '../../context/AppContext';
 
 export default function Layout() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
@@ -17,6 +18,7 @@ export default function Layout() {
   const isMobile = useMediaQuery('(max-width: 768px)');
   // null means "use default" (closed on mobile, open on desktop)
   const [sidebarOverride, setSidebarOverride] = useState(null);
+  const { settings } = useAppContext();
 
   // Reset override when viewport changes
   const sidebarOpen = sidebarOverride !== null ? sidebarOverride : !isMobile;
@@ -55,6 +57,31 @@ export default function Layout() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Apply accessibility settings to document element
+  useEffect(() => {
+    const accessibility = settings?.accessibility || {};
+    const root = document.documentElement;
+
+    // High contrast mode
+    if (accessibility.highContrast) {
+      root.setAttribute('data-high-contrast', 'true');
+    } else {
+      root.removeAttribute('data-high-contrast');
+    }
+
+    // Reduced motion preference
+    if (accessibility.reducedMotion) {
+      root.setAttribute('data-reduced-motion', 'true');
+    } else {
+      root.removeAttribute('data-reduced-motion');
+    }
+
+    // Font size class
+    root.classList.remove('font-size-small', 'font-size-medium', 'font-size-large');
+    const fontSize = accessibility.fontSize || 'medium';
+    root.classList.add(`font-size-${fontSize}`);
+  }, [settings?.accessibility]);
 
   return (
     <div className="flex min-h-screen">
