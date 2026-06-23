@@ -3,16 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Search, X, Clock } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { searchAllEntities } from '../../lib/searchUtils';
+import { useDebouncedValue } from '../../hooks/useDebounce';
 import SearchResult from './SearchResult';
-
-function useDebounce(value, delay) {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-  return debouncedValue;
-}
 
 export default function CommandPalette({ isOpen, onClose }) {
   const [query, setQuery] = useState('');
@@ -21,7 +13,7 @@ export default function CommandPalette({ isOpen, onClose }) {
   const navigate = useNavigate();
   const { nurses, placements, documents, cohorts, recentSearches, updateRecentSearches, recentlyViewed, updateRecentlyViewed } = useAppContext();
 
-  const debouncedQuery = useDebounce(query, 150);
+  const debouncedQuery = useDebouncedValue(query, 150);
 
   const results = useMemo(
     () =>

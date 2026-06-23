@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Search, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { OUTREACH_OUTCOMES, PREFERRED_CHANNELS, PROVINCES, ACQUISITION_TRACKS } from '../../lib/constants';
+import { useDebouncedValue } from '../../hooks/useDebounce';
 
 function getOutcomeColor(outcome) {
   if (!outcome) return 'bg-gray-100 text-gray-600';
@@ -38,6 +39,8 @@ export default function OutreachTable() {
   });
   const [sortField, setSortField] = useState('date');
   const [sortDir, setSortDir] = useState('desc');
+
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
 
   // Aggregate all outreach entries from all tracks
   const allEntries = useMemo(() => {
@@ -107,8 +110,8 @@ export default function OutreachTable() {
     let result = [...allEntries];
 
     // Search
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+    if (debouncedSearchQuery.trim()) {
+      const q = debouncedSearchQuery.toLowerCase();
       result = result.filter((e) =>
         (e.contactPerson || '').toLowerCase().includes(q) ||
         (e.templateUsed || '').toLowerCase().includes(q) ||
@@ -162,7 +165,7 @@ export default function OutreachTable() {
     });
 
     return result;
-  }, [allEntries, searchQuery, filters, sortField, sortDir]);
+  }, [allEntries, debouncedSearchQuery, filters, sortField, sortDir]);
 
   function toggleSort(field) {
     if (sortField === field) {
