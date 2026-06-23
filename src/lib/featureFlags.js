@@ -98,8 +98,12 @@ const FeatureFlagContext = createContext({});
 
 /**
  * Provider component that makes feature flags available via context.
+ * NOTE: Flags are evaluated once at mount time and do not update dynamically.
+ * Consumers must reload the page for flag changes to take effect.
  */
 export function FeatureFlagProvider({ children }) {
+  // Intentionally empty dependency array: flags are read once at mount.
+  // A page reload is required for changes (e.g., localStorage overrides) to propagate.
   const flags = useMemo(() => getFeatureFlags(), []);
 
   return createElement(FeatureFlagContext.Provider, { value: flags }, children);

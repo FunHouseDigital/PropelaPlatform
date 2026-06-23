@@ -27,6 +27,13 @@ function getServiceWorkerStatus() {
   return 'Registered (no controller)';
 }
 
+/**
+ * System status/health page showing build info, environment, and runtime health.
+ *
+ * NOTE: In production, this page should be placed behind authentication or restricted
+ * to admin users, as it exposes build metadata (git commit, environment, timestamps).
+ * Currently acceptable since the application does not yet have a real auth layer.
+ */
 export default function StatusPage() {
   const { isOnline } = useOnlineStatus();
   const [swStatus, setSwStatus] = useState('Checking...');

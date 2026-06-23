@@ -51,6 +51,7 @@ export default function FeatureFlagPanel() {
       </h3>
       <p className="text-sm text-gray-500 mb-4">
         Toggle feature flags for development and testing. Changes are saved to localStorage.
+        A page refresh is required for changes to take effect throughout the application.
       </p>
       <div className="space-y-3">
         {Object.values(FEATURE_FLAGS).map((flagName) => (

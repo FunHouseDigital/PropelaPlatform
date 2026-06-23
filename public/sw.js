@@ -1,3 +1,7 @@
+// NOTE: APP_VERSION must be bumped manually before each release.
+// Since public/ files are copied verbatim by Vite, the `define` injection in
+// vite.config.js does not apply here. Update this value as part of your
+// release checklist to ensure caches are invalidated on new deployments.
 const APP_VERSION = '1.0.0';
 const SHELL_CACHE = `propela-shell-v${APP_VERSION}`;
 const API_CACHE = `propela-api-v${APP_VERSION}`;

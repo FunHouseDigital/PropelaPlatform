@@ -57,6 +57,17 @@ export default function useNetworkRetry(options = {}) {
   const isMountedRef = useRef(true);
   const timeoutRef = useRef(null);
 
+  // Store callbacks in refs so they can be updated without invalidating execute
+  const onRetryRef = useRef(config.onRetry);
+  const onErrorRef = useRef(config.onError);
+  const onSuccessRef = useRef(config.onSuccess);
+
+  useEffect(() => {
+    onRetryRef.current = config.onRetry;
+    onErrorRef.current = config.onError;
+    onSuccessRef.current = config.onSuccess;
+  });
+
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -75,7 +86,7 @@ export default function useNetworkRetry(options = {}) {
       if (!isOnline) {
         const offlineError = new Error('No network connection');
         setError(offlineError);
-        config.onError?.(offlineError);
+        onErrorRef.current?.(offlineError);
         return { success: false, error: offlineError };
       }
 
@@ -109,7 +120,7 @@ export default function useNetworkRetry(options = {}) {
           setData(result);
           setIsLoading(false);
           setError(null);
-          config.onSuccess?.(result);
+          onSuccessRef.current?.(result);
           return { success: true, data: result };
         } catch (err) {
           lastError = err;
@@ -126,7 +137,7 @@ export default function useNetworkRetry(options = {}) {
 
           // If we have retries remaining, wait and try again
           if (attempt < config.maxRetries) {
-            config.onRetry?.(attempt + 1, err);
+            onRetryRef.current?.(attempt + 1, err);
             addBreadcrumb('api', `Retry ${attempt + 1} after error: ${err.message}`);
 
             const delay = getBackoffDelay(attempt, config.baseDelay, config.maxDelay);
@@ -141,7 +152,7 @@ export default function useNetworkRetry(options = {}) {
       if (isMountedRef.current) {
         setIsLoading(false);
         setError(lastError);
-        config.onError?.(lastError);
+        onErrorRef.current?.(lastError);
         captureException(lastError, {
           component: 'useNetworkRetry',
           userAction: 'network request',
@@ -151,7 +162,7 @@ export default function useNetworkRetry(options = {}) {
 
       return { success: false, error: lastError };
     },
-    [isOnline, config.maxRetries, config.baseDelay, config.maxDelay, config.onRetry, config.onError, config.onSuccess]
+    [isOnline, config.maxRetries, config.baseDelay, config.maxDelay]
   );
 
   const reset = useCallback(() => {
