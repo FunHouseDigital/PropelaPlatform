@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "feat",
   "description": "Deployment Configuration - Dockerfile, docker-compose.yml, GitHub Actions CI/CD workflow, health check/status page component, and deployment documentation.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create Dockerfile at project root: multi-stage build (node:20-alpine for build, nginx:alpine for serve), copy built assets to nginx, custom nginx.conf for SPA routing (try_files $uri /index.html), expose port 80, healthcheck instruction.",
     "Create docker-compose.yml for local development: app service using the Dockerfile with port 8080:80 mapping, environment variables from .env file, volume mount for live config updates.",
