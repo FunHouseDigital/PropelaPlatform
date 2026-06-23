@@ -2,6 +2,8 @@ import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
+import jsxA11y from 'eslint-plugin-jsx-a11y'
+import simpleImportSort from 'eslint-plugin-simple-import-sort'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
@@ -13,6 +15,10 @@ export default defineConfig([
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
+    plugins: {
+      'jsx-a11y': jsxA11y,
+      'simple-import-sort': simpleImportSort,
+    },
     languageOptions: {
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
@@ -24,6 +30,16 @@ export default defineConfig([
       'react-hooks/set-state-in-effect': 'warn',
       'react-hooks/purity': 'warn',
       'react-hooks/immutability': 'warn',
+      // jsx-a11y rules (warn level to avoid breaking existing code)
+      ...Object.fromEntries(
+        Object.entries(jsxA11y.flatConfigs.recommended.rules || {}).map(([key, value]) => [
+          key,
+          Array.isArray(value) ? ['warn', ...value.slice(1)] : 'warn',
+        ])
+      ),
+      // Import ordering via simple-import-sort
+      'simple-import-sort/imports': 'warn',
+      'simple-import-sort/exports': 'warn',
     },
   },
   {
