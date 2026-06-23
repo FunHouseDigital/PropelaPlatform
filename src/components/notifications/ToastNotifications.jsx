@@ -66,6 +66,7 @@ function Toast({ toast, onDismiss, onView }) {
         <button
           onClick={() => onDismiss(toast.id)}
           className="text-gray-400 hover:text-gray-600 transition-colors"
+          aria-label="Dismiss notification"
         >
           <X size={14} />
         </button>
@@ -263,7 +264,7 @@ export default function ToastNotifications() {
             {/* Toast display area */}
             <div className="relative min-h-[280px] border border-dashed border-gray-300 rounded-lg p-4 bg-white overflow-hidden">
               <p className="text-xs text-gray-400 text-center mb-4">Toast Preview Area</p>
-              <div className="space-y-2">
+              <div className="space-y-2" aria-live="assertive" role="alert">
                 {visibleToasts.map((toast) => (
                   <Toast
                     key={toast.id}

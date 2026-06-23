@@ -15,7 +15,7 @@ function SortableStageCard({ stage, onRemove, onUpdate }) {
 
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-3 bg-white border border-gray-200 rounded-lg p-3 mb-2">
-      <button {...attributes} {...listeners} className="cursor-grab text-gray-400 hover:text-gray-600">
+      <button {...attributes} {...listeners} className="cursor-grab text-gray-400 hover:text-gray-600" aria-label="Drag to reorder stage">
         <GripVertical size={18} />
       </button>
       <div className="flex-1 grid grid-cols-3 gap-3 items-center">
@@ -23,6 +23,7 @@ function SortableStageCard({ stage, onRemove, onUpdate }) {
           type="text"
           value={stage.name}
           onChange={(e) => onUpdate(stage.id, 'name', e.target.value)}
+          aria-label="Stage name"
           className="px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#5B2D8E]/30"
         />
         <div className="flex items-center gap-1">
@@ -30,6 +31,7 @@ function SortableStageCard({ stage, onRemove, onUpdate }) {
             type="number"
             value={stage.defaultDuration}
             onChange={(e) => onUpdate(stage.id, 'defaultDuration', parseInt(e.target.value) || 0)}
+            aria-label="Default duration in days"
             className="w-16 px-2 py-1.5 border border-gray-200 rounded text-sm text-center focus:outline-none focus:ring-1 focus:ring-[#5B2D8E]/30"
           />
           <span className="text-xs text-gray-500">days</span>
@@ -39,6 +41,7 @@ function SortableStageCard({ stage, onRemove, onUpdate }) {
             type="number"
             value={stage.slaThreshold}
             onChange={(e) => onUpdate(stage.id, 'slaThreshold', parseInt(e.target.value) || 0)}
+            aria-label="SLA threshold in days"
             className="w-16 px-2 py-1.5 border border-gray-200 rounded text-sm text-center focus:outline-none focus:ring-1 focus:ring-[#5B2D8E]/30"
           />
           <span className="text-xs text-gray-500">SLA days</span>
@@ -47,11 +50,11 @@ function SortableStageCard({ stage, onRemove, onUpdate }) {
       <button
         onClick={() => onUpdate(stage.id, 'notificationsEnabled', !stage.notificationsEnabled)}
         className={`p-1.5 rounded ${stage.notificationsEnabled ? 'text-[#5B2D8E]' : 'text-gray-400'}`}
-        title={stage.notificationsEnabled ? 'Notifications enabled' : 'Notifications disabled'}
+        aria-label={stage.notificationsEnabled ? 'Disable notifications for stage' : 'Enable notifications for stage'}
       >
         {stage.notificationsEnabled ? <Bell size={16} /> : <BellOff size={16} />}
       </button>
-      <button onClick={() => onRemove(stage.id)} className="p-1.5 text-red-400 hover:text-red-600 rounded">
+      <button onClick={() => onRemove(stage.id)} className="p-1.5 text-red-400 hover:text-red-600 rounded" aria-label="Remove stage">
         <Trash2 size={16} />
       </button>
     </div>

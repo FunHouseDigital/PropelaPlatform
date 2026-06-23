@@ -38,6 +38,7 @@ export default function Header({ onOpenSearch, onToggleSidebar, isMobile }) {
         <button
           type="button"
           onClick={onOpenSearch}
+          aria-label="Open search"
           className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:border-gray-300 transition-colors"
         >
           <Search size={14} />
@@ -53,6 +54,7 @@ export default function Header({ onOpenSearch, onToggleSidebar, isMobile }) {
             ref={toggleButtonRef}
             type="button"
             onClick={toggleSuggestions}
+            aria-label="Toggle smart suggestions"
             className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-colors ${
               showSuggestions
                 ? 'bg-blue-50 border-blue-200 text-blue-600'

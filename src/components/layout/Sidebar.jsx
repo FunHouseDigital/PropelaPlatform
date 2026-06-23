@@ -54,6 +54,8 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
   return (
     <aside
       className={sidebarClasses}
+      role="navigation"
+      aria-label="Main navigation"
       style={{
         background: 'linear-gradient(180deg, #5B2D8E 0%, #3D1D5E 100%)',
       }}
@@ -94,6 +96,7 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
               key={item.path}
               to={item.path}
               onClick={isMobile ? onClose : undefined}
+              aria-current={isActive ? 'page' : undefined}
               className={`flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg mb-1 text-sm font-medium transition-all duration-150
                 ${isActive
                   ? 'bg-white/15 text-white'
