@@ -1,0 +1,7 @@
+{
+  "task_id": "task-stage-17-mobile-pwa",
+  "task_description": "Stage 17: Mobile Responsiveness & PWA - Make the platform responsive with collapsible sidebar, bottom navigation, PWA manifest and service worker, install prompt, offline indicator, lazy-loaded routes, responsive UI components (modals, tables, virtual list, filter panels, chart containers), and touch-friendly sizing.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}
