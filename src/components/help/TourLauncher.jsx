@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Map, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import FeatureTour from './FeatureTour';
@@ -9,7 +9,7 @@ export default function TourLauncher({ tourId, steps = [], label = 'Start Tour' 
 
   const isCompleted = tourState?.completedTours?.includes(tourId);
 
-  const handleStart = () => {
+  const handleStart = useCallback(() => {
     // Reset the tour state for this tour to allow restart
     if (isCompleted) {
       const completedTours = (tourState?.completedTours || []).filter((t) => t !== tourId);
@@ -20,12 +20,14 @@ export default function TourLauncher({ tourId, steps = [], label = 'Start Tour' 
         currentTourStep: 0,
       });
     }
+    // Use explicit active prop so FeatureTour does not need to derive
+    // visibility from context (avoids race with batched state updates)
     setShowTour(true);
-  };
+  }, [isCompleted, tourState, tourId, updateTourState]);
 
-  const handleComplete = () => {
+  const handleComplete = useCallback(() => {
     setShowTour(false);
-  };
+  }, []);
 
   return (
     <>
@@ -55,6 +57,7 @@ export default function TourLauncher({ tourId, steps = [], label = 'Start Tour' 
         <FeatureTour
           tourId={tourId}
           steps={steps}
+          active={showTour}
           onComplete={handleComplete}
         />
       )}
