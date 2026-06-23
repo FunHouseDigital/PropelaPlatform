@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Error Handling and Monitoring - Global ErrorBoundary with user-friendly fallback UI, structured error reporting infrastructure, unhandled promise rejection catching, and network error recovery with retry logic.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create src/components/layout/ErrorBoundary.jsx - a React class component error boundary with: componentDidCatch logging to the error reporter, user-friendly fallback UI showing 'Something went wrong' with option to reload or go home, different severity levels (recoverable vs fatal), expandable error details in development mode.",
     "Create src/lib/errorReporter.js - structured error reporting module: captureException(error, context) function that logs structured JSON to console (severity, timestamp, component, user action, stack trace), captureMessage(message, level) for non-error events, breadcrumb trail (last 20 user interactions), network error classification (timeout, server error, auth error, connectivity). Structure it so replacing console logging with Sentry/DataDog is a single-line change.",
