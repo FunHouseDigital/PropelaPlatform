@@ -14,6 +14,7 @@ import {
   Shield,
   Zap,
   Bell,
+  HelpCircle,
   Settings,
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
@@ -33,6 +34,7 @@ const NAV_ITEMS = [
   { path: '/audit', label: 'Audit Trail', icon: Shield },
   { path: '/automations', label: 'Automations', icon: Zap },
   { path: '/notifications', label: 'Notifications', icon: Bell },
+  { path: '/help', label: 'Help', icon: HelpCircle },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
