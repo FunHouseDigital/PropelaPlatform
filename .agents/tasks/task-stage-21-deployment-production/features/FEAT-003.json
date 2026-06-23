@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Build Optimization and Service Worker Enhancement - Enhance vite.config.js with production optimizations (preload/prefetch), enhance the existing service worker for better offline caching with versioned cache busting, and add build analysis documentation.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Update vite.config.js to add production optimizations: terser minification options (drop console.log in production), asset inlining threshold (4kb), CSS code splitting, source map generation for production (hidden sourcemaps), and preload directives for critical chunks via modulePreload config.",
     "Enhance public/sw.js with improved caching strategies: versioned cache names (use APP_VERSION), runtime caching for API calls (network-first with 5s timeout fallback to cache), stale-while-revalidate for fonts/images, cache size limits (max 50 entries per cache, auto-evict oldest), and a message handler for 'SKIP_WAITING' to support update-available UI.",
@@ -25,5 +25,5 @@
     "Run `unset NODE_OPTIONS && npx vitest run` and confirm all tests pass"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 242 tests pass. Build succeeds with terser (installed as devDependency since Vite 8 requires it explicitly). Added terser to package.json. vitest.config.js updated with define values for __BUILD_TIMESTAMP__, __APP_VERSION__, __GIT_COMMIT_HASH__ so buildInfo.js works in test environment. UpdateNotification component added to Layout.jsx alongside other layout components."
 }
