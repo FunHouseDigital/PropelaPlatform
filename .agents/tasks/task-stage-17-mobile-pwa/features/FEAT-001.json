@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Responsive Layout System - Make the sidebar collapsible with hamburger menu on mobile, add bottom navigation bar for mobile, convert Layout to responsive with proper breakpoints, and ensure touch-friendly tap targets (min 44px).",
+  "status": "completed",
+  "steps": [
+    "Create src/hooks/useMediaQuery.js - a custom hook that listens for a media query match (e.g., '(max-width: 768px)') and returns boolean. Also create src/hooks/useOnlineStatus.js that tracks navigator.onLine and returns { isOnline }.",
+    "Refactor src/components/layout/Layout.jsx: Add state for sidebar open/closed (default closed on mobile, open on desktop). Use useMediaQuery('(max-width: 768px)') to determine isMobile. On mobile: show hamburger button in header area, render sidebar as an overlay (fixed, z-50) with backdrop, remove the fixed ml-[220px] and use ml-0 on mobile. On desktop: keep existing behavior with ml-[220px]. Pass sidebarOpen/setSidebarOpen and isMobile as props or context.",
+    "Refactor src/components/layout/Sidebar.jsx: Accept props for isOpen, onClose, and isMobile. On mobile, render as a slide-in panel (translate-x based on isOpen) with a close button and backdrop click-to-close. Keep the existing desktop appearance. Add transition-transform duration-300 for smooth animation. Ensure all nav items have min-h-[44px] for touch targets.",
+    "Create src/components/layout/MobileBottomNav.jsx: A fixed bottom navigation bar (h-16, z-40) shown only on mobile (md:hidden). Include 5 key nav items: Dashboard (/), Nurses (/nurses), Placements (/placements), Notifications (/notifications), and a 'More' button that opens the full sidebar. Use NavLink for active state styling. Icons from lucide-react (LayoutDashboard, Users, Briefcase, Bell, Menu). Active item gets propela-purple color.",
+    "Update src/components/layout/Header.jsx: On mobile, add a hamburger menu button (Menu icon from lucide-react) on the left side that triggers sidebar open. Accept onToggleSidebar prop. Make the header height responsive - keep h-14 but adjust padding for mobile (px-4 on mobile vs px-6 on desktop).",
+    "Add pb-20 to the main content area on mobile (to account for bottom nav bar height) in Layout.jsx. Add responsive padding to the main content: p-4 on mobile, p-8 on desktop (change the existing p-8 to p-4 md:p-8)."
+  ],
+  "acceptance_criteria": [
+    "On screens <= 768px, sidebar is hidden by default and accessible via hamburger menu",
+    "Hamburger menu icon is visible in the header on mobile viewports",
+    "Sidebar slides in from left with smooth animation when opened on mobile",
+    "Clicking backdrop or close button closes the mobile sidebar",
+    "Bottom navigation bar is visible on mobile with 5 quick-access items",
+    "All navigation items have minimum 44px touch target height",
+    "On desktop (>768px), layout is unchanged from previous behavior (fixed sidebar at 220px)",
+    "npm run build succeeds without errors",
+    "npm run lint passes"
+  ],
+  "verification": [
+    "npm run build",
+    "npm run lint"
+  ],
+  "blocked_reason": null,
+  "findings": "Used useSyncExternalStore for useMediaQuery hook to comply with React 19 strict lint rules (no setState in effects, no ref access during render). Used a null-based sidebarOverride pattern instead of useEffect+setState for sidebar state sync on viewport changes. All pre-existing lint errors in design-reference/ and other files are unrelated to this feature."
+}

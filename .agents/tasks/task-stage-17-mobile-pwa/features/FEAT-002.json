@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "PWA Configuration - Add web app manifest, service worker for basic offline shell caching, install prompt handling with custom banner, and offline indicator banner.",
+  "status": "pending",
+  "steps": [
+    "Create public/manifest.json with: name 'Propela Ops', short_name 'Propela', start_url '/', display 'standalone', background_color '#F8F7FC', theme_color '#5B2D8E', icons array with 192x192 and 512x512 entries (use generated simple SVG-based PNGs or reference placeholders at /icons/icon-192x192.png and /icons/icon-512x512.png).",
+    "Create public/icons/ directory with simple generated icon files. Create a minimal SVG icon (purple background with white P letter) and save as public/icons/icon-192x192.png and public/icons/icon-512x512.png (use SVG format as .png files or create actual icon placeholders). Alternatively, create public/icons/icon.svg and reference it in the manifest.",
+    "Update index.html: Add <link rel='manifest' href='/manifest.json' />, add <meta name='theme-color' content='#5B2D8E' />, add <meta name='apple-mobile-web-app-capable' content='yes' />, add <meta name='apple-mobile-web-app-status-bar-style' content='default' />, add <link rel='apple-touch-icon' href='/icons/icon-192x192.png' />.",
+    "Create public/sw.js - a basic service worker that: (1) on install, caches the app shell (index.html, key static assets) using a named cache 'propela-shell-v1', (2) on activate, cleans old caches, (3) on fetch, uses a network-first strategy for navigation requests with cache fallback, and cache-first for static assets.",
+    "Update src/main.jsx to register the service worker: after createRoot render, check if 'serviceWorker' in navigator, then register('/sw.js'). Handle registration success/failure with console logs.",
+    "Create src/components/layout/InstallPrompt.jsx: Captures the 'beforeinstallprompt' event in a useEffect, stores it in state. Shows a dismissible banner at the top of the page (below header) with an install button. When user clicks install, calls prompt() on the stored event. Banner disappears after install or dismiss. Save dismiss state to localStorage so it does not reappear for 7 days.",
+    "Create src/components/layout/OfflineBanner.jsx: Uses the useOnlineStatus hook (created in FEAT-001). When offline, shows a fixed banner at the top of the viewport (z-50, full width) with amber/yellow background: 'You are offline. Some features may be unavailable.' with a WiFiOff icon. Animates in/out smoothly.",
+    "Integrate InstallPrompt and OfflineBanner into src/components/layout/Layout.jsx - render them inside the layout, OfflineBanner at the very top, InstallPrompt below the header."
+  ],
+  "acceptance_criteria": [
+    "public/manifest.json exists with correct PWA fields (name, short_name, icons, display, theme_color)",
+    "index.html includes manifest link, theme-color meta, and apple-mobile-web-app meta tags",
+    "public/sw.js exists with install/activate/fetch event handlers implementing caching strategy",
+    "Service worker registration code exists in src/main.jsx",
+    "InstallPrompt component captures beforeinstallprompt and shows install banner with dismiss functionality",
+    "OfflineBanner component shows when navigator.onLine is false",
+    "npm run build succeeds without errors",
+    "npm run lint passes"
+  ],
+  "verification": [
+    "npm run build",
+    "npm run lint"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
