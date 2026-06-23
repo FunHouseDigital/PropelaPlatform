@@ -6,9 +6,10 @@ import {
 } from 'recharts';
 import { TrendingUp, Clock, DollarSign, Users } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { ACCESSIBLE_CHART_COLORS } from '../../lib/chartAccessibility';
 
-const COLORS = ['#5B2D8E', '#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE', '#EDE9FE', '#F5F3FF'];
-const PIE_COLORS = ['#5B2D8E', '#10B981'];
+const COLORS = ACCESSIBLE_CHART_COLORS;
+const PIE_COLORS = [ACCESSIBLE_CHART_COLORS[0], ACCESSIBLE_CHART_COLORS[2]];
 
 export default function OutcomesDashboard() {
   const { placements } = useAppContext();

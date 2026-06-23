@@ -76,3 +76,89 @@ textarea:focus-visible,
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   text-decoration: none;
 }
+
+/* High Contrast Mode */
+html[data-high-contrast='true'] {
+  --hc-text: #000000;
+  --hc-text-muted: #1a1a1a;
+  --hc-bg: #ffffff;
+  --hc-border: #000000;
+  --hc-focus-ring: #0000ff;
+}
+
+html[data-high-contrast='true'] body {
+  color: var(--hc-text);
+  background: var(--hc-bg);
+}
+
+html[data-high-contrast='true'] * {
+  border-color: var(--hc-border) !important;
+}
+
+html[data-high-contrast='true'] p,
+html[data-high-contrast='true'] span,
+html[data-high-contrast='true'] label,
+html[data-high-contrast='true'] h1,
+html[data-high-contrast='true'] h2,
+html[data-high-contrast='true'] h3,
+html[data-high-contrast='true'] h4,
+html[data-high-contrast='true'] h5,
+html[data-high-contrast='true'] h6 {
+  color: var(--hc-text) !important;
+}
+
+html[data-high-contrast='true'] .text-gray-400,
+html[data-high-contrast='true'] .text-gray-500,
+html[data-high-contrast='true'] .text-gray-600 {
+  color: var(--hc-text-muted) !important;
+}
+
+html[data-high-contrast='true'] a:focus-visible,
+html[data-high-contrast='true'] button:focus-visible,
+html[data-high-contrast='true'] input:focus-visible,
+html[data-high-contrast='true'] select:focus-visible,
+html[data-high-contrast='true'] textarea:focus-visible,
+html[data-high-contrast='true'] [tabindex]:focus-visible {
+  outline: 3px solid var(--hc-focus-ring) !important;
+  outline-offset: 3px !important;
+}
+
+html[data-high-contrast='true'] .border,
+html[data-high-contrast='true'] .border-gray-200,
+html[data-high-contrast='true'] .border-gray-300 {
+  border-width: 2px !important;
+}
+
+html[data-high-contrast='true'] input,
+html[data-high-contrast='true'] select,
+html[data-high-contrast='true'] textarea {
+  border-width: 2px !important;
+  border-color: var(--hc-border) !important;
+}
+
+html[data-high-contrast='true'] button {
+  border-width: 2px !important;
+}
+
+/* Reduced Motion */
+html[data-reduced-motion='true'] *,
+html[data-reduced-motion='true'] *::before,
+html[data-reduced-motion='true'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Font Size Classes */
+html.font-size-small {
+  font-size: 14px;
+}
+
+html.font-size-medium {
+  font-size: 16px;
+}
+
+html.font-size-large {
+  font-size: 18px;
+}

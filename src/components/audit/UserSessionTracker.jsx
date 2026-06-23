@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Monitor, Clock, Wifi, WifiOff } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAppContext } from '../../context/AppContext';
+import { ACCESSIBLE_CHART_COLORS } from '../../lib/chartAccessibility';
 
 const STATUS_BADGES = {
   active: 'bg-green-100 text-green-700 border-green-200',
@@ -112,7 +113,7 @@ export default function UserSessionTracker() {
                   fontSize: '12px',
                 }}
               />
-              <Bar dataKey="duration" fill="#5B2D8E" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="duration" fill={ACCESSIBLE_CHART_COLORS[0]} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

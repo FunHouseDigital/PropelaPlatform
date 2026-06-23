@@ -4,11 +4,12 @@ import {
   LineChart, Line, Cell,
 } from 'recharts';
 import { useAppContext } from '../../context/AppContext';
+import { ACCESSIBLE_CHART_COLORS } from '../../lib/chartAccessibility';
 
-const PURPLE = '#5B2D8E';
-const PURPLE_LIGHT = '#8B5DC0';
-const PURPLE_LIGHTER = '#B794D4';
-const CHART_COLORS = ['#5B2D8E', '#8B5DC0', '#B794D4', '#D4B8E8', '#F3EDF9'];
+const PURPLE = ACCESSIBLE_CHART_COLORS[0];
+const PURPLE_LIGHT = ACCESSIBLE_CHART_COLORS[1];
+const PURPLE_LIGHTER = ACCESSIBLE_CHART_COLORS[2];
+const CHART_COLORS = ACCESSIBLE_CHART_COLORS;
 
 export default function ChannelPerformance() {
   const { facilities, referrers, communityChannels, events, outreachTemplates } = useAppContext();

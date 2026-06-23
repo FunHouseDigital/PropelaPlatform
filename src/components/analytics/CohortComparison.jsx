@@ -6,9 +6,10 @@ import {
 } from 'recharts';
 import { Target, TrendingUp, Users, DollarSign, Clock } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { ACCESSIBLE_CHART_COLORS } from '../../lib/chartAccessibility';
 
-const BRAND_COLOR = '#5B2D8E';
-const TARGET_COLOR = '#10B981';
+const BRAND_COLOR = ACCESSIBLE_CHART_COLORS[0];
+const TARGET_COLOR = ACCESSIBLE_CHART_COLORS[2];
 
 export default function CohortComparison() {
   const { cohorts, nurses, placements } = useAppContext();

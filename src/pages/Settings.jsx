@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Building2, GitBranch, Users, Puzzle, Bell } from 'lucide-react';
+import { Building2, GitBranch, Users, Puzzle, Bell, Eye } from 'lucide-react';
 import OrganizationSettings from '../components/settings/OrganizationSettings';
 import PipelineConfiguration from '../components/settings/PipelineConfiguration';
 import UserManagement from '../components/settings/UserManagement';
 import IntegrationSettings from '../components/settings/IntegrationSettings';
 import NotificationPreferences from '../components/settings/NotificationPreferences';
+import AccessibilitySettings from '../components/settings/AccessibilitySettings';
 
 const TABS = [
   { id: 'organization', label: 'Organization', icon: Building2 },
@@ -12,6 +13,7 @@ const TABS = [
   { id: 'users', label: 'Users', icon: Users },
   { id: 'integrations', label: 'Integrations', icon: Puzzle },
   { id: 'notifications', label: 'Notifications', icon: Bell },
+  { id: 'accessibility', label: 'Accessibility', icon: Eye },
 ];
 
 export default function Settings() {
@@ -55,6 +57,7 @@ export default function Settings() {
       {activeTab === 'users' && <UserManagement />}
       {activeTab === 'integrations' && <IntegrationSettings />}
       {activeTab === 'notifications' && <NotificationPreferences />}
+      {activeTab === 'accessibility' && <AccessibilitySettings />}
     </div>
   );
 }

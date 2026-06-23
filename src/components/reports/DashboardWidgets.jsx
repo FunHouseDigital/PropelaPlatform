@@ -25,9 +25,10 @@ import {
   ChevronDown, ChevronRight, X,
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { ACCESSIBLE_CHART_COLORS } from '../../lib/chartAccessibility';
 
 const BRAND_COLOR = '#5B2D8E';
-const CHART_COLORS = ['#5B2D8E', '#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE', '#EDE9FE'];
+const CHART_COLORS = ACCESSIBLE_CHART_COLORS;
 
 const WIDGET_LIBRARY = [
   { type: 'kpi', title: 'KPI Card', description: 'Single metric with trend indicator', icon: TrendingUp },
