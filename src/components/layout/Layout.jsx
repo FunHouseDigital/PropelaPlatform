@@ -9,6 +9,7 @@ import OfflineBanner from './OfflineBanner';
 import InstallPrompt from './InstallPrompt';
 import UpdateNotification from './UpdateNotification';
 import LoadingSpinner from './LoadingSpinner';
+import PageTransition from '../ui/PageTransition';
 import KeyboardShortcutsPanel from '../accessibility/KeyboardShortcutsPanel';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import { useAppContext } from '../../context/AppContext';
@@ -114,7 +115,9 @@ export default function Layout() {
         <main id="main-content" className="flex-1 bg-propela-bg">
           <div className={`p-4 md:p-8 ${isMobile ? 'pb-20' : ''}`}>
             <Suspense fallback={<LoadingSpinner />}>
-              <Outlet />
+              <PageTransition>
+                <Outlet />
+              </PageTransition>
             </Suspense>
           </div>
         </main>

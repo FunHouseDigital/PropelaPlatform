@@ -1,0 +1,33 @@
+{
+  "project_type": "React SPA with Vite bundler, Tailwind CSS v4, localStorage persistence",
+  "language": "JavaScript (JSX)",
+  "build_system": "npm + Vite 8. Use --legacy-peer-deps for npm install due to eslint peer dep conflict.",
+  "test_framework": "Vitest with @testing-library/react, jsdom environment. Test utils in src/test/utils.jsx wrap components in MemoryRouter + AppProvider. Factories in src/test/factories/. Playwright for e2e (tests/e2e/).",
+  "build_command": "unset NODE_OPTIONS && npx vite build",
+  "test_command": "unset NODE_OPTIONS && npx vitest run",
+  "verification_instructions": "1. Run npx vitest run to confirm all tests pass. 2. Run npx vite build to confirm build succeeds. 3. Run npx eslint . to check lint (may have warnings).",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd /projects/sandbox/PropelaPlatform && unset NODE_OPTIONS && npm install --legacy-peer-deps",
+  "environment_constraints": "NODE_OPTIONS must be unset before running npm/node commands (sandbox pre-sets a broken --require path). Use 'unset NODE_OPTIONS &&' before all node commands.",
+  "contribution_requirements": "No CONTRIBUTING.md present. Follow existing patterns: lazy-loaded pages, AppContext for state, localStorage via src/lib/storage.js, Tailwind CSS for styling, lucide-react for icons.",
+  "key_patterns": "Pages are lazy-loaded in App.jsx. AppContext provides global state + localStorage persistence. Test factories (nurseFactory, documentFactory, placementFactory) generate test data. Integration tests use custom render from src/test/utils.jsx. Toast notifications via AppContext addToast/dismissToast. LoadingSpinner component for loading states.",
+  "relevant_files": [
+    "src/App.jsx",
+    "src/context/AppContext.jsx",
+    "src/lib/storage.js",
+    "src/components/layout/Layout.jsx",
+    "src/components/layout/LoadingSpinner.jsx",
+    "src/components/notifications/ToastNotifications.jsx",
+    "src/pages/__tests__/workflows.integration.test.jsx",
+    "src/pages/__tests__/statePersistence.integration.test.jsx",
+    "src/pages/__tests__/navigation.integration.test.jsx",
+    "src/pages/__tests__/pages.integration.test.jsx",
+    "src/test/utils.jsx",
+    "src/test/factories/nurseFactory.js",
+    "src/test/factories/documentFactory.js",
+    "src/test/factories/placementFactory.js",
+    "vitest.config.js",
+    "package.json"
+  ],
+  "directory_structure": "src/pages/ - 17 page components (lazy-loaded), src/components/ - organized by domain (ui/, layout/, nurses/, placements/, etc.), src/context/ - AppContext global state, src/lib/ - utilities (storage, formatUtils, etc.), src/data/ - seed data generators, src/test/ - test utilities and factories, tests/e2e/ - Playwright tests (mostly skipped stubs)"
+}

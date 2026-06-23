@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Cross-module integration tests covering end-to-end flows, data consistency, and UI polish utilities (PageTransition wrapper, EmptyState component, consistent loading/toast patterns)",
+  "status": "in_progress",
+  "steps": [
+    "Create src/components/ui/PageTransition.jsx - a lightweight CSS-transition wrapper that animates page entry (opacity + translateY fade-in) using Tailwind classes. It should accept children and optionally a className prop.",
+    "Create src/components/ui/EmptyState.jsx - a reusable empty-state component accepting icon (from lucide-react), title, description, and optional action button (label + onClick). Follow existing component patterns (Tailwind classes, propela-purple color).",
+    "Create src/pages/__tests__/crossModule.integration.test.jsx with these test scenarios: (a) Full pipeline flow: create a nurse via context -> add documents for that nurse -> create a placement for that nurse -> verify all data is consistent via context reads; (b) Data consistency: seed multiple nurses, verify dashboard nurse count matches nurseDatabase length from context; (c) localStorage persistence across re-renders: update nurses in context, unmount, re-mount AppProvider, verify data persists; (d) Navigation flows: render all routes with Sidebar, click through multiple nav links verifying each page renders its heading.",
+    "Create src/pages/__tests__/edgeCases.integration.test.jsx with: (a) Large dataset handling: create 100+ nurses via createNurses factory, render NurseDatabase, verify it renders without error; (b) Rapid state updates: call updateNurses multiple times in quick succession, verify final state is correct; (c) Empty state rendering: render pages with no data (empty localStorage), verify they render without crashing.",
+    "Update src/components/layout/Layout.jsx to wrap the Outlet (page content) with the PageTransition component so all route transitions get the animation."
+  ],
+  "acceptance_criteria": [
+    "PageTransition component renders children with a fade-in CSS animation class",
+    "EmptyState component renders icon, title, description, and optional action button",
+    "crossModule.integration.test.jsx has at least 4 test cases covering pipeline flow, data consistency, persistence, and navigation",
+    "edgeCases.integration.test.jsx has at least 3 test cases covering large datasets, rapid updates, and empty states",
+    "Layout.jsx wraps route content in PageTransition",
+    "All existing 247 tests continue to pass",
+    "All new tests pass"
+  ],
+  "verification": [
+    "Run: unset NODE_OPTIONS && npx vitest run",
+    "Run: unset NODE_OPTIONS && npx vite build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
