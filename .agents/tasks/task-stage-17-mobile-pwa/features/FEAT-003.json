@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Responsive Components and Performance Optimizations - Convert route imports to React.lazy with Suspense, add responsive component utilities (mobile-friendly modals, responsive tables as cards, collapsible filter panels, virtual scrolling hook), and memoized expensive computations.",
+  "status": "pending",
+  "steps": [
+    "Refactor src/App.jsx: Convert all 16 page imports to use React.lazy(() => import('./pages/PageName')). Wrap the <Routes> in <Suspense fallback={<LoadingSpinner />}>. Create a simple LoadingSpinner component inline or as src/components/layout/LoadingSpinner.jsx (centered spinner with propela-purple color, animate-spin).",
+    "Create src/components/ui/ResponsiveModal.jsx: A modal wrapper that is centered dialog on desktop (max-w-lg, rounded-lg, with backdrop) but becomes full-screen on mobile (inset-0, no border-radius). Accept props: isOpen, onClose, title, children, size ('sm'|'md'|'lg'|'full'). Use fixed positioning, z-50, smooth fade-in animation. Close button is always 44px touch target.",
+    "Create src/components/ui/ResponsiveTable.jsx: On desktop (md+), renders a standard table. On mobile (<md), renders each row as a card (stacked key-value pairs). Accept props: columns (array of {key, label, render?}), data (array of row objects), onRowClick?. Use useMediaQuery to switch between table and card view.",
+    "Create src/components/ui/VirtualList.jsx: A virtualized list component for large datasets. Accept props: items (array), itemHeight (number, default 60), renderItem (function), containerHeight (string, default '500px'). Implement with simple scroll-based windowing: track scrollTop, compute visible range, render only visible items with spacers above/below. Use useCallback and useMemo for performance.",
+    "Create src/components/ui/CollapsibleFilter.jsx: A filter panel that is always visible on desktop but collapses into an expandable section on mobile. Props: title, children, defaultOpen (boolean). On mobile, shows a button 'Filters' with filter icon that toggles the panel open/closed with slide animation. On desktop, always renders children.",
+    "Create src/hooks/useMemoizedComputation.js: A hook that wraps useMemo with a stable dependency comparison using JSON.stringify for object deps. Useful for expensive computations on large datasets. Export as named export.",
+    "Add responsive chart container utility: Create src/components/ui/ResponsiveChartContainer.jsx that wraps Recharts ResponsiveContainer with aspect ratio that changes based on viewport (aspect={2} on desktop, aspect={1.2} on mobile). Accept children and optional aspectDesktop/aspectMobile props.",
+    "Ensure all new components use proper touch-friendly sizing: buttons min-h-[44px] min-w-[44px], form inputs min-h-[44px], tap targets have adequate spacing."
+  ],
+  "acceptance_criteria": [
+    "All 16 page routes in src/App.jsx use React.lazy with dynamic imports",
+    "Suspense boundary wraps Routes with a loading spinner fallback",
+    "ResponsiveModal renders full-screen on mobile and centered dialog on desktop",
+    "ResponsiveTable switches between table and card view based on viewport width",
+    "VirtualList renders only visible items and handles scroll efficiently",
+    "CollapsibleFilter collapses on mobile, stays open on desktop",
+    "ResponsiveChartContainer adjusts aspect ratio based on viewport",
+    "All interactive elements have minimum 44px touch targets",
+    "npm run build succeeds with code-split chunks for each lazy-loaded page",
+    "npm run lint passes"
+  ],
+  "verification": [
+    "npm run build",
+    "npm run lint"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
