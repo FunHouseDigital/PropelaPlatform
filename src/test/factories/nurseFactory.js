@@ -1,13 +1,29 @@
 let nurseCounter = 0;
 
 /**
+ * Reset the nurse counter. Useful for test isolation.
+ */
+export function resetNurseCounter() {
+  nurseCounter = 0;
+}
+
+/**
+ * Generate a unique ID suffix using counter + random component
+ * to avoid cross-test collisions even without explicit resets.
+ */
+function uniqueId() {
+  nurseCounter++;
+  const random = Math.random().toString(36).slice(2, 6);
+  return `nurse-test-${String(nurseCounter).padStart(3, '0')}-${random}`;
+}
+
+/**
  * Factory function to generate mock nurse objects.
  * Based on the shape from src/data/seedNurses.js.
  * Pass overrides to customize specific fields.
  */
 export function createNurse(overrides = {}) {
-  nurseCounter++;
-  const id = `nurse-test-${String(nurseCounter).padStart(3, '0')}`;
+  const id = uniqueId();
   const firstName = 'Thandi';
   const lastName = 'Nkosi';
 

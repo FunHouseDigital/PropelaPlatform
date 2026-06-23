@@ -13,5 +13,21 @@ export default defineConfig({
         classNameStrategy: 'non-scoped',
       },
     },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'html'],
+      exclude: [
+        'node_modules/**',
+        'tests/e2e/**',
+        'src/test/**',
+        '*.config.js',
+      ],
+      thresholds: {
+        lines: 20,
+        branches: 15,
+        functions: 20,
+        statements: 20,
+      },
+    },
   },
 });

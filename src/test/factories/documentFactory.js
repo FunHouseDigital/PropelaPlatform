@@ -1,13 +1,29 @@
 let docCounter = 0;
 
 /**
+ * Reset the document counter. Useful for test isolation.
+ */
+export function resetDocCounter() {
+  docCounter = 0;
+}
+
+/**
+ * Generate a unique ID suffix using counter + random component
+ * to avoid cross-test collisions even without explicit resets.
+ */
+function uniqueId() {
+  docCounter++;
+  const random = Math.random().toString(36).slice(2, 6);
+  return `doc-test-${String(docCounter).padStart(4, '0')}-${random}`;
+}
+
+/**
  * Factory function to generate mock document objects.
  * Based on the shape from src/data/seedDocuments.js.
  * Pass overrides to customize specific fields.
  */
 export function createDocument(overrides = {}) {
-  docCounter++;
-  const id = `doc-test-${String(docCounter).padStart(4, '0')}`;
+  const id = uniqueId();
 
   return {
     id,

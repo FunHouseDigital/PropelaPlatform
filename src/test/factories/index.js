@@ -1,4 +1,4 @@
-export { createNurse, createNurses } from './nurseFactory';
-export { createDocument, createVerifiedDocument, createDocuments } from './documentFactory';
-export { createPlacement, createPlacedPlacement, createPlacements } from './placementFactory';
-export { createCohort, createCohorts } from './cohortFactory';
+export { createNurse, createNurses, resetNurseCounter } from './nurseFactory';
+export { createDocument, createVerifiedDocument, createDocuments, resetDocCounter } from './documentFactory';
+export { createPlacement, createPlacedPlacement, createPlacements, resetPlacementCounter } from './placementFactory';
+export { createCohort, createCohorts, resetCohortCounter } from './cohortFactory';
