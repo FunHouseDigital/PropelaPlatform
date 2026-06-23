@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Error Handling and Monitoring - Global ErrorBoundary with user-friendly fallback UI, structured error reporting infrastructure, unhandled promise rejection catching, and network error recovery with retry logic.",
+  "status": "pending",
+  "steps": [
+    "Create src/components/layout/ErrorBoundary.jsx - a React class component error boundary with: componentDidCatch logging to the error reporter, user-friendly fallback UI showing 'Something went wrong' with option to reload or go home, different severity levels (recoverable vs fatal), expandable error details in development mode.",
+    "Create src/lib/errorReporter.js - structured error reporting module: captureException(error, context) function that logs structured JSON to console (severity, timestamp, component, user action, stack trace), captureMessage(message, level) for non-error events, breadcrumb trail (last 20 user interactions), network error classification (timeout, server error, auth error, connectivity). Structure it so replacing console logging with Sentry/DataDog is a single-line change.",
+    "Create src/hooks/useNetworkRetry.js - a hook providing: retryable fetch wrapper with exponential backoff (max 3 retries), configurable retry delays, user feedback via toast notifications on retry/failure, cancel mechanism for unmounted components, online/offline awareness using existing useOnlineStatus hook.",
+    "Update src/main.jsx to add global unhandledrejection and error event listeners that route to errorReporter.captureException.",
+    "Update src/App.jsx to wrap the BrowserRouter with the ErrorBoundary component.",
+    "Create src/components/layout/__tests__/ErrorBoundary.test.jsx testing: renders children normally, shows fallback on error, shows details in dev mode, reload button works.",
+    "Create src/lib/__tests__/errorReporter.test.js testing: captureException logs structured data, breadcrumbs are maintained with max size, captureMessage works at different levels.",
+    "Create src/hooks/__tests__/useNetworkRetry.test.js testing: successful fetch returns data, retries on failure with backoff, gives up after max retries, cancels on unmount."
+  ],
+  "acceptance_criteria": [
+    "ErrorBoundary catches component errors and shows a friendly fallback UI",
+    "errorReporter.captureException logs structured error data to console",
+    "Unhandled promise rejections are caught globally and reported",
+    "useNetworkRetry hook retries failed requests with exponential backoff",
+    "All new tests pass",
+    "Existing 188 tests still pass"
+  ],
+  "verification": [
+    "Run `unset NODE_OPTIONS && npx vitest run` and confirm all tests pass including new ones"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

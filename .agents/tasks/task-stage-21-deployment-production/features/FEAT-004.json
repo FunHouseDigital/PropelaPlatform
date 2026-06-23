@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Deployment Configuration - Dockerfile, docker-compose.yml, GitHub Actions CI/CD workflow, health check/status page component, and deployment documentation.",
+  "status": "pending",
+  "steps": [
+    "Create Dockerfile at project root: multi-stage build (node:20-alpine for build, nginx:alpine for serve), copy built assets to nginx, custom nginx.conf for SPA routing (try_files $uri /index.html), expose port 80, healthcheck instruction.",
+    "Create docker-compose.yml for local development: app service using the Dockerfile with port 8080:80 mapping, environment variables from .env file, volume mount for live config updates.",
+    "Create nginx.conf at project root: gzip compression for text/css/js/json/svg, SPA fallback routing, cache-control headers (immutable for hashed assets, no-cache for index.html), security headers (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, CSP).",
+    "Create .github/workflows/ci.yml: GitHub Actions workflow triggered on push/PR to main. Jobs: lint (eslint), test (vitest run), build (vite build), with node 20, npm ci --legacy-peer-deps, caching node_modules.",
+    "Create src/pages/StatusPage.jsx - a health check / status page component showing: app version, build timestamp, environment, service worker status, localStorage usage, online/offline status, last API check time. Add route /status in App.jsx.",
+    "Update the project README.md (or create DEPLOYMENT.md) with deployment documentation: environment setup, Docker build/run instructions, CI/CD pipeline explanation, environment variables reference, production checklist.",
+    "Create src/pages/__tests__/StatusPage.test.jsx testing: renders version info, shows environment, shows online status."
+  ],
+  "acceptance_criteria": [
+    "Dockerfile exists with multi-stage build using node:20-alpine and nginx:alpine",
+    "docker-compose.yml exists for local development",
+    "nginx.conf has SPA routing, gzip, cache headers, and security headers",
+    ".github/workflows/ci.yml defines lint, test, build jobs",
+    "StatusPage component renders at /status showing app health info",
+    "DEPLOYMENT.md documents deployment process",
+    "All tests pass including new StatusPage test"
+  ],
+  "verification": [
+    "Run `unset NODE_OPTIONS && npx vitest run` and confirm all tests pass",
+    "Run `unset NODE_OPTIONS && npx vite build` and confirm build succeeds"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
