@@ -2,6 +2,9 @@ const CACHE_NAME = 'propela-shell-v1';
 const SHELL_ASSETS = [
   '/',
   '/index.html',
+  '/manifest.json',
+  '/icons/icon-192x192.svg',
+  '/icons/icon-512x512.svg',
 ];
 
 // Install: cache the app shell

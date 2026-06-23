@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -7,6 +7,7 @@ import CommandPalette from '../search/CommandPalette';
 import OnboardingWizard from '../help/OnboardingWizard';
 import OfflineBanner from './OfflineBanner';
 import InstallPrompt from './InstallPrompt';
+import LoadingSpinner from './LoadingSpinner';
 import useMediaQuery from '../../hooks/useMediaQuery';
 
 export default function Layout() {
@@ -51,7 +52,6 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen">
-      <OfflineBanner />
       <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} isMobile={isMobile} />
 
       {/* Backdrop for mobile sidebar */}
@@ -64,11 +64,14 @@ export default function Layout() {
       )}
 
       <div className={`flex-1 flex flex-col min-h-screen ${isMobile ? 'ml-0' : 'ml-[220px]'}`}>
+        <OfflineBanner />
         <Header onOpenSearch={openSearch} onToggleSidebar={toggleSidebar} isMobile={isMobile} />
         <InstallPrompt />
         <main className="flex-1 bg-propela-bg">
           <div className={`p-4 md:p-8 ${isMobile ? 'pb-20' : ''}`}>
-            <Outlet />
+            <Suspense fallback={<LoadingSpinner />}>
+              <Outlet />
+            </Suspense>
           </div>
         </main>
       </div>
