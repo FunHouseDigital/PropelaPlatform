@@ -15,6 +15,9 @@ export default defineConfig({
         brotliSize: true,
       }),
   ].filter(Boolean),
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
+  },
   define: {
     __BUILD_TIMESTAMP__: JSON.stringify(new Date().toISOString()),
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '0.0.0'),

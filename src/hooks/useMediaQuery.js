@@ -1,17 +1,17 @@
-import { useSyncExternalStore, useCallback } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 
 export default function useMediaQuery(query) {
-  const subscribe = useCallback(
-    (callback) => {
-      const mediaQuery = window.matchMedia(query);
-      mediaQuery.addEventListener('change', callback);
-      return () => mediaQuery.removeEventListener('change', callback);
-    },
-    [query]
-  );
-
-  const getSnapshot = useCallback(() => {
-    return window.matchMedia(query).matches;
+  const { subscribe, getSnapshot } = useMemo(() => {
+    return {
+      subscribe(callback) {
+        const mediaQuery = window.matchMedia(query);
+        mediaQuery.addEventListener('change', callback);
+        return () => mediaQuery.removeEventListener('change', callback);
+      },
+      getSnapshot() {
+        return window.matchMedia(query).matches;
+      },
+    };
   }, [query]);
 
   return useSyncExternalStore(subscribe, getSnapshot);
