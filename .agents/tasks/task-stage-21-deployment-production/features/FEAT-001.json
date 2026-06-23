@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Environment Configuration and Feature Flags - Create .env.example with all required vars, config module separating build-time from runtime config, feature flags system for progressive rollout, and environment-specific settings for dev/staging/production.",
+  "status": "in_progress",
+  "steps": [
+    "Create .env.example at project root with all environment variables: VITE_APP_TITLE, VITE_APP_VERSION, VITE_API_URL, VITE_SENTRY_DSN, VITE_ENABLE_SERVICE_WORKER (true/false), VITE_ENABLE_ANALYTICS (true/false), VITE_ENVIRONMENT (development/staging/production), VITE_LOG_LEVEL (debug/info/warn/error), VITE_FEATURE_FLAGS (comma-separated list of enabled flags)",
+    "Create src/lib/config.js that exports an appConfig object reading from import.meta.env with fallback defaults, separating build-time config (VITE_ prefixed) from runtime config (window.__RUNTIME_CONFIG__ for future server injection). Include environment detection (isDevelopment, isStaging, isProduction helpers).",
+    "Create src/lib/featureFlags.js implementing a feature flags system: define flag names as constants, a getFeatureFlags() function that reads from VITE_FEATURE_FLAGS env var AND localStorage override (for dev toggles), an isFeatureEnabled(flagName) function, and a FeatureFlagProvider context component. Default flags: ENHANCED_ANALYTICS, WORKFLOW_AUTOMATION_V2, DARK_MODE, AI_SUGGESTIONS.",
+    "Create src/components/settings/FeatureFlagPanel.jsx - a developer/admin panel listing all feature flags with toggles to enable/disable via localStorage override. Only shown when config.isDevelopment is true or a secret key combo is pressed.",
+    "Create src/lib/__tests__/config.test.js testing the config module - verify defaults when env vars missing, verify correct reading of env vars, verify environment helpers.",
+    "Create src/lib/__tests__/featureFlags.test.js testing the feature flags module - verify flag reading from env, localStorage overrides, isFeatureEnabled logic."
+  ],
+  "acceptance_criteria": [
+    ".env.example exists at project root with documented variables",
+    "src/lib/config.js exports appConfig with build-time and runtime separation",
+    "src/lib/featureFlags.js exports isFeatureEnabled, getFeatureFlags, FEATURE_FLAGS constants",
+    "Feature flag panel component renders list of flags with toggle controls",
+    "All new tests pass when running `npx vitest run`",
+    "Existing 188 tests still pass"
+  ],
+  "verification": [
+    "Run `unset NODE_OPTIONS && npx vitest run` and confirm all tests pass including new ones"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

@@ -1,0 +1,33 @@
+{
+  "project_type": "React SPA with Vite bundler, localStorage persistence, PWA-enabled",
+  "language": "JavaScript (JSX)",
+  "build_system": "Vite 8 with npm, manual chunks configured in vite.config.js",
+  "test_framework": "Vitest with @testing-library/react, jsdom environment, setup in src/test/setup.js",
+  "build_command": "unset NODE_OPTIONS && npx vite build",
+  "test_command": "unset NODE_OPTIONS && npx vitest run",
+  "verification_instructions": "1. Run `unset NODE_OPTIONS && npx vitest run` - all tests must pass. 2. Run `unset NODE_OPTIONS && npx vite build` - must succeed without errors.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd /projects/sandbox/PropelaPlatform && unset NODE_OPTIONS && npm install --legacy-peer-deps",
+  "environment_constraints": "Must unset NODE_OPTIONS before running npm/npx commands. npm install requires --legacy-peer-deps due to peer dependency conflicts. No Docker daemon available in sandbox.",
+  "contribution_requirements": "ESLint config with jsx-a11y and simple-import-sort plugins at warn level. Tests use custom render from src/test/utils.jsx wrapping with MemoryRouter + AppProvider.",
+  "key_patterns": "Lazy-loaded pages in App.jsx, AppContext for global state with localStorage write-through, existing service worker in public/sw.js, existing PWA manifest, existing useOnlineStatus hook, existing OfflineBanner/InstallPrompt components, existing performanceBudget.js, existing manualChunks in vite.config.js, test files in __tests__ subdirectories alongside components",
+  "relevant_files": [
+    "src/App.jsx",
+    "src/main.jsx",
+    "src/context/AppContext.jsx",
+    "src/components/layout/Layout.jsx",
+    "src/components/layout/OfflineBanner.jsx",
+    "src/hooks/useOnlineStatus.js",
+    "src/lib/performanceBudget.js",
+    "vite.config.js",
+    "vitest.config.js",
+    "public/sw.js",
+    "public/manifest.json",
+    "index.html",
+    "package.json",
+    "eslint.config.js",
+    "src/test/setup.js",
+    "src/test/utils.jsx"
+  ],
+  "directory_structure": "src/components/<domain>/ for domain components, src/pages/ for route pages, src/hooks/ for custom hooks, src/lib/ for utilities, src/context/ for React context, src/test/ for test setup/utils, public/ for static assets, tests/e2e/ for Playwright E2E tests"
+}

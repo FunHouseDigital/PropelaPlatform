@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Build Optimization and Service Worker Enhancement - Enhance vite.config.js with production optimizations (preload/prefetch), enhance the existing service worker for better offline caching with versioned cache busting, and add build analysis documentation.",
+  "status": "pending",
+  "steps": [
+    "Update vite.config.js to add production optimizations: terser minification options (drop console.log in production), asset inlining threshold (4kb), CSS code splitting, source map generation for production (hidden sourcemaps), and preload directives for critical chunks via modulePreload config.",
+    "Enhance public/sw.js with improved caching strategies: versioned cache names (use APP_VERSION), runtime caching for API calls (network-first with 5s timeout fallback to cache), stale-while-revalidate for fonts/images, cache size limits (max 50 entries per cache, auto-evict oldest), and a message handler for 'SKIP_WAITING' to support update-available UI.",
+    "Create src/components/layout/UpdateNotification.jsx - a small banner/toast component that detects when a new service worker is waiting and prompts the user to refresh for updates.",
+    "Update index.html to add resource hints: preconnect to fonts.googleapis.com (already there), dns-prefetch hints, meta description, Open Graph tags for the app.",
+    "Create src/lib/buildInfo.js - exports build metadata (version from package.json, build timestamp set at build time via define in vite config, git commit hash placeholder). Update vite.config.js to inject __BUILD_TIMESTAMP__ and __APP_VERSION__ via define.",
+    "Create src/lib/__tests__/buildInfo.test.js verifying the buildInfo module exports expected shape."
+  ],
+  "acceptance_criteria": [
+    "vite.config.js includes production optimizations (terser, modulePreload, cssCodeSplit)",
+    "public/sw.js has versioned cache, runtime caching for APIs, stale-while-revalidate for assets, size limits",
+    "UpdateNotification component renders update prompt when new SW is waiting",
+    "index.html has resource hints and meta tags",
+    "buildInfo.js exports version and build timestamp",
+    "Build succeeds: `npx vite build` completes without errors",
+    "All tests pass"
+  ],
+  "verification": [
+    "Run `unset NODE_OPTIONS && npx vite build` and confirm it succeeds",
+    "Run `unset NODE_OPTIONS && npx vitest run` and confirm all tests pass"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
