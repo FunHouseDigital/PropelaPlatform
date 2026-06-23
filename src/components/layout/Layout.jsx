@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import CommandPalette from '../search/CommandPalette';
+import OnboardingWizard from '../help/OnboardingWizard';
 
 export default function Layout() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
@@ -39,6 +40,7 @@ export default function Layout() {
         </main>
       </div>
       <CommandPalette isOpen={isCommandPaletteOpen} onClose={closeSearch} />
+      <OnboardingWizard />
     </div>
   );
 }
