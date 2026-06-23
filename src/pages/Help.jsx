@@ -3,6 +3,7 @@ import { BookOpen, Sparkles, Map, Rocket } from 'lucide-react';
 import KnowledgeBase from '../components/help/KnowledgeBase';
 import TourLauncher from '../components/help/TourLauncher';
 import { useAppContext } from '../context/AppContext';
+import { seedHelp } from '../data/seedHelp';
 
 const TABS = [
   { id: 'knowledge-base', label: 'Knowledge Base', icon: BookOpen },
@@ -11,59 +12,8 @@ const TABS = [
   { id: 'getting-started', label: 'Getting Started', icon: Rocket },
 ];
 
-const TOUR_CONFIGS = {
-  dashboard: {
-    id: 'dashboard',
-    label: 'Dashboard Tour',
-    description: 'Learn about the main dashboard and its widgets.',
-    steps: [
-      { id: 'dash-1', title: 'Pipeline Overview', content: 'See how many nurses are in each pipeline stage at a glance.' },
-      { id: 'dash-2', title: 'Compliance Score', content: 'Monitor overall document compliance across all nurses.' },
-      { id: 'dash-3', title: 'Activity Feed', content: 'Track the latest actions and updates from your team.' },
-      { id: 'dash-4', title: 'Quick Actions', content: 'Access common tasks quickly from the dashboard.' },
-    ],
-  },
-  nurses: {
-    id: 'nurses',
-    label: 'Nurse Database Tour',
-    description: 'Explore the nurse management features.',
-    steps: [
-      { id: 'nurse-1', title: 'Nurse List', content: 'View and search all nurses in your database with filtering options.' },
-      { id: 'nurse-2', title: 'Add Nurse', content: 'Click here to add a new nurse to your pipeline.' },
-      { id: 'nurse-3', title: 'Pipeline Stages', content: 'Each nurse is assigned a pipeline stage that you can update as they progress.' },
-    ],
-  },
-  documents: {
-    id: 'documents',
-    label: 'Document Management Tour',
-    description: 'Learn how to manage and track documents.',
-    steps: [
-      { id: 'doc-1', title: 'Document List', content: 'See all documents with their current status and expiry dates.' },
-      { id: 'doc-2', title: 'Upload Documents', content: 'Upload new documents and assign them to nurses.' },
-      { id: 'doc-3', title: 'Verification Queue', content: 'Review and verify submitted documents awaiting approval.' },
-    ],
-  },
-  placements: {
-    id: 'placements',
-    label: 'Placement Tracker Tour',
-    description: 'Discover the placement matching and tracking system.',
-    steps: [
-      { id: 'place-1', title: 'Active Placements', content: 'View all current placements with status and timeline.' },
-      { id: 'place-2', title: 'Create Placement', content: 'Match nurses to facilities and create new placements.' },
-      { id: 'place-3', title: 'Calendar View', content: 'See upcoming start dates and milestones on the calendar.' },
-    ],
-  },
-  reports: {
-    id: 'reports',
-    label: 'Reports & Analytics Tour',
-    description: 'Generate insights and export data.',
-    steps: [
-      { id: 'rep-1', title: 'Report Templates', content: 'Choose from pre-built report templates or create your own.' },
-      { id: 'rep-2', title: 'Export Options', content: 'Export reports as CSV, PDF, or schedule automatic delivery.' },
-      { id: 'rep-3', title: 'Dashboard Builder', content: 'Create custom dashboard layouts with drag-and-drop widgets.' },
-    ],
-  },
-};
+// Single source of truth for tour configs - uses seedHelp data which includes target selectors
+const { featureTours: TOUR_CONFIGS } = seedHelp();
 
 export default function Help() {
   const [activeTab, setActiveTab] = useState('knowledge-base');
