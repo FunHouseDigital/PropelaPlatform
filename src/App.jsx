@@ -1,6 +1,7 @@
 import { useEffect, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
+import ErrorBoundary from './components/layout/ErrorBoundary';
 import { initializeData } from './lib/storage';
 import { AppProvider } from './context/AppContext';
 
@@ -27,9 +28,10 @@ export default function App() {
   }, []);
 
   return (
-    <AppProvider>
-      <BrowserRouter>
-        <Routes>
+    <ErrorBoundary>
+      <AppProvider>
+        <BrowserRouter>
+          <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/nurses" element={<NurseDatabase />} />
@@ -51,5 +53,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </AppProvider>
+    </ErrorBoundary>
   );
 }
