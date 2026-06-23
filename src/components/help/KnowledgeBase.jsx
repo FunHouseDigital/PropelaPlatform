@@ -9,8 +9,10 @@ function highlightText(text, query) {
   const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const regex = new RegExp(`(${escaped})`, 'gi');
   const parts = text.split(regex);
+  // After split with a captured group, matched segments are at odd indices.
+  // Using index parity avoids the g-flag lastIndex drift issue with .test().
   return parts.map((part, i) =>
-    regex.test(part) ? (
+    i % 2 === 1 ? (
       <mark key={i} className="bg-yellow-200 text-gray-900 rounded px-0.5">{part}</mark>
     ) : (
       <span key={i}>{part}</span>
