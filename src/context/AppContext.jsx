@@ -507,6 +507,11 @@ export function AppProvider({ children }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  // NOTE: This useMemo has 90+ dependencies covering every state slice and updater.
+  // It effectively recomputes on every state change, providing minimal memoization benefit.
+  // This is intentional scaffolding for a future context-splitting refactor where individual
+  // domain slices will be moved into separate providers, at which point each useMemo will
+  // have a smaller, meaningful dependency set.
   const value = useMemo(() => ({
     nurses,
     facilities,
