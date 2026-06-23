@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Bundle optimization: add chunk splitting config to vite.config.js (manual chunks for vendor libs), integrate rollup-plugin-visualizer for bundle analysis, and add a useWebVitals hook for performance monitoring with Web Vitals tracking (LCP, FID, CLS, TTFB, INP).",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Update vite.config.js: add build.rollupOptions.output.manualChunks configuration to split vendor libraries into separate chunks - 'vendor-react' (react, react-dom), 'vendor-recharts' (recharts), 'vendor-lucide' (lucide-react), 'vendor-dnd' (@dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities), 'vendor-router' (react-router-dom)",
     "Add rollup-plugin-visualizer to vite.config.js as an optional plugin (conditionally enabled via ANALYZE env var or a separate 'build:analyze' script) so it generates stats.html",
@@ -25,5 +25,5 @@
     "npm test"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Vite 8 uses rolldown instead of rollup; manualChunks must be a function (not an object map). The function-based approach works correctly with rolldown. Build produces all expected vendor chunks. Stats.html generation via rollup-plugin-visualizer works correctly with the ANALYZE env var."
 }
