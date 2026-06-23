@@ -1,13 +1,29 @@
 let cohortCounter = 0;
 
 /**
+ * Reset the cohort counter. Useful for test isolation.
+ */
+export function resetCohortCounter() {
+  cohortCounter = 0;
+}
+
+/**
+ * Generate a unique ID suffix using counter + random component
+ * to avoid cross-test collisions even without explicit resets.
+ */
+function uniqueId() {
+  cohortCounter++;
+  const random = Math.random().toString(36).slice(2, 6);
+  return `cohort-test-${cohortCounter}-${random}`;
+}
+
+/**
  * Factory function to generate mock cohort objects.
  * Based on the shape from src/data/seedCohorts.js.
  * Pass overrides to customize specific fields.
  */
 export function createCohort(overrides = {}) {
-  cohortCounter++;
-  const id = `cohort-test-${cohortCounter}`;
+  const id = uniqueId();
 
   return {
     id,
