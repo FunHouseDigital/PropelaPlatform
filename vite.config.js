@@ -31,7 +31,9 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true,
+        // Only drop console.log and console.debug; preserve console.error and
+        // console.warn so the error reporter transport remains functional.
+        pure_funcs: ['console.log', 'console.debug'],
         drop_debugger: true,
       },
       format: {
