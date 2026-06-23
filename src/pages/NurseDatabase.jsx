@@ -16,6 +16,7 @@ import PipelineView from '../components/nurses/PipelineView';
 import CohortView from '../components/nurses/CohortView';
 import NurseCard from '../components/nurses/NurseCard';
 import FilterPanel from '../components/nurses/FilterPanel';
+import EmptyState from '../components/ui/EmptyState';
 
 const VIEW_TABS = [
   { id: 'gallery', label: 'Gallery', icon: LayoutGrid },
@@ -244,30 +245,50 @@ export default function NurseDatabase() {
       </div>
 
       {/* Views */}
-      {activeView === 'gallery' && (
-        <GalleryView
-          nurses={filteredNurses}
-          groupBy={groupBy}
-          onNurseClick={handleNurseClick}
+      {filteredNurses.length === 0 ? (
+        <EmptyState
+          icon={Users}
+          title="No nurses found"
+          description={
+            debouncedSearchQuery || activeFilterCount > 0
+              ? "No nurses match your current search or filter criteria. Try adjusting your filters."
+              : "There are no nurses in the database yet. Add your first nurse to get started."
+          }
+          actionLabel={debouncedSearchQuery || activeFilterCount > 0 ? "Clear filters" : undefined}
+          onAction={
+            debouncedSearchQuery || activeFilterCount > 0
+              ? () => { setSearchQuery(''); setFilters({}); }
+              : undefined
+          }
         />
-      )}
+      ) : (
+        <>
+          {activeView === 'gallery' && (
+            <GalleryView
+              nurses={filteredNurses}
+              groupBy={groupBy}
+              onNurseClick={handleNurseClick}
+            />
+          )}
 
-      {activeView === 'pipeline' && (
-        <PipelineView
-          nurses={filteredNurses}
-          onNurseClick={handleNurseClick}
-          onUpdateNurse={handleUpdateNurse}
-        />
-      )}
+          {activeView === 'pipeline' && (
+            <PipelineView
+              nurses={filteredNurses}
+              onNurseClick={handleNurseClick}
+              onUpdateNurse={handleUpdateNurse}
+            />
+          )}
 
-      {activeView === 'cohort' && (
-        <CohortView
-          nurses={filteredNurses}
-          selectedCohort={selectedCohort}
-          onCohortChange={setSelectedCohort}
-          onNurseClick={handleNurseClick}
-          cohorts={cohorts}
-        />
+          {activeView === 'cohort' && (
+            <CohortView
+              nurses={filteredNurses}
+              selectedCohort={selectedCohort}
+              onCohortChange={setSelectedCohort}
+              onNurseClick={handleNurseClick}
+              cohorts={cohorts}
+            />
+          )}
+        </>
       )}
 
       {/* Nurse Card Modal */}

@@ -39,7 +39,7 @@ A comprehensive nurse recruitment and placement management platform built with R
 | Icons | lucide-react |
 | Performance | web-vitals |
 | Testing | Vitest + @testing-library/react |
-| E2E Testing | Playwright |
+| E2E Testing | Playwright (scaffolded) |
 
 ## Getting Started
 

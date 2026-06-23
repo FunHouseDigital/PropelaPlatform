@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import MobileBottomNav from './MobileBottomNav';
@@ -21,6 +21,7 @@ export default function Layout() {
   // null means "use default" (closed on mobile, open on desktop)
   const [sidebarOverride, setSidebarOverride] = useState(null);
   const { settings } = useAppContext();
+  const location = useLocation();
 
   // Reset override when viewport changes
   const sidebarOpen = sidebarOverride !== null ? sidebarOverride : !isMobile;
@@ -115,7 +116,7 @@ export default function Layout() {
         <main id="main-content" className="flex-1 bg-propela-bg">
           <div className={`p-4 md:p-8 ${isMobile ? 'pb-20' : ''}`}>
             <Suspense fallback={<LoadingSpinner />}>
-              <PageTransition>
+              <PageTransition key={location.pathname}>
                 <Outlet />
               </PageTransition>
             </Suspense>
