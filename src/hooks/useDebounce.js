@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useState } from 'react';
 
 /**
  * Returns a debounced version of the provided callback along with a flush function.
@@ -70,6 +70,27 @@ export function useDebounce(callback, delay = 500) {
   // since we attach flush as a property.
   debouncedFn.flush = flush;
   return debouncedFn;
+}
+
+/**
+ * Returns a debounced version of a value. The returned value only updates
+ * after `delay` ms have passed without the input value changing.
+ *
+ * Useful for debouncing search input values before triggering filtering.
+ *
+ * @param {*} value - The value to debounce
+ * @param {number} delay - Delay in milliseconds (default 300)
+ * @returns {*} The debounced value
+ */
+export function useDebouncedValue(value, delay = 300) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debouncedValue;
 }
 
 export default useDebounce;

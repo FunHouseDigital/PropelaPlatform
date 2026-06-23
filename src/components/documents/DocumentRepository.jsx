@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { Search, Upload, FileText, Trash2, Eye, ArrowLeft } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 
@@ -36,7 +36,7 @@ function ExpiryBadge({ expiryDate }) {
   return null;
 }
 
-function DocumentCard({ doc, onDelete }) {
+const DocumentCard = memo(function DocumentCard({ doc, onDelete }) {
   return (
     <div className="border border-gray-200 rounded-lg p-4 hover:border-[#5B2D8E]/30 transition-colors">
       <div className="flex items-start justify-between">
@@ -73,7 +73,7 @@ function DocumentCard({ doc, onDelete }) {
       </div>
     </div>
   );
-}
+});
 
 function DropZone({ onDrop }) {
   const [isDragOver, setIsDragOver] = useState(false);
