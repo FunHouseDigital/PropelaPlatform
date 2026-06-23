@@ -12,6 +12,7 @@ import { seedIntegrations } from '../data/seedIntegrations';
 import { seedAuditTrail } from '../data/seedAuditTrail';
 import { seedAutomations } from '../data/seedAutomations';
 import { seedNotifications as seedNotificationsModule } from '../data/seedNotifications';
+import { seedHelp } from '../data/seedHelp';
 
 const STORAGE_PREFIX = 'propela_ops_';
 
@@ -185,6 +186,42 @@ export function initializeData() {
     setData('notifAlertConfig', seededNotifs.notifAlertConfig);
     setData('notificationLog', seededNotifs.notificationLog);
     setData('toastPreferences', seededNotifs.toastPreferences);
+  }
+
+  const helpArticlesData = getData('helpArticles');
+  if (!helpArticlesData || helpArticlesData.length === 0) {
+    const seededHelp = seedHelp();
+    setData('helpArticles', seededHelp.helpArticles);
+    setData('onboardingSteps', seededHelp.onboardingSteps);
+    setData('featureTours', seededHelp.featureTours);
+  }
+
+  if (!getData('onboardingState')) {
+    setData('onboardingState', {
+      currentStep: 0,
+      completedSteps: [],
+      isComplete: false,
+      skipped: false,
+      role: '',
+      preferences: {
+        emailNotifications: true,
+        desktopNotifications: false,
+        weeklyDigest: true,
+        compactLayout: false,
+      },
+    });
+  }
+
+  if (!getData('tourState')) {
+    setData('tourState', {
+      completedTours: [],
+      currentTourId: null,
+      currentTourStep: 0,
+    });
+  }
+
+  if (!getData('articleVotes')) {
+    setData('articleVotes', {});
   }
 }
 
@@ -809,5 +846,77 @@ export function getToastPreferences() {
  */
 export function saveToastPreferences(prefs) {
   setData('toastPreferences', prefs);
+}
+
+/**
+ * Get help articles from localStorage.
+ */
+export function getHelpArticles() {
+  return getData('helpArticles') || [];
+}
+
+/**
+ * Save help articles to localStorage.
+ */
+export function saveHelpArticles(articles) {
+  setData('helpArticles', articles);
+}
+
+/**
+ * Get onboarding state from localStorage.
+ */
+export function getOnboardingState() {
+  return getData('onboardingState') || {
+    currentStep: 0,
+    completedSteps: [],
+    isComplete: false,
+    skipped: false,
+    role: '',
+    preferences: {
+      emailNotifications: true,
+      desktopNotifications: false,
+      weeklyDigest: true,
+      compactLayout: false,
+    },
+  };
+}
+
+/**
+ * Save onboarding state to localStorage.
+ */
+export function saveOnboardingState(state) {
+  setData('onboardingState', state);
+}
+
+/**
+ * Get tour state from localStorage.
+ */
+export function getTourState() {
+  return getData('tourState') || {
+    completedTours: [],
+    currentTourId: null,
+    currentTourStep: 0,
+  };
+}
+
+/**
+ * Save tour state to localStorage.
+ */
+export function saveTourState(state) {
+  setData('tourState', state);
+}
+
+/**
+ * Get article votes from localStorage.
+ */
+export function getArticleVotes() {
+  return getData('articleVotes') || {};
+}
+
+/**
+ * Save article votes to localStorage.
+ */
+export function saveArticleVotes(votes) {
+  setData('articleVotes', votes);
 }
 

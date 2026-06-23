@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useRef } from 'react';
 import {
   getNurses,
   saveNurses,
@@ -86,6 +86,14 @@ import {
   saveNotificationLog,
   getToastPreferences,
   saveToastPreferences,
+  getHelpArticles,
+  saveHelpArticles,
+  getOnboardingState,
+  saveOnboardingState,
+  getTourState,
+  saveTourState,
+  getArticleVotes,
+  saveArticleVotes,
 } from '../lib/storage';
 
 const AppContext = createContext(null);
@@ -134,6 +142,10 @@ export function AppProvider({ children }) {
   const [notifAlertConfig, setNotifAlertConfig] = useState(() => getNotifAlertConfig());
   const [notificationLog, setNotificationLog] = useState(() => getNotificationLog());
   const [toastPreferences, setToastPreferences] = useState(() => getToastPreferences());
+  const [helpArticles, setHelpArticles] = useState(() => getHelpArticles());
+  const [onboardingState, setOnboardingState] = useState(() => getOnboardingState());
+  const [tourState, setTourState] = useState(() => getTourState());
+  const [articleVotes, setArticleVotes] = useState(() => getArticleVotes());
   const [toasts, setToasts] = useState([]);
 
   // Update functions that write through to localStorage
@@ -360,6 +372,26 @@ export function AppProvider({ children }) {
     saveToastPreferences(updatedPrefs);
   }, []);
 
+  const updateHelpArticles = useCallback((updatedArticles) => {
+    setHelpArticles(updatedArticles);
+    saveHelpArticles(updatedArticles);
+  }, []);
+
+  const updateOnboardingState = useCallback((updatedState) => {
+    setOnboardingState(updatedState);
+    saveOnboardingState(updatedState);
+  }, []);
+
+  const updateTourState = useCallback((updatedState) => {
+    setTourState(updatedState);
+    saveTourState(updatedState);
+  }, []);
+
+  const updateArticleVotes = useCallback((updatedVotes) => {
+    setArticleVotes(updatedVotes);
+    saveArticleVotes(updatedVotes);
+  }, []);
+
   const toastIdCounter = useRef(0);
 
   const addToast = useCallback((notification) => {
@@ -418,6 +450,10 @@ export function AppProvider({ children }) {
     notifAlertConfig,
     notificationLog,
     toastPreferences,
+    helpArticles,
+    onboardingState,
+    tourState,
+    articleVotes,
     updateNurses,
     updateFacilities,
     updateCohorts,
@@ -461,6 +497,10 @@ export function AppProvider({ children }) {
     updateNotifAlertConfig,
     updateNotificationLog,
     updateToastPreferences,
+    updateHelpArticles,
+    updateOnboardingState,
+    updateTourState,
+    updateArticleVotes,
     toasts,
     addToast,
     dismissToast,
