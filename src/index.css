@@ -162,3 +162,40 @@ html.font-size-medium {
 html.font-size-large {
   font-size: 18px;
 }
+
+/* RTL Layout Foundation */
+[dir='rtl'] {
+  direction: rtl;
+}
+
+[dir='rtl'] .fixed.left-0 {
+  left: auto;
+  right: 0;
+}
+
+[dir='rtl'] .-translate-x-full {
+  --tw-translate-x: 100%;
+  transform: translateX(var(--tw-translate-x));
+}
+
+[dir='rtl'] .translate-x-0 {
+  --tw-translate-x: 0;
+  transform: translateX(var(--tw-translate-x));
+}
+
+/*
+ * CSS Logical Properties Reference for RTL support:
+ * Use margin-inline-start/end instead of margin-left/right
+ * Use padding-inline-start/end instead of padding-left/right
+ * Use inset-inline-start/end instead of left/right
+ * Use border-inline-start/end instead of border-left/right
+ * Use text-align: start/end instead of left/right
+ *
+ * Tailwind v4 equivalents:
+ * ms-* = margin-inline-start
+ * me-* = margin-inline-end
+ * ps-* = padding-inline-start
+ * pe-* = padding-inline-end
+ * start-* = inset-inline-start
+ * end-* = inset-inline-end
+ */

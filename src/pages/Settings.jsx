@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Building2, GitBranch, Users, Puzzle, Bell, Eye } from 'lucide-react';
 import OrganizationSettings from '../components/settings/OrganizationSettings';
 import PipelineConfiguration from '../components/settings/PipelineConfiguration';
@@ -8,24 +9,25 @@ import NotificationPreferences from '../components/settings/NotificationPreferen
 import AccessibilitySettings from '../components/settings/AccessibilitySettings';
 
 const TABS = [
-  { id: 'organization', label: 'Organization', icon: Building2 },
-  { id: 'pipeline', label: 'Pipeline', icon: GitBranch },
-  { id: 'users', label: 'Users', icon: Users },
-  { id: 'integrations', label: 'Integrations', icon: Puzzle },
-  { id: 'notifications', label: 'Notifications', icon: Bell },
-  { id: 'accessibility', label: 'Accessibility', icon: Eye },
+  { id: 'organization', labelKey: 'settings.tabs.organization', icon: Building2 },
+  { id: 'pipeline', labelKey: 'settings.tabs.pipeline', icon: GitBranch },
+  { id: 'users', labelKey: 'settings.tabs.users', icon: Users },
+  { id: 'integrations', labelKey: 'settings.tabs.integrations', icon: Puzzle },
+  { id: 'notifications', labelKey: 'settings.tabs.notifications', icon: Bell },
+  { id: 'accessibility', labelKey: 'settings.tabs.accessibility', icon: Eye },
 ];
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('organization');
+  const { t } = useTranslation();
 
   return (
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Settings & Configuration</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('settings.title')}</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Manage organization settings, pipeline, users, integrations, and notifications
+          {t('settings.description')}
         </p>
       </div>
 
@@ -45,7 +47,7 @@ export default function Settings() {
                 }`}
             >
               <Icon size={16} />
-              <span>{tab.label}</span>
+              <span>{t(tab.labelKey)}</span>
             </button>
           );
         })}

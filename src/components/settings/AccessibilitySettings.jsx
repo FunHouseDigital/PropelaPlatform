@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Save, Eye, Monitor, Type } from 'lucide-react';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const FONT_SIZES = [
   { id: 'small', label: 'Small', description: '14px base' },
@@ -140,6 +141,9 @@ export default function AccessibilitySettings() {
           {saved ? 'Saved!' : 'Save Changes'}
         </button>
       </div>
+
+      {/* Language & Region */}
+      <LanguageSwitcher />
     </div>
   );
 }

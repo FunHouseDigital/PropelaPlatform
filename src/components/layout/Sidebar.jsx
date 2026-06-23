@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
   Users,
@@ -21,26 +22,27 @@ import {
 import { useAppContext } from '../../context/AppContext';
 
 const NAV_ITEMS = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/nurses', label: 'Nurse Database', icon: Users },
-  { path: '/acquisition', label: 'Acquisition Hub', icon: Building2 },
-  { path: '/cohorts', label: 'Cohort Manager', icon: GraduationCap },
-  { path: '/outreach', label: 'Outreach Log', icon: Mail },
-  { path: '/placements', label: 'Placements', icon: Briefcase },
-  { path: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { path: '/reports', label: 'Reports', icon: ClipboardList },
-  { path: '/documents', label: 'Documents', icon: FileText },
-  { path: '/communications', label: 'Communications', icon: MessageSquare },
-  { path: '/integrations', label: 'Integrations', icon: Puzzle },
-  { path: '/audit', label: 'Audit Trail', icon: Shield },
-  { path: '/automations', label: 'Automations', icon: Zap },
-  { path: '/notifications', label: 'Notifications', icon: Bell },
-  { path: '/help', label: 'Help', icon: HelpCircle },
-  { path: '/settings', label: 'Settings', icon: Settings },
+  { path: '/', labelKey: 'navigation.dashboard', icon: LayoutDashboard },
+  { path: '/nurses', labelKey: 'navigation.nurseDatabase', icon: Users },
+  { path: '/acquisition', labelKey: 'navigation.acquisitionHub', icon: Building2 },
+  { path: '/cohorts', labelKey: 'navigation.cohortManager', icon: GraduationCap },
+  { path: '/outreach', labelKey: 'navigation.outreachLog', icon: Mail },
+  { path: '/placements', labelKey: 'navigation.placements', icon: Briefcase },
+  { path: '/analytics', labelKey: 'navigation.analytics', icon: BarChart3 },
+  { path: '/reports', labelKey: 'navigation.reports', icon: ClipboardList },
+  { path: '/documents', labelKey: 'navigation.documents', icon: FileText },
+  { path: '/communications', labelKey: 'navigation.communications', icon: MessageSquare },
+  { path: '/integrations', labelKey: 'navigation.integrations', icon: Puzzle },
+  { path: '/audit', labelKey: 'navigation.auditTrail', icon: Shield },
+  { path: '/automations', labelKey: 'navigation.automations', icon: Zap },
+  { path: '/notifications', labelKey: 'navigation.notifications', icon: Bell },
+  { path: '/help', labelKey: 'navigation.help', icon: HelpCircle },
+  { path: '/settings', labelKey: 'navigation.settings', icon: Settings },
 ];
 
 export default function Sidebar({ isOpen, onClose, isMobile }) {
   const location = useLocation();
+  const { t } = useTranslation();
   const { notifications, notificationAlerts } = useAppContext();
   const unreadCount = notifications.filter((n) => !n.read).length;
   const notifUnreadCount = notificationAlerts.filter((n) => !n.read).length;
@@ -104,7 +106,7 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
                 }`}
             >
               <Icon size={20} strokeWidth={1.8} />
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
               {item.path === '/communications' && unreadCount > 0 && (
                 <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
                   {unreadCount > 99 ? '99+' : unreadCount}

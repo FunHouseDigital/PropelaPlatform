@@ -101,7 +101,7 @@ export default function Layout() {
         />
       )}
 
-      <div className={`flex-1 flex flex-col min-h-screen ${isMobile ? 'ml-0' : 'ml-[220px]'}`}>
+      <div className={`flex-1 flex flex-col min-h-screen ${isMobile ? 'ms-0' : 'ms-[220px]'}`}>
         <OfflineBanner />
         <Header onOpenSearch={openSearch} onToggleSidebar={toggleSidebar} isMobile={isMobile} />
         <InstallPrompt />
