@@ -66,9 +66,13 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
       <div className="px-5 pt-6 pb-2 flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white font-bold text-sm">
-              P
-            </span>
+            <img
+              src="/logo.svg"
+              alt="Propela logo"
+              width={32}
+              height={32}
+              className="rounded-lg"
+            />
             <span className="text-white font-semibold text-lg tracking-tight">
               propela
             </span>

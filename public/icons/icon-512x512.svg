@@ -1,4 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="64" fill="#5B2D8E"/>
-  <text x="256" y="340" font-family="Arial, sans-serif" font-size="320" font-weight="bold" fill="white" text-anchor="middle">P</text>
+  <!-- Purple rounded rectangle background -->
+  <rect width="512" height="512" rx="96" fill="#6C63FF"/>
+  
+  <!-- Stylized swirl/pinwheel - four curved blades rotating clockwise -->
+  <!-- Top-right blade -->
+  <path d="M256 224 C256 176 280 136 308 108 C324 136 316 184 296 224 Z" fill="white"/>
+  <!-- Right-bottom blade -->
+  <path d="M288 256 C336 256 376 280 404 308 C376 324 328 316 288 296 Z" fill="white"/>
+  <!-- Bottom-left blade -->
+  <path d="M256 288 C256 336 232 376 204 404 C188 376 196 328 216 288 Z" fill="white"/>
+  <!-- Left-top blade -->
+  <path d="M224 256 C176 256 136 232 108 204 C136 188 184 196 224 216 Z" fill="white"/>
+  
+  <!-- Swirl curves giving rotation feel -->
+  <path d="M270 130 C330 140 370 180 380 240 C350 200 310 170 270 160 Z" fill="white" opacity="0.85"/>
+  <path d="M382 270 C372 330 332 370 272 380 C312 350 342 310 352 270 Z" fill="white" opacity="0.85"/>
+  <path d="M242 382 C182 372 142 332 132 272 C162 312 202 342 242 352 Z" fill="white" opacity="0.85"/>
+  <path d="M130 242 C140 182 180 142 240 132 C200 162 170 202 160 242 Z" fill="white" opacity="0.85"/>
+  
+  <!-- Center white circle -->
+  <circle cx="256" cy="256" r="36" fill="white"/>
+  
+  <!-- Plus/cross symbol in center -->
+  <rect x="249" y="236" width="14" height="40" rx="3" fill="#6C63FF"/>
+  <rect x="236" y="249" width="40" height="14" rx="3" fill="#6C63FF"/>
 </svg>
