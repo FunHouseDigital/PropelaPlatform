@@ -1,7 +1,6 @@
-import { useEffect, lazy, Suspense } from 'react';
+import { useEffect, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
-import LoadingSpinner from './components/layout/LoadingSpinner';
 import { initializeData } from './lib/storage';
 import { AppProvider } from './context/AppContext';
 
@@ -30,28 +29,26 @@ export default function App() {
   return (
     <AppProvider>
       <BrowserRouter>
-        <Suspense fallback={<LoadingSpinner />}>
-          <Routes>
-            <Route element={<Layout />}>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/nurses" element={<NurseDatabase />} />
-              <Route path="/acquisition" element={<AcquisitionHub />} />
-              <Route path="/cohorts" element={<CohortManager />} />
-              <Route path="/outreach" element={<OutreachLog />} />
-              <Route path="/placements" element={<PlacementTracker />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/documents" element={<DocumentManagement />} />
-              <Route path="/communications" element={<Communications />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/integrations" element={<Integrations />} />
-              <Route path="/audit" element={<AuditTrail />} />
-              <Route path="/automations" element={<Automations />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/help" element={<Help />} />
-              <Route path="/settings" element={<Settings />} />
-            </Route>
-          </Routes>
-        </Suspense>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/nurses" element={<NurseDatabase />} />
+            <Route path="/acquisition" element={<AcquisitionHub />} />
+            <Route path="/cohorts" element={<CohortManager />} />
+            <Route path="/outreach" element={<OutreachLog />} />
+            <Route path="/placements" element={<PlacementTracker />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/documents" element={<DocumentManagement />} />
+            <Route path="/communications" element={<Communications />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/integrations" element={<Integrations />} />
+            <Route path="/audit" element={<AuditTrail />} />
+            <Route path="/automations" element={<Automations />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/help" element={<Help />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
+        </Routes>
       </BrowserRouter>
     </AppProvider>
   );

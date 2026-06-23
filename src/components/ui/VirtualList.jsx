@@ -5,6 +5,7 @@ export default function VirtualList({
   itemHeight = 60,
   renderItem,
   containerHeight = '500px',
+  keyExtractor = (item, index) => index,
 }) {
   const [scrollTop, setScrollTop] = useState(0);
   const containerRef = useRef(null);
@@ -51,7 +52,7 @@ export default function VirtualList({
         >
           {visibleItems.map((item, index) => (
             <div
-              key={startIndex + index}
+              key={keyExtractor(item, startIndex + index)}
               style={{ height: itemHeight }}
             >
               {renderItem(item, startIndex + index)}
