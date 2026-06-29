@@ -1,37 +1,44 @@
-import { useState } from 'react';
 import {
-  X,
-  MapPin,
-  Phone,
-  Mail,
   Calendar,
-  Flag,
-  MessageSquare,
   ChevronDown,
   ChevronRight,
+  Flag,
+  MessageSquare,
   Plus,
   Star,
   StarHalf,
+  X,
 } from 'lucide-react';
+import { useState } from 'react';
+
+import { useDebounce } from '../../hooks/useDebounce';
 import {
-  PIPELINE_STAGES,
-  NEXT_ACTION_VALUES,
-  SPECIALTIES,
-  PROVINCES,
-  QUALIFICATION_TYPES,
-  YEARS_EXPERIENCE,
-  OET_STATUSES,
+  calculateCVScore,
+  calculateFinalScore,
+  calculateReadinessStatus,
+  calculateTier,
+} from '../../lib/calculations';
+import {
+  AGE_GROUPS,
   COMMITMENT_FEE_STATUSES,
+  DESTINATION_COUNTRIES,
+  EFSET_LEVELS,
+  EMPLOYMENT_STATUSES,
+  GENDERS,
+  NEXT_ACTION_VALUES,
+  OET_RESULTS,
+  OET_STATUSES,
+  PIPELINE_STAGES,
+  PLACEMENT_STATUSES,
+  QUALIFICATION_TYPES,
+  RECOMMENDED_PATHWAYS,
+  SANC_APC_STATUSES,
   SHORTLIST_DECISIONS,
   SOURCE_OPTIONS,
-  SANC_APC_STATUSES,
-  EFSET_LEVELS,
-  GENDERS,
-  AGE_GROUPS,
-  EMPLOYMENT_STATUSES,
+  SPECIALTIES,
+  YEARS_EXPERIENCE,
+  YES_NO,
 } from '../../lib/constants';
-import { calculateCVScore, calculateFinalScore, calculateTier, calculateReadinessStatus } from '../../lib/calculations';
-import { useDebounce } from '../../hooks/useDebounce';
 
 function getNextActionColor(nurse) {
   if (!nurse.nextAction || nurse.nextAction === 'No action required') {
@@ -43,7 +50,8 @@ function getNextActionColor(nurse) {
     today.setHours(0, 0, 0, 0);
     due.setHours(0, 0, 0, 0);
     if (due < today) return { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' };
-    if (due.getTime() === today.getTime()) return { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' };
+    if (due.getTime() === today.getTime())
+      return { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' };
   }
   return { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200' };
 }
@@ -106,6 +114,99 @@ function EditableSelect({ value, options, onChange, className = '' }) {
         </option>
       ))}
     </select>
+  );
+}
+
+// Shared input styling: subtle by default, clearly editable on focus.
+const INPUT_CLASS =
+  'w-full text-sm text-gray-900 bg-transparent border border-transparent hover:border-gray-200 rounded px-2 py-1 focus:outline-none focus:bg-white focus:border-gray-300 focus:ring-1 focus:ring-propela-purple';
+
+function EditableText({ value, onChange, placeholder = '', className = '' }) {
+  return (
+    <input
+      type="text"
+      value={value ?? ''}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className={`${INPUT_CLASS} ${className}`}
+    />
+  );
+}
+
+function EditableNumber({ value, onChange, placeholder = '', min, max, step, className = '' }) {
+  return (
+    <input
+      type="number"
+      value={value ?? ''}
+      onChange={(e) => {
+        const raw = e.target.value;
+        onChange(raw === '' ? '' : Number(raw));
+      }}
+      placeholder={placeholder}
+      min={min}
+      max={max}
+      step={step}
+      className={`${INPUT_CLASS} ${className}`}
+    />
+  );
+}
+
+function EditableDate({ value, onChange, className = '' }) {
+  return (
+    <input
+      type="date"
+      value={value || ''}
+      onChange={(e) => onChange(e.target.value)}
+      className={`${INPUT_CLASS} ${className}`}
+    />
+  );
+}
+
+function EditableTextarea({ value, onChange, placeholder = '', rows = 3, className = '' }) {
+  return (
+    <textarea
+      value={value ?? ''}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      rows={rows}
+      className={`${INPUT_CLASS} resize-y leading-snug ${className}`}
+    />
+  );
+}
+
+// Maps a stored boolean (e.g. agreementSigned) to a Yes / No dropdown
+// without changing the underlying data type used elsewhere in the app.
+function EditableYesNoBoolean({ value, onChange, className = '' }) {
+  return (
+    <EditableSelect
+      value={value ? 'Yes' : 'No'}
+      options={YES_NO}
+      onChange={(v) => onChange(v === 'Yes')}
+      className={className}
+    />
+  );
+}
+
+// Comma-separated text input backed by an array field. Keeps its own raw
+// text state so typing stays smooth, while persisting a cleaned array.
+function EditableCertifications({ value, onChange, placeholder = '' }) {
+  const [text, setText] = useState((value || []).join(', '));
+  return (
+    <input
+      type="text"
+      value={text}
+      onChange={(e) => {
+        setText(e.target.value);
+        onChange(
+          e.target.value
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        );
+      }}
+      placeholder={placeholder}
+      className={INPUT_CLASS}
+    />
   );
 }
 
@@ -173,6 +274,11 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
     updateField(field, value, { debounce: true });
   };
 
+  const updateOetScore = (key, value) => {
+    const newScores = { ...(localNurse.oetScores || {}), [key]: value };
+    updateField('oetScores', newScores);
+  };
+
   const updateScorecard = (key, value) => {
     const newScorecard = { ...localNurse.scorecardFields, [key]: value };
     const updated = { ...localNurse, scorecardFields: newScorecard };
@@ -218,8 +324,8 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
             localNurse.pipelineStage === 'Dropped Out'
               ? 'bg-red-50'
               : localNurse.pipelineStage === 'Deferred'
-              ? 'bg-yellow-50'
-              : 'bg-white'
+                ? 'bg-yellow-50'
+                : 'bg-white'
           }`}
         >
           <div className="flex items-start justify-between mb-3">
@@ -238,11 +344,12 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
                   {localNurse.fullName}
-                  {localNurse.preferredName && localNurse.preferredName !== localNurse.fullName.split(' ')[0] && (
-                    <span className="text-gray-400 font-normal text-sm ml-1">
-                      ({localNurse.preferredName})
-                    </span>
-                  )}
+                  {localNurse.preferredName &&
+                    localNurse.preferredName !== localNurse.fullName.split(' ')[0] && (
+                      <span className="text-gray-400 font-normal text-sm ml-1">
+                        ({localNurse.preferredName})
+                      </span>
+                    )}
                 </h2>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   <EditableSelect
@@ -304,8 +411,8 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
                   localNurse.readinessStatus === 'Placement Ready'
                     ? 'bg-green-100 text-green-700'
                     : localNurse.readinessStatus === 'Placed'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-gray-100 text-gray-600'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-100 text-gray-600'
                 }`}
               >
                 {localNurse.readinessStatus}
@@ -319,44 +426,177 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
           <Section title="Personal Information" defaultOpen={true}>
             <div className="space-y-0.5">
               <FieldRow label="Email">
-                <a href={`mailto:${localNurse.email}`} className="text-propela-purple hover:underline">
-                  {localNurse.email}
-                </a>
+                <EditableText
+                  value={localNurse.email}
+                  onChange={(v) => updateFieldDebounced('email', v)}
+                  placeholder="email@example.com"
+                />
               </FieldRow>
-              <FieldRow label="Phone" value={localNurse.contactNumber} />
-              <FieldRow label="Gender" value={localNurse.gender} />
-              <FieldRow label="Age Group" value={localNurse.ageGroup} />
-              <FieldRow label="Province" value={localNurse.province} />
-              <FieldRow label="City" value={localNurse.city} />
+              <FieldRow label="Phone">
+                <EditableText
+                  value={localNurse.contactNumber}
+                  onChange={(v) => updateFieldDebounced('contactNumber', v)}
+                  placeholder="+27..."
+                />
+              </FieldRow>
+              <FieldRow label="Gender">
+                <EditableSelect
+                  value={localNurse.gender}
+                  options={GENDERS}
+                  onChange={(v) => updateField('gender', v)}
+                />
+              </FieldRow>
+              <FieldRow label="Age Group">
+                <EditableSelect
+                  value={localNurse.ageGroup}
+                  options={AGE_GROUPS}
+                  onChange={(v) => updateField('ageGroup', v)}
+                />
+              </FieldRow>
+              <FieldRow label="Province">
+                <EditableText
+                  value={localNurse.province}
+                  onChange={(v) => updateFieldDebounced('province', v)}
+                  placeholder="Province"
+                />
+              </FieldRow>
+              <FieldRow label="City">
+                <EditableText
+                  value={localNurse.city}
+                  onChange={(v) => updateFieldDebounced('city', v)}
+                  placeholder="City"
+                />
+              </FieldRow>
             </div>
           </Section>
 
           <Section title="Professional Profile">
             <div className="space-y-0.5">
-              <FieldRow label="Registered with SANC" value={localNurse.registeredWithSANC} />
-              <FieldRow label="Registered Nurse in SA" value={localNurse.registeredNurseInSA} />
-              <FieldRow label="SANC Number" value={localNurse.sancNumber} />
-              <FieldRow label="SANC APC Expiry" value={localNurse.sancAPCExpiry} />
-              <FieldRow label="SANC APC Status" value={localNurse.sancAPCStatus} />
-              <FieldRow label="Highest Qualification" value={localNurse.highestQualification} />
-              <FieldRow label="Institution" value={localNurse.qualificationInstitution} />
-              <FieldRow label="Years Experience" value={localNurse.yearsOfClinicalExperience} />
-              <FieldRow label="Primary Specialty" value={localNurse.primaryClinicalSpecialty} />
-              <FieldRow label="Additional Certs">
-                {localNurse.additionalCertifications?.join(', ') || '-'}
+              <FieldRow label="Registered with SANC">
+                <EditableSelect
+                  value={localNurse.registeredWithSANC}
+                  options={YES_NO}
+                  onChange={(v) => updateField('registeredWithSANC', v)}
+                />
               </FieldRow>
-              <FieldRow label="Employment Status" value={localNurse.employmentStatus} />
-              <FieldRow label="Current Employer" value={localNurse.currentEmployer} />
-              <FieldRow label="Valid Passport" value={localNurse.validPassport} />
-              <FieldRow label="Passport Expiry" value={localNurse.passportExpiryDate} />
+              <FieldRow label="Registered Nurse in SA">
+                <EditableSelect
+                  value={localNurse.registeredNurseInSA}
+                  options={YES_NO}
+                  onChange={(v) => updateField('registeredNurseInSA', v)}
+                />
+              </FieldRow>
+              <FieldRow label="SANC Number">
+                <EditableText
+                  value={localNurse.sancNumber}
+                  onChange={(v) => updateFieldDebounced('sancNumber', v)}
+                  placeholder="SANC registration number"
+                />
+              </FieldRow>
+              <FieldRow label="SANC APC Expiry">
+                <EditableDate
+                  value={localNurse.sancAPCExpiry}
+                  onChange={(v) => updateField('sancAPCExpiry', v)}
+                />
+              </FieldRow>
+              <FieldRow label="SANC APC Status">
+                <EditableSelect
+                  value={localNurse.sancAPCStatus}
+                  options={SANC_APC_STATUSES}
+                  onChange={(v) => updateField('sancAPCStatus', v)}
+                />
+              </FieldRow>
+              <FieldRow label="Highest Qualification">
+                <EditableSelect
+                  value={localNurse.highestQualification}
+                  options={QUALIFICATION_TYPES}
+                  onChange={(v) => updateField('highestQualification', v)}
+                />
+              </FieldRow>
+              <FieldRow label="Institution">
+                <EditableText
+                  value={localNurse.qualificationInstitution}
+                  onChange={(v) => updateFieldDebounced('qualificationInstitution', v)}
+                  placeholder="Institution"
+                />
+              </FieldRow>
+              <FieldRow label="Years Experience">
+                <EditableSelect
+                  value={localNurse.yearsOfClinicalExperience}
+                  options={YEARS_EXPERIENCE}
+                  onChange={(v) => updateField('yearsOfClinicalExperience', v)}
+                />
+              </FieldRow>
+              <FieldRow label="Primary Specialty">
+                <EditableSelect
+                  value={localNurse.primaryClinicalSpecialty}
+                  options={SPECIALTIES}
+                  onChange={(v) => updateField('primaryClinicalSpecialty', v)}
+                />
+              </FieldRow>
+              <FieldRow label="Additional Certs">
+                <EditableCertifications
+                  value={localNurse.additionalCertifications}
+                  onChange={(v) => updateFieldDebounced('additionalCertifications', v)}
+                  placeholder="Comma-separated, e.g. ACLS, BLS"
+                />
+              </FieldRow>
+              <FieldRow label="Employment Status">
+                <EditableSelect
+                  value={localNurse.employmentStatus}
+                  options={EMPLOYMENT_STATUSES}
+                  onChange={(v) => updateField('employmentStatus', v)}
+                />
+              </FieldRow>
+              <FieldRow label="Current Employer">
+                <EditableText
+                  value={localNurse.currentEmployer}
+                  onChange={(v) => updateFieldDebounced('currentEmployer', v)}
+                  placeholder="Current employer"
+                />
+              </FieldRow>
+              <FieldRow label="Valid Passport">
+                <EditableSelect
+                  value={localNurse.validPassport}
+                  options={YES_NO}
+                  onChange={(v) => updateField('validPassport', v)}
+                />
+              </FieldRow>
+              <FieldRow label="Passport Expiry">
+                <EditableDate
+                  value={localNurse.passportExpiryDate}
+                  onChange={(v) => updateField('passportExpiryDate', v)}
+                />
+              </FieldRow>
             </div>
           </Section>
 
           <Section title="English Proficiency - Screening (EF SET)">
             <div className="space-y-0.5">
-              <FieldRow label="EF SET Score" value={localNurse.efSetScore} />
-              <FieldRow label="EF SET Level" value={localNurse.efSetLevel} />
-              <FieldRow label="English Pts" value={localNurse.englishPts} />
+              <FieldRow label="EF SET Score">
+                <EditableNumber
+                  value={localNurse.efSetScore}
+                  onChange={(v) => updateField('efSetScore', v)}
+                  placeholder="Score"
+                  min={0}
+                />
+              </FieldRow>
+              <FieldRow label="EF SET Level">
+                <EditableSelect
+                  value={localNurse.efSetLevel}
+                  options={EFSET_LEVELS}
+                  onChange={(v) => updateField('efSetLevel', v)}
+                />
+              </FieldRow>
+              <FieldRow label="English Pts">
+                <EditableNumber
+                  value={localNurse.englishPts}
+                  onChange={(v) => updateField('englishPts', v)}
+                  placeholder="0-3"
+                  min={0}
+                  max={3}
+                />
+              </FieldRow>
             </div>
           </Section>
 
@@ -369,16 +609,61 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
                   onChange={(v) => updateField('oetStatus', v)}
                 />
               </FieldRow>
-              <FieldRow label="OET Exam Date" value={localNurse.oetExamDate || '-'} />
-              {localNurse.oetScores && (
-                <>
-                  <FieldRow label="Writing" value={localNurse.oetScores.writing} />
-                  <FieldRow label="Speaking" value={localNurse.oetScores.speaking} />
-                  <FieldRow label="Listening" value={localNurse.oetScores.listening} />
-                  <FieldRow label="Reading" value={localNurse.oetScores.reading} />
-                </>
-              )}
-              <FieldRow label="OET Overall Result" value={localNurse.oetOverallResult || '-'} />
+              <FieldRow label="OET Exam Date">
+                <EditableDate
+                  value={localNurse.oetExamDate}
+                  onChange={(v) => updateField('oetExamDate', v)}
+                />
+              </FieldRow>
+              <FieldRow label="OET Exam Centre">
+                <EditableText
+                  value={localNurse.oetExamCentre}
+                  onChange={(v) => updateFieldDebounced('oetExamCentre', v)}
+                  placeholder="Exam centre"
+                />
+              </FieldRow>
+              <FieldRow label="Writing">
+                <EditableNumber
+                  value={localNurse.oetScores?.writing}
+                  onChange={(v) => updateOetScore('writing', v)}
+                  placeholder="Writing score"
+                />
+              </FieldRow>
+              <FieldRow label="Speaking">
+                <EditableNumber
+                  value={localNurse.oetScores?.speaking}
+                  onChange={(v) => updateOetScore('speaking', v)}
+                  placeholder="Speaking score"
+                />
+              </FieldRow>
+              <FieldRow label="Listening">
+                <EditableNumber
+                  value={localNurse.oetScores?.listening}
+                  onChange={(v) => updateOetScore('listening', v)}
+                  placeholder="Listening score"
+                />
+              </FieldRow>
+              <FieldRow label="Reading">
+                <EditableNumber
+                  value={localNurse.oetScores?.reading}
+                  onChange={(v) => updateOetScore('reading', v)}
+                  placeholder="Reading score"
+                />
+              </FieldRow>
+              <FieldRow label="OET Overall Result">
+                <EditableSelect
+                  value={localNurse.oetOverallResult}
+                  options={OET_RESULTS}
+                  onChange={(v) => updateField('oetOverallResult', v)}
+                />
+              </FieldRow>
+              <FieldRow label="Retake Required">
+                <EditableSelect
+                  value={localNurse.retakeRequired}
+                  options={YES_NO}
+                  onChange={(v) => updateField('retakeRequired', v)}
+                />
+              </FieldRow>
             </div>
           </Section>
 
@@ -450,10 +735,10 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
                     localNurse.tier === 'Tier 1 Priority'
                       ? 'bg-green-100 text-green-700'
                       : localNurse.tier === 'Tier 1 Standard'
-                      ? 'bg-blue-100 text-blue-700'
-                      : localNurse.tier === 'Tier 2 Development'
-                      ? 'bg-amber-100 text-amber-700'
-                      : 'bg-gray-100 text-gray-700'
+                        ? 'bg-blue-100 text-blue-700'
+                        : localNurse.tier === 'Tier 2 Development'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-gray-100 text-gray-700'
                   }`}
                 >
                   {localNurse.tier}
@@ -471,13 +756,63 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
                   onChange={(v) => updateField('shortlistDecision', v)}
                 />
               </FieldRow>
+              <FieldRow label="First Interview Date">
+                <EditableDate
+                  value={localNurse.firstInterviewDate}
+                  onChange={(v) => updateField('firstInterviewDate', v)}
+                />
+              </FieldRow>
+              <FieldRow label="Non-Selection Reason">
+                <EditableText
+                  value={localNurse.nonSelectionReason}
+                  onChange={(v) => updateFieldDebounced('nonSelectionReason', v)}
+                  placeholder="Reason"
+                />
+              </FieldRow>
+              <FieldRow label="Recommended Pathway">
+                <EditableSelect
+                  value={localNurse.recommendedPathway}
+                  options={RECOMMENDED_PATHWAYS}
+                  onChange={(v) => updateField('recommendedPathway', v)}
+                />
+              </FieldRow>
             </div>
           </Section>
 
           <Section title="Cohort and Commitment">
             <div className="space-y-0.5">
-              <FieldRow label="Cohort Assigned" value={localNurse.cohortAssigned || 'Unassigned'} />
-              <FieldRow label="Agreement Signed" value={localNurse.agreementSigned ? 'Yes' : 'No'} />
+              <FieldRow label="Cohort Assigned">
+                <EditableText
+                  value={localNurse.cohortAssigned}
+                  onChange={(v) => updateFieldDebounced('cohortAssigned', v)}
+                  placeholder="Unassigned"
+                />
+              </FieldRow>
+              <FieldRow label="Agreement Sent">
+                <EditableSelect
+                  value={localNurse.agreementSent}
+                  options={YES_NO}
+                  onChange={(v) => updateField('agreementSent', v)}
+                />
+              </FieldRow>
+              <FieldRow label="Agreement Sent Date">
+                <EditableDate
+                  value={localNurse.agreementSentDate}
+                  onChange={(v) => updateField('agreementSentDate', v)}
+                />
+              </FieldRow>
+              <FieldRow label="Agreement Signed">
+                <EditableYesNoBoolean
+                  value={localNurse.agreementSigned}
+                  onChange={(v) => updateField('agreementSigned', v)}
+                />
+              </FieldRow>
+              <FieldRow label="Agreement Signed Date">
+                <EditableDate
+                  value={localNurse.agreementSignedDate}
+                  onChange={(v) => updateField('agreementSignedDate', v)}
+                />
+              </FieldRow>
               <FieldRow label="Commitment Fee Status">
                 <EditableSelect
                   value={localNurse.commitmentFeeStatus}
@@ -485,21 +820,77 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
                   onChange={(v) => updateField('commitmentFeeStatus', v)}
                 />
               </FieldRow>
+              <FieldRow label="Commitment Fee Date Paid">
+                <EditableDate
+                  value={localNurse.commitmentFeeDatePaid}
+                  onChange={(v) => updateField('commitmentFeeDatePaid', v)}
+                />
+              </FieldRow>
             </div>
           </Section>
 
           <Section title="Placement">
             <div className="space-y-0.5">
-              <FieldRow label="Placement Status" value={localNurse.placementStatus || '-'} />
+              <FieldRow label="Placement Status">
+                <EditableSelect
+                  value={localNurse.placementStatus}
+                  options={PLACEMENT_STATUSES}
+                  onChange={(v) => updateField('placementStatus', v)}
+                />
+              </FieldRow>
+              <FieldRow label="Destination Country">
+                <EditableSelect
+                  value={localNurse.destinationCountry}
+                  options={DESTINATION_COUNTRIES}
+                  onChange={(v) => updateField('destinationCountry', v)}
+                />
+              </FieldRow>
+              <FieldRow label="Employer">
+                <EditableText
+                  value={localNurse.placementEmployer}
+                  onChange={(v) => updateFieldDebounced('placementEmployer', v)}
+                  placeholder="Employer"
+                />
+              </FieldRow>
+              <FieldRow label="Placement Date">
+                <EditableDate
+                  value={localNurse.placementDate}
+                  onChange={(v) => updateField('placementDate', v)}
+                />
+              </FieldRow>
             </div>
           </Section>
 
           <Section title="Notes / Flags / Source">
             <div className="space-y-0.5">
-              <FieldRow label="Source" value={localNurse.source} />
-              <FieldRow label="Motivations" value={localNurse.motivations} />
-              <FieldRow label="Questions" value={localNurse.questions} />
-              <FieldRow label="Notes/Flags" value={localNurse.notesFlags} />
+              <FieldRow label="Source">
+                <EditableSelect
+                  value={localNurse.source}
+                  options={SOURCE_OPTIONS}
+                  onChange={(v) => updateField('source', v)}
+                />
+              </FieldRow>
+              <FieldRow label="Motivations">
+                <EditableTextarea
+                  value={localNurse.motivations}
+                  onChange={(v) => updateFieldDebounced('motivations', v)}
+                  placeholder="Motivations"
+                />
+              </FieldRow>
+              <FieldRow label="Questions">
+                <EditableTextarea
+                  value={localNurse.questions}
+                  onChange={(v) => updateFieldDebounced('questions', v)}
+                  placeholder="Questions"
+                />
+              </FieldRow>
+              <FieldRow label="Notes/Flags">
+                <EditableTextarea
+                  value={localNurse.notesFlags}
+                  onChange={(v) => updateFieldDebounced('notesFlags', v)}
+                  placeholder="Notes / flags"
+                />
+              </FieldRow>
             </div>
           </Section>
 
@@ -511,10 +902,7 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
                 [...(localNurse.communicationLog || [])]
                   .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
                   .map((entry, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-gray-50 rounded-lg p-2.5 text-sm"
-                    >
+                    <div key={idx} className="bg-gray-50 rounded-lg p-2.5 text-sm">
                       <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
                         <span>{entry.date}</span>
                         <span className="bg-gray-200 px-1.5 py-0.5 rounded text-xs">
@@ -523,9 +911,7 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
                       </div>
                       <p className="text-gray-700">{entry.summary}</p>
                       {entry.nextAction && (
-                        <p className="text-xs text-teal-600 mt-1">
-                          Next: {entry.nextAction}
-                        </p>
+                        <p className="text-xs text-teal-600 mt-1">Next: {entry.nextAction}</p>
                       )}
                     </div>
                   ))

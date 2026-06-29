@@ -90,45 +90,19 @@ export const QUALIFICATION_TYPES = [
 ];
 
 // Years of Experience (Section 7.7)
-export const YEARS_EXPERIENCE = [
-  'Less than 1 year',
-  '1-2 years',
-  '3-5 years',
-  '5+ years',
-];
+export const YEARS_EXPERIENCE = ['Less than 1 year', '1-2 years', '3-5 years', '5+ years'];
 
 // Gender options
-export const GENDERS = [
-  'Female',
-  'Male',
-  'Non-binary',
-  'Prefer not to say',
-];
+export const GENDERS = ['Female', 'Male', 'Non-binary', 'Prefer not to say'];
 
 // Age Groups
-export const AGE_GROUPS = [
-  '25-29',
-  '30-35',
-  '35-40',
-  '40+',
-];
+export const AGE_GROUPS = ['25-29', '30-35', '35-40', '40+'];
 
 // SANC APC Status
-export const SANC_APC_STATUSES = [
-  'Active',
-  'Lapsed',
-  'Unverified',
-];
+export const SANC_APC_STATUSES = ['Active', 'Lapsed', 'Unverified'];
 
 // EF SET Levels
-export const EFSET_LEVELS = [
-  'A1',
-  'A2',
-  'B1',
-  'B2',
-  'C1',
-  'C2',
-];
+export const EFSET_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
 // OET Statuses
 export const OET_STATUSES = [
@@ -142,11 +116,7 @@ export const OET_STATUSES = [
 ];
 
 // OET Overall Result
-export const OET_RESULTS = [
-  'Pass',
-  'Fail',
-  'Partial',
-];
+export const OET_RESULTS = ['Pass', 'Fail', 'Partial'];
 
 // Commitment Fee Statuses
 export const COMMITMENT_FEE_STATUSES = [
@@ -169,10 +139,7 @@ export const HEALTHCARE_GROUPS = [
 ];
 
 // Facility Types
-export const FACILITY_TYPES = [
-  'Private',
-  'Public',
-];
+export const FACILITY_TYPES = ['Private', 'Public'];
 
 // Organisation Stages (Section 8.2 - Shared Outreach Pipeline)
 export const ORGANISATION_STAGES = [
@@ -196,11 +163,7 @@ export const TIERS = [
 ];
 
 // Shortlist Decisions
-export const SHORTLIST_DECISIONS = [
-  'YES',
-  'MAYBE',
-  'NO',
-];
+export const SHORTLIST_DECISIONS = ['YES', 'MAYBE', 'NO'];
 
 // Source Options (Section 7.7)
 export const SOURCE_OPTIONS = [
@@ -215,29 +178,17 @@ export const SOURCE_OPTIONS = [
   'Other',
 ];
 
+// Generic Yes / No options (used for boolean-style dropdowns on the Nurse Card)
+export const YES_NO = ['Yes', 'No'];
+
 // Employment Statuses
-export const EMPLOYMENT_STATUSES = [
-  'Employed',
-  'Unemployed',
-  'Freelancing',
-  'Prefer not to say',
-];
+export const EMPLOYMENT_STATUSES = ['Employed', 'Unemployed', 'Freelancing', 'Prefer not to say'];
 
 // Placement Statuses
-export const PLACEMENT_STATUSES = [
-  'Not Ready',
-  'Ready',
-  'In Process',
-  'Placed',
-  'Declined',
-];
+export const PLACEMENT_STATUSES = ['Not Ready', 'Ready', 'In Process', 'Placed', 'Declined'];
 
 // Destination Countries
-export const DESTINATION_COUNTRIES = [
-  'UK',
-  'Ireland',
-  'Other',
-];
+export const DESTINATION_COUNTRIES = ['UK', 'Ireland', 'Other'];
 
 // Recommended Pathways
 export const RECOMMENDED_PATHWAYS = [
@@ -257,13 +208,7 @@ export const OUTREACH_APPROACHES = [
 ];
 
 // Preferred Channels
-export const PREFERRED_CHANNELS = [
-  'Email',
-  'LinkedIn',
-  'Phone',
-  'WhatsApp',
-  'In-person',
-];
+export const PREFERRED_CHANNELS = ['Email', 'LinkedIn', 'Phone', 'WhatsApp', 'In-person'];
 
 // Cohort Statuses (Section 9.2)
 export const COHORT_STATUSES = [
@@ -277,10 +222,7 @@ export const COHORT_STATUSES = [
 ];
 
 // Organisation Types
-export const ORGANISATION_TYPES = [
-  'NEI',
-  'Health Facility',
-];
+export const ORGANISATION_TYPES = ['NEI', 'Health Facility'];
 
 // Template Types (Section 10 - Outreach Templates)
 export const TEMPLATE_TYPES = [
@@ -293,17 +235,10 @@ export const TEMPLATE_TYPES = [
 ];
 
 // Template Channels
-export const TEMPLATE_CHANNELS = [
-  'Email',
-  'LinkedIn',
-  'WhatsApp',
-];
+export const TEMPLATE_CHANNELS = ['Email', 'LinkedIn', 'WhatsApp'];
 
 // Template Statuses
-export const TEMPLATE_STATUSES = [
-  'Active',
-  'Archived',
-];
+export const TEMPLATE_STATUSES = ['Active', 'Archived'];
 
 // Outreach Outcomes (matching OutreachLogEntry.jsx OUTCOMES)
 export const OUTREACH_OUTCOMES = [
@@ -367,14 +302,32 @@ export const RELOCATION_CHECKLIST_ITEMS = [
 
 // Pipeline stages in progression order (used by analytics)
 export const PIPELINE_STAGES_ORDER = [
-  'Applied', 'CV Submitted', 'CV + English Submitted', 'Under Review',
-  'Shortlisted - Yes', 'Shortlisted - Maybe', 'Selected for Cohort', 'Reserve',
-  'Cohort Confirmed', 'Training Active', 'OET Registered', 'OET Passed',
-  'OET Failed', 'Placement Ready', 'Placed',
+  'Applied',
+  'CV Submitted',
+  'CV + English Submitted',
+  'Under Review',
+  'Shortlisted - Yes',
+  'Shortlisted - Maybe',
+  'Selected for Cohort',
+  'Reserve',
+  'Cohort Confirmed',
+  'Training Active',
+  'OET Registered',
+  'OET Passed',
+  'OET Failed',
+  'Placement Ready',
+  'Placed',
 ];
 
 // Exit states (nurses who have left the active pipeline)
-export const EXIT_STATES = ['Placed', 'Deferred', 'Dropped Out', 'Recommended Pathway', 'Not Selected', "Didn't Qualify"];
+export const EXIT_STATES = [
+  'Placed',
+  'Deferred',
+  'Dropped Out',
+  'Recommended Pathway',
+  'Not Selected',
+  "Didn't Qualify",
+];
 
 // Document Management Constants (Section 12)
 
@@ -391,12 +344,7 @@ export const DOCUMENT_TYPES = [
 ];
 
 // Document Statuses
-export const DOCUMENT_STATUSES = [
-  'Pending',
-  'Verified',
-  'Expired',
-  'Rejected',
-];
+export const DOCUMENT_STATUSES = ['Pending', 'Verified', 'Expired', 'Rejected'];
 
 // Document Template Types
 export const DOCUMENT_TEMPLATE_TYPES = [
@@ -406,25 +354,37 @@ export const DOCUMENT_TEMPLATE_TYPES = [
 ];
 
 // Verification Actions
-export const VERIFICATION_ACTIONS = [
-  'Approved',
-  'Rejected',
-];
+export const VERIFICATION_ACTIONS = ['Approved', 'Rejected'];
 
 // Compliance Required Documents - mapping pipeline stages to required document types
 export const COMPLIANCE_REQUIRED_DOCUMENTS = {
-  'Applied': ['Passport'],
+  Applied: ['Passport'],
   'CV Submitted': ['Passport', 'Nursing Qualification'],
   'CV + English Submitted': ['Passport', 'Nursing Qualification'],
   'Under Review': ['Passport', 'Nursing Qualification'],
   'Shortlisted - Yes': ['Passport', 'Nursing Qualification'],
   'Shortlisted - Maybe': ['Passport', 'Nursing Qualification'],
   'Selected for Cohort': ['Passport', 'Nursing Qualification', 'References'],
-  'Reserve': ['Passport', 'Nursing Qualification', 'References'],
+  Reserve: ['Passport', 'Nursing Qualification', 'References'],
   'Cohort Confirmed': ['Passport', 'Nursing Qualification', 'References'],
   'Training Active': ['Passport', 'Nursing Qualification', 'References'],
   'OET Registered': ['Passport', 'Nursing Qualification', 'References'],
   'OET Passed': ['Passport', 'Nursing Qualification', 'OET Certificate', 'References'],
-  'Placement Ready': ['Passport', 'Nursing Qualification', 'OET Certificate', 'CBT Certificate', 'NMC Decision Letter', 'References'],
-  'Placed': ['Passport', 'Nursing Qualification', 'OET Certificate', 'CBT Certificate', 'NMC Decision Letter', 'Visa Documents', 'References'],
+  'Placement Ready': [
+    'Passport',
+    'Nursing Qualification',
+    'OET Certificate',
+    'CBT Certificate',
+    'NMC Decision Letter',
+    'References',
+  ],
+  Placed: [
+    'Passport',
+    'Nursing Qualification',
+    'OET Certificate',
+    'CBT Certificate',
+    'NMC Decision Letter',
+    'Visa Documents',
+    'References',
+  ],
 };
