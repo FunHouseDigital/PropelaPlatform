@@ -15,6 +15,9 @@ export default defineConfig({
         brotliSize: true,
       }),
   ].filter(Boolean),
+  resolve: {
+    dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
+  },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
   },

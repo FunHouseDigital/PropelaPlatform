@@ -95,9 +95,11 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .then((response) => {
           const responseClone = response.clone();
-          caches.open(SHELL_CACHE).then((cache) => {
-            cache.put(request, responseClone);
-          });
+          if (request.url.startsWith('http')) {
+            caches.open(SHELL_CACHE).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
           return response;
         })
         .catch(() => {
@@ -113,10 +115,12 @@ self.addEventListener('fetch', (event) => {
       fetchWithTimeout(request, API_TIMEOUT_MS)
         .then((response) => {
           const responseClone = response.clone();
-          caches.open(API_CACHE).then((cache) => {
-            cache.put(request, responseClone);
-            trimCache(API_CACHE, MAX_CACHE_ENTRIES);
-          });
+          if (request.url.startsWith('http')) {
+            caches.open(API_CACHE).then((cache) => {
+              cache.put(request, responseClone);
+              trimCache(API_CACHE, MAX_CACHE_ENTRIES);
+            });
+          }
           return response;
         })
         .catch(() => {
@@ -137,10 +141,12 @@ self.addEventListener('fetch', (event) => {
         const fetchPromise = fetch(request)
           .then((response) => {
             const responseClone = response.clone();
-            caches.open(FONT_CACHE).then((cache) => {
-              cache.put(request, responseClone);
-              trimCache(FONT_CACHE, MAX_CACHE_ENTRIES);
-            });
+            if (request.url.startsWith('http')) {
+              caches.open(FONT_CACHE).then((cache) => {
+                cache.put(request, responseClone);
+                trimCache(FONT_CACHE, MAX_CACHE_ENTRIES);
+              });
+            }
             return response;
           })
           .catch(() => cachedResponse);
@@ -158,10 +164,12 @@ self.addEventListener('fetch', (event) => {
         const fetchPromise = fetch(request)
           .then((response) => {
             const responseClone = response.clone();
-            caches.open(ASSETS_CACHE).then((cache) => {
-              cache.put(request, responseClone);
-              trimCache(ASSETS_CACHE, MAX_CACHE_ENTRIES);
-            });
+            if (request.url.startsWith('http')) {
+              caches.open(ASSETS_CACHE).then((cache) => {
+                cache.put(request, responseClone);
+                trimCache(ASSETS_CACHE, MAX_CACHE_ENTRIES);
+              });
+            }
             return response;
           })
           .catch(() => cachedResponse);
@@ -181,10 +189,12 @@ self.addEventListener('fetch', (event) => {
         }
         return fetch(request).then((response) => {
           const responseClone = response.clone();
-          caches.open(ASSETS_CACHE).then((cache) => {
-            cache.put(request, responseClone);
-            trimCache(ASSETS_CACHE, MAX_CACHE_ENTRIES);
-          });
+          if (request.url.startsWith('http')) {
+            caches.open(ASSETS_CACHE).then((cache) => {
+              cache.put(request, responseClone);
+              trimCache(ASSETS_CACHE, MAX_CACHE_ENTRIES);
+            });
+          }
           return response;
         });
       })
