@@ -20,7 +20,13 @@ export default defineConfig([
       'simple-import-sort': simpleImportSort,
     },
     languageOptions: {
-      globals: globals.browser,
+      globals: {
+        ...globals.browser,
+        // Build-time constants injected by Vite's `define` config (see vite.config.js)
+        __APP_VERSION__: 'readonly',
+        __BUILD_TIMESTAMP__: 'readonly',
+        __GIT_COMMIT_HASH__: 'readonly',
+      },
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
     rules: {
