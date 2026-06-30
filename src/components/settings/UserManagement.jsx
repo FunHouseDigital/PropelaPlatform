@@ -3,7 +3,7 @@ import { useAppContext } from '../../context/AppContext';
 import { UserPlus, Save } from 'lucide-react';
 
 const MODULES = ['Dashboard', 'Nurses', 'Acquisition', 'Cohorts', 'Outreach', 'Placements', 'Analytics', 'Settings'];
-const ROLES = ['Admin', 'Manager', 'Recruiter', 'Read-only'];
+const ROLES = ['Superadmin', 'Admin', 'Manager', 'Recruiter', 'Read-only'];
 
 export default function UserManagement() {
   const { settings, updateSettings } = useAppContext();
