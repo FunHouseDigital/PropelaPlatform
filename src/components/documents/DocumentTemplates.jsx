@@ -1,6 +1,14 @@
 import { useState } from 'react';
-import { FileText, X, Download, UserPlus } from 'lucide-react';
+import { FileText, X, Download, UserPlus, Lock } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { useExport } from '../../hooks/useExport';
+
+// A template download only emits real record data when a specific nurse is
+// selected (their name + id get substituted into the document). In that case it
+// is a real single-record export and is gated under the Nurses module + audited.
+// Plain template downloads (no nurse selected) contain only sample placeholders
+// and are not gated.
+const EXPORT_MODULE = 'Nurses';
 
 function TypeBadge({ type }) {
   const colors = {
@@ -23,9 +31,15 @@ function extractPlaceholders(content) {
 
 function TemplatePreviewModal({ template, nurses, onClose }) {
   const [selectedNurse, setSelectedNurse] = useState('');
+  const [exportError, setExportError] = useState('');
+  const { runExport, canExport } = useExport();
   const placeholders = extractPlaceholders(template.content);
+  // Only an export-of-real-data when a nurse is selected; otherwise it's a
+  // sample template, which anyone may download.
+  const requiresPermission = !!selectedNurse;
+  const blockedByPermission = requiresPermission && !canExport(EXPORT_MODULE);
 
-  function handleDownload() {
+  function buildAndDownload() {
     let content = template.content;
     // Replace placeholders with sample data
     const sampleData = {
@@ -54,6 +68,27 @@ function TemplatePreviewModal({ template, nurses, onClose }) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  }
+
+  function handleDownload() {
+    // Plain template (no nurse) → sample data only, no permission needed.
+    if (!requiresPermission) {
+      buildAndDownload();
+      setExportError('');
+      return;
+    }
+    // Real nurse record embedded → gate under Nurses + audit the attempt.
+    const { allowed, error } = runExport(
+      {
+        module: EXPORT_MODULE,
+        entityType: 'document',
+        format: 'TXT',
+        recordCount: 1,
+        filters: { template: template.name, nurseId: selectedNurse },
+      },
+      buildAndDownload
+    );
+    setExportError(allowed ? '' : error);
   }
 
   // Highlight placeholders in content
@@ -103,26 +138,33 @@ function TemplatePreviewModal({ template, nurses, onClose }) {
           </div>
         </div>
 
-        <div className="p-4 border-t border-gray-200 flex items-center gap-3">
-          <div className="flex-1">
-            <select
-              value={selectedNurse}
-              onChange={(e) => setSelectedNurse(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B2D8E]/20 focus:border-[#5B2D8E]"
+        <div className="p-4 border-t border-gray-200 flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <select
+                value={selectedNurse}
+                onChange={(e) => setSelectedNurse(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B2D8E]/20 focus:border-[#5B2D8E]"
+              >
+                <option value="">Select a nurse (optional)</option>
+                {nurses.map((nurse) => (
+                  <option key={nurse.id} value={nurse.id}>{nurse.fullName}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={handleDownload}
+              disabled={blockedByPermission}
+              title={blockedByPermission ? "You don't have permission to export this nurse's data" : undefined}
+              className="flex items-center gap-2 px-4 py-2 bg-[#5B2D8E] text-white text-sm font-medium rounded-lg hover:bg-[#4a2574] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <option value="">Select a nurse (optional)</option>
-              {nurses.map((nurse) => (
-                <option key={nurse.id} value={nurse.id}>{nurse.fullName}</option>
-              ))}
-            </select>
+              {blockedByPermission ? <Lock size={16} /> : <Download size={16} />}
+              Download
+            </button>
           </div>
-          <button
-            onClick={handleDownload}
-            className="flex items-center gap-2 px-4 py-2 bg-[#5B2D8E] text-white text-sm font-medium rounded-lg hover:bg-[#4a2574] transition-colors"
-          >
-            <Download size={16} />
-            Download
-          </button>
+          {exportError && (
+            <p role="alert" className="text-sm text-red-600 font-medium">{exportError}</p>
+          )}
         </div>
       </div>
     </div>
