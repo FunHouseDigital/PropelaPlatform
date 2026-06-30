@@ -920,3 +920,26 @@ export function saveArticleVotes(votes) {
   setData('articleVotes', votes);
 }
 
+/**
+ * Get the persisted auth session (current user) from localStorage.
+ * Returns null when no user is signed in.
+ */
+export function getAuthSession() {
+  return getData('authSession') || null;
+}
+
+/**
+ * Persist the auth session (current user) to localStorage.
+ * Only non-sensitive identity fields should be stored (never the password).
+ */
+export function saveAuthSession(user) {
+  setData('authSession', user);
+}
+
+/**
+ * Clear the persisted auth session from localStorage.
+ */
+export function clearAuthSession() {
+  removeData('authSession');
+}
+
