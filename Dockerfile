@@ -18,8 +18,12 @@ RUN npm run build
 # Stage 2: Serve
 FROM nginx:alpine
 
-# Copy custom nginx configuration
+# Copy custom nginx configuration. nginx.conf `include`s security-headers.conf
+# (the single source of truth for the security headers + CSP); it lives outside
+# conf.d/ so nginx's default `include conf.d/*.conf;` does not load it as a
+# standalone server block.
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY security-headers.conf /etc/nginx/security-headers.conf
 
 # Copy built assets from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
