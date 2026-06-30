@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { useExport } from '../../hooks/useExport';
 import { generateApiKey } from '../../lib/secureRandom';
+import { toCsv } from '../../lib/csv';
 import { Key, Webhook, Link2, Upload, Download, Save, Plus, Send, Lock } from 'lucide-react';
 
 const EXPORT_MODULE = 'Settings';
@@ -109,9 +110,13 @@ export default function IntegrationSettings() {
 
   const handleExport = () => {
     const users = settings.users || [];
-    const header = 'Name,Email,Role,Status';
-    const rows = users.map((u) => `${u.name},${u.email},${u.role},${u.status}`);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [header, ...rows].join('\n');
+    const headers = ['Name', 'Email', 'Role', 'Status'];
+    // Build via the shared util (formula-injection + RFC-4180 safe). Names are
+    // user-controlled, so this is a real injection surface.
+    const csvContent = toCsv(
+      users.map((u) => [u.name, u.email, u.role, u.status]),
+      { headers }
+    );
 
     // Gate + audit the export of user records behind the Settings permission.
     const { allowed, error } = runExport(
@@ -122,12 +127,18 @@ export default function IntegrationSettings() {
         recordCount: users.length,
       },
       () => {
+        // Use a Blob download (consistent with the other exporters) instead of
+        // a `data:` URI: it avoids encodeURI quirks and keeps the escaped CSV
+        // content byte-for-byte intact.
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.setAttribute('href', encodeURI(csvContent));
+        link.setAttribute('href', url);
         link.setAttribute('download', 'propela_export.csv');
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
       }
     );
     setTransferError(allowed ? '' : error);
