@@ -1,12 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Key, Plus, Copy, Ban, Check } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
-
-function generateUUID() {
-  return 'pk_live_' + 'xxxxxxxxxxxxxxxxxxxxxxxxxxxx'.replace(/x/g, () =>
-    Math.floor(Math.random() * 16).toString(16)
-  );
-}
+import { generateApiKey } from '../../lib/secureRandom';
 
 function truncateKey(key) {
   if (!key || key.length < 16) return key;
@@ -24,7 +19,7 @@ export default function ApiKeyManager() {
     const newKey = {
       id: `key-${Date.now()}`,
       name: newKeyName.trim(),
-      key: generateUUID(),
+      key: generateApiKey(),
       status: 'active',
       created: new Date().toISOString().split('.')[0],
       lastUsed: null,

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { useExport } from '../../hooks/useExport';
+import { generateApiKey } from '../../lib/secureRandom';
 import { Key, Webhook, Link2, Upload, Download, Save, Plus, Send, Lock } from 'lucide-react';
 
 const EXPORT_MODULE = 'Settings';
@@ -31,7 +32,7 @@ export default function IntegrationSettings() {
     const newKey = {
       id: `key-${Date.now()}`,
       name: `API Key ${apiKeys.length + 1}`,
-      key: `pk_live_${Math.random().toString(36).slice(2, 18)}`,
+      key: generateApiKey(),
       createdDate: new Date().toISOString().split('T')[0],
       status: 'Active',
     };
