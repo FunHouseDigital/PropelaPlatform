@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Save, Upload } from 'lucide-react';
+import { sanitizeText, validateEmail, MAX_LENGTHS } from '../../lib/validation';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -11,6 +12,7 @@ export default function OrganizationSettings() {
   const { settings, updateSettings } = useAppContext();
   const [form, setForm] = useState({ ...settings.organization });
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -24,8 +26,23 @@ export default function OrganizationSettings() {
   };
 
   const handleSave = () => {
-    const updated = { ...settings, organization: form };
+    // Email must be valid when provided; sanitize the free-text profile fields
+    // (trim + length cap + control-char strip) before persisting.
+    if (form.contactEmail && !validateEmail(form.contactEmail)) {
+      setError('Please enter a valid contact email address.');
+      return;
+    }
+    setError('');
+    const cleanedOrg = {
+      ...form,
+      name: sanitizeText(form.name, { maxLength: MAX_LENGTHS.NAME }),
+      contactEmail: sanitizeText(form.contactEmail, { maxLength: MAX_LENGTHS.EMAIL }),
+      contactPhone: sanitizeText(form.contactPhone, { maxLength: MAX_LENGTHS.SHORT_TEXT }),
+      address: sanitizeText(form.address, { maxLength: MAX_LENGTHS.SHORT_TEXT }),
+    };
+    const updated = { ...settings, organization: cleanedOrg };
     updateSettings(updated);
+    setForm(cleanedOrg);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -165,7 +182,10 @@ export default function OrganizationSettings() {
       </div>
 
       {/* Save Button */}
-      <div className="flex justify-end">
+      <div className="flex flex-col items-end gap-2">
+        {error && (
+          <p role="alert" className="text-sm text-red-600">{error}</p>
+        )}
         <button
           onClick={handleSave}
           className="flex items-center gap-2 px-5 py-2.5 bg-[#5B2D8E] text-white rounded-lg text-sm font-medium hover:bg-[#4a2574] transition-colors"

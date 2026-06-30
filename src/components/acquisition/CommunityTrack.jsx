@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { X, Plus, Users } from 'lucide-react';
 import { getCommunityChannels, saveCommunityChannels } from '../../lib/storage';
 import { ORGANISATION_STAGES } from '../../lib/constants';
+import { sanitizeText, validateForm, MAX_LENGTHS } from '../../lib/validation';
 import OutreachLogEntry from './OutreachLogEntry';
 
 const CHANNEL_TYPES = ['Facebook Group', 'WhatsApp Group', 'Professional Association', 'LinkedIn Group', 'Online Forum', 'Other'];
@@ -43,6 +44,7 @@ export default function CommunityTrack({ searchQuery }) {
   const [channels, setChannels] = useState(() => getCommunityChannels());
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [formError, setFormError] = useState('');
   const [newChannel, setNewChannel] = useState({
     name: '',
     type: 'Facebook Group',
@@ -64,8 +66,25 @@ export default function CommunityTrack({ searchQuery }) {
 
   function handleAdd(e) {
     e.preventDefault();
+    // Validate through the shared util: name required, optional URL must use
+    // http/https, reach must be a non-negative whole number.
+    const { valid, errors } = validateForm(newChannel, {
+      name: { label: 'Channel name', required: true, maxLength: MAX_LENGTHS.NAME },
+      url: { label: 'URL', url: true },
+      estimatedReach: { label: 'Estimated reach', number: { min: 0, integer: true } },
+    });
+    if (!valid) {
+      setFormError(errors.name || errors.url || errors.estimatedReach);
+      return;
+    }
+    setFormError('');
     const channel = {
       ...newChannel,
+      name: sanitizeText(newChannel.name, { maxLength: MAX_LENGTHS.NAME }),
+      platform: sanitizeText(newChannel.platform, { maxLength: MAX_LENGTHS.SHORT_TEXT }),
+      url: sanitizeText(newChannel.url, { maxLength: MAX_LENGTHS.URL }),
+      adminName: sanitizeText(newChannel.adminName, { maxLength: MAX_LENGTHS.NAME }),
+      adminContact: sanitizeText(newChannel.adminContact, { maxLength: MAX_LENGTHS.SHORT_TEXT }),
       id: `ch-${Date.now()}`,
       postPermission: false,
       currentStage: 'Identified',
@@ -85,13 +104,18 @@ export default function CommunityTrack({ searchQuery }) {
   }
 
   function updateChannel(chId, field, value) {
+    // Sanitize free-text edits before persisting (control-char strip + length
+    // cap). trim:false keeps inline typing usable (spaces preserved mid-edit).
+    const cleanValue = typeof value === 'string'
+      ? sanitizeText(value, { maxLength: MAX_LENGTHS.LONG_TEXT, trim: false })
+      : value;
     const updated = channels.map((c) =>
-      c.id === chId ? { ...c, [field]: value } : c
+      c.id === chId ? { ...c, [field]: cleanValue } : c
     );
     setChannels(updated);
     saveCommunityChannels(updated);
     if (selectedChannel && selectedChannel.id === chId) {
-      setSelectedChannel({ ...selectedChannel, [field]: value });
+      setSelectedChannel({ ...selectedChannel, [field]: cleanValue });
     }
   }
 
@@ -100,7 +124,7 @@ export default function CommunityTrack({ searchQuery }) {
       <div className="flex items-center justify-between mb-4">
         <span className="text-xs text-gray-400">{filtered.length} channels</span>
         <button
-          onClick={() => setShowAddForm(true)}
+          onClick={() => { setFormError(''); setShowAddForm(true); }}
           className="flex items-center gap-1 px-3 py-1.5 bg-propela-purple text-white text-xs font-medium rounded-lg hover:bg-propela-purple/90"
         >
           <Plus size={14} />
@@ -238,6 +262,9 @@ export default function CommunityTrack({ searchQuery }) {
                   Add Channel
                 </button>
               </div>
+              {formError && (
+                <p role="alert" className="text-sm text-red-600">{formError}</p>
+              )}
             </form>
           </div>
         </div>

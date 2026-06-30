@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { X, Plus, Star } from 'lucide-react';
 import { getFacilities, saveFacilities } from '../../lib/storage';
 import { ORGANISATION_STAGES, ORGANISATION_TYPES, PROVINCES, HEALTHCARE_GROUPS, OUTREACH_APPROACHES } from '../../lib/constants';
+import { sanitizeText, validateForm, MAX_LENGTHS } from '../../lib/validation';
 import OutreachLogEntry from './OutreachLogEntry';
 
 function getStageColor(stage) {
@@ -41,6 +42,7 @@ export default function OrganisationsTrack({ searchQuery }) {
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [typeFilter, setTypeFilter] = useState('All');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [formError, setFormError] = useState('');
   const [newOrg, setNewOrg] = useState({
     name: '',
     type: 'Health Facility',
@@ -70,8 +72,19 @@ export default function OrganisationsTrack({ searchQuery }) {
 
   function handleAddOrg(e) {
     e.preventDefault();
+    const { valid, errors } = validateForm(newOrg, {
+      name: { label: 'Name', required: true, maxLength: MAX_LENGTHS.NAME },
+      city: { label: 'City', maxLength: MAX_LENGTHS.SHORT_TEXT },
+    });
+    if (!valid) {
+      setFormError(errors.name || errors.city);
+      return;
+    }
+    setFormError('');
     const org = {
       ...newOrg,
+      name: sanitizeText(newOrg.name, { maxLength: MAX_LENGTHS.NAME }),
+      city: sanitizeText(newOrg.city, { maxLength: MAX_LENGTHS.SHORT_TEXT }),
       id: `org-${Date.now()}`,
       lastContact: null,
       nextFollowUp: null,
@@ -95,13 +108,17 @@ export default function OrganisationsTrack({ searchQuery }) {
   }
 
   function updateOrg(orgId, field, value) {
+    // Free-text edits are control-char stripped + length capped before persist.
+    const cleanValue = typeof value === 'string'
+      ? sanitizeText(value, { maxLength: MAX_LENGTHS.LONG_TEXT, trim: false })
+      : value;
     const updated = facilities.map((f) =>
-      f.id === orgId ? { ...f, [field]: value } : f
+      f.id === orgId ? { ...f, [field]: cleanValue } : f
     );
     setFacilities(updated);
     saveFacilities(updated);
     if (selectedOrg && selectedOrg.id === orgId) {
-      setSelectedOrg({ ...selectedOrg, [field]: value });
+      setSelectedOrg({ ...selectedOrg, [field]: cleanValue });
     }
   }
 
@@ -129,7 +146,7 @@ export default function OrganisationsTrack({ searchQuery }) {
         ))}
         <span className="text-xs text-gray-400 ml-auto">{filtered.length} organisations</span>
         <button
-          onClick={() => setShowAddForm(true)}
+          onClick={() => { setFormError(''); setShowAddForm(true); }}
           className="flex items-center gap-1 px-3 py-1.5 bg-propela-purple text-white text-xs font-medium rounded-lg hover:bg-propela-purple/90"
         >
           <Plus size={14} />
@@ -264,6 +281,9 @@ export default function OrganisationsTrack({ searchQuery }) {
                   Add Organisation
                 </button>
               </div>
+              {formError && (
+                <p role="alert" className="text-sm text-red-600">{formError}</p>
+              )}
             </form>
           </div>
         </div>

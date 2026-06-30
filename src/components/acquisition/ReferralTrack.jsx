@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { X, Plus } from 'lucide-react';
 import { getReferrers, saveReferrers } from '../../lib/storage';
 import { ORGANISATION_STAGES } from '../../lib/constants';
+import { sanitizeText, validateForm, MAX_LENGTHS } from '../../lib/validation';
 import OutreachLogEntry from './OutreachLogEntry';
 
 const REFERRER_TYPES = ['Placed Nurse', 'Nursing Colleague', 'Healthcare Professional', 'Community Leader', 'Other'];
@@ -29,6 +30,7 @@ export default function ReferralTrack({ searchQuery }) {
   const [referrers, setReferrers] = useState(() => getReferrers());
   const [selectedRef, setSelectedRef] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [formError, setFormError] = useState('');
   const [newRef, setNewRef] = useState({
     name: '',
     type: 'Placed Nurse',
@@ -47,8 +49,20 @@ export default function ReferralTrack({ searchQuery }) {
 
   function handleAdd(e) {
     e.preventDefault();
+    const { valid, errors } = validateForm(newRef, {
+      name: { label: 'Name', required: true, maxLength: MAX_LENGTHS.NAME },
+      contactEmail: { label: 'Email', email: true },
+    });
+    if (!valid) {
+      setFormError(errors.name || errors.contactEmail);
+      return;
+    }
+    setFormError('');
     const ref = {
       ...newRef,
+      name: sanitizeText(newRef.name, { maxLength: MAX_LENGTHS.NAME }),
+      contactPhone: sanitizeText(newRef.contactPhone, { maxLength: MAX_LENGTHS.SHORT_TEXT }),
+      contactEmail: sanitizeText(newRef.contactEmail, { maxLength: MAX_LENGTHS.EMAIL }),
       id: `ref-${Date.now()}`,
       linkedNurseId: null,
       nursesReferred: 0,
@@ -67,13 +81,16 @@ export default function ReferralTrack({ searchQuery }) {
   }
 
   function updateRef(refId, field, value) {
+    const cleanValue = typeof value === 'string'
+      ? sanitizeText(value, { maxLength: MAX_LENGTHS.LONG_TEXT, trim: false })
+      : value;
     const updated = referrers.map((r) =>
-      r.id === refId ? { ...r, [field]: value } : r
+      r.id === refId ? { ...r, [field]: cleanValue } : r
     );
     setReferrers(updated);
     saveReferrers(updated);
     if (selectedRef && selectedRef.id === refId) {
-      setSelectedRef({ ...selectedRef, [field]: value });
+      setSelectedRef({ ...selectedRef, [field]: cleanValue });
     }
   }
 
@@ -82,7 +99,7 @@ export default function ReferralTrack({ searchQuery }) {
       <div className="flex items-center justify-between mb-4">
         <span className="text-xs text-gray-400">{filtered.length} referrers</span>
         <button
-          onClick={() => setShowAddForm(true)}
+          onClick={() => { setFormError(''); setShowAddForm(true); }}
           className="flex items-center gap-1 px-3 py-1.5 bg-propela-purple text-white text-xs font-medium rounded-lg hover:bg-propela-purple/90"
         >
           <Plus size={14} />
@@ -198,6 +215,9 @@ export default function ReferralTrack({ searchQuery }) {
                   Add Referrer
                 </button>
               </div>
+              {formError && (
+                <p role="alert" className="text-sm text-red-600">{formError}</p>
+              )}
             </form>
           </div>
         </div>
