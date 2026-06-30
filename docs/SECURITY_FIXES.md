@@ -10,7 +10,7 @@ fix is branched off the previous fix's branch and opened as a PR against it.
 | 3 | Export gating + audit logging | [x] | #29 |
 | 4 | Secure random key/secret generation (Web Crypto) | [x] | #30 |
 | 5 | CSV (formula) injection neutralization in all CSV exports | [x] | #31 |
-| 6 | Input validation / sanitization on all forms | [x] | this PR |
+| 6 | Input validation / sanitization on all forms | [x] | #32 |
 | 7 | _TBD_ (next on backlog: security headers / Content-Security-Policy) | [ ] | — |
 | 8 | _TBD_ | [ ] | — |
 | 9 | _TBD_ | [ ] | — |
