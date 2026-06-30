@@ -1,9 +1,15 @@
 import { useEffect, lazy } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Layout from './components/layout/Layout';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import RequirePermission from './components/auth/RequirePermission';
 import ErrorBoundary from './components/layout/ErrorBoundary';
-import { initializeData } from './lib/storage';
+import Layout from './components/layout/Layout';
 import { AppProvider } from './context/AppContext';
+import { AuthProvider } from './context/AuthContext';
+import { ROUTE_PERMISSIONS } from './lib/permissions';
+import { initializeData } from './lib/storage';
+import Login from './pages/Login';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const NurseDatabase = lazy(() => import('./pages/NurseDatabase'));
@@ -23,6 +29,29 @@ const Notifications = lazy(() => import('./pages/Notifications'));
 const Help = lazy(() => import('./pages/Help'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
 
+// Each protected route maps to its page component. The required permission for
+// every path lives in ROUTE_PERMISSIONS (src/lib/permissions.js), the single
+// source shared with the navigation UI.
+const PROTECTED_ROUTES = [
+  { path: '/', element: <Dashboard /> },
+  { path: '/nurses', element: <NurseDatabase /> },
+  { path: '/acquisition', element: <AcquisitionHub /> },
+  { path: '/cohorts', element: <CohortManager /> },
+  { path: '/outreach', element: <OutreachLog /> },
+  { path: '/placements', element: <PlacementTracker /> },
+  { path: '/analytics', element: <Analytics /> },
+  { path: '/documents', element: <DocumentManagement /> },
+  { path: '/communications', element: <Communications /> },
+  { path: '/reports', element: <Reports /> },
+  { path: '/integrations', element: <Integrations /> },
+  { path: '/audit', element: <AuditTrail /> },
+  { path: '/automations', element: <Automations /> },
+  { path: '/notifications', element: <Notifications /> },
+  { path: '/help', element: <Help /> },
+  { path: '/settings', element: <Settings /> },
+  { path: '/status', element: <StatusPage /> },
+];
+
 export default function App() {
   useEffect(() => {
     initializeData();
@@ -31,30 +60,35 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AppProvider>
-        <BrowserRouter>
-          <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/nurses" element={<NurseDatabase />} />
-            <Route path="/acquisition" element={<AcquisitionHub />} />
-            <Route path="/cohorts" element={<CohortManager />} />
-            <Route path="/outreach" element={<OutreachLog />} />
-            <Route path="/placements" element={<PlacementTracker />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/documents" element={<DocumentManagement />} />
-            <Route path="/communications" element={<Communications />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/integrations" element={<Integrations />} />
-            <Route path="/audit" element={<AuditTrail />} />
-            <Route path="/automations" element={<Automations />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/help" element={<Help />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/status" element={<StatusPage />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AppProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Public route */}
+              <Route path="/login" element={<Login />} />
+
+              {/* Authenticated routes (redirect to /login when signed out) */}
+              <Route element={<ProtectedRoute />}>
+                <Route element={<Layout />}>
+                  {PROTECTED_ROUTES.map(({ path, element }) => (
+                    <Route
+                      key={path}
+                      path={path}
+                      element={
+                        <RequirePermission module={ROUTE_PERMISSIONS[path]}>
+                          {element}
+                        </RequirePermission>
+                      }
+                    />
+                  ))}
+                </Route>
+              </Route>
+
+              {/* Unknown routes fall back to the dashboard (which itself is gated) */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </AppProvider>
     </ErrorBoundary>
   );
 }
