@@ -1,10 +1,13 @@
 import { useState, useMemo, useCallback } from 'react';
 import {
   FileText, Download, Save, Trash2, Play, Calendar, Mail, Clock,
-  CheckSquare, Filter, Database,
+  CheckSquare, Filter, Database, Lock,
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { useExport } from '../../hooks/useExport';
 import { getReportTemplates, saveReportTemplates } from '../../lib/storage';
+
+const EXPORT_MODULE = 'Analytics';
 
 const METRIC_OPTIONS = [
   { id: 'nursePipeline', label: 'Nurse Pipeline' },
@@ -29,12 +32,15 @@ const FREQUENCIES = ['Daily', 'Weekly', 'Monthly'];
 
 export default function ReportBuilder() {
   const { nurses, cohorts, placements } = useAppContext();
+  const { runExport, canExport } = useExport();
+  const canExportData = canExport(EXPORT_MODULE);
 
   // Form state
   const [selectedMetrics, setSelectedMetrics] = useState([]);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [filters, setFilters] = useState({ cohort: 'All', specialty: 'All', source: 'All' });
   const [previewData, setPreviewData] = useState(null);
+  const [exportError, setExportError] = useState('');
 
   // Templates state
   const [templates, setTemplates] = useState(() => getReportTemplates());
@@ -211,16 +217,31 @@ export default function ReportBuilder() {
     });
 
     const csvString = csvRows.join('\n');
-    const blob = new Blob([csvString], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `propela-report-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, [previewData]);
+
+    // Gate + audit the export before producing the file.
+    const { allowed, error } = runExport(
+      {
+        module: EXPORT_MODULE,
+        entityType: 'analytics-report',
+        format: 'CSV',
+        recordCount: previewData.rows.length,
+        filters: { ...filters, start: dateRange.start, end: dateRange.end },
+      },
+      () => {
+        const blob = new Blob([csvString], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `propela-report-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    );
+
+    setExportError(allowed ? '' : error);
+  }, [previewData, filters, dateRange, runExport]);
 
   // Save template
   const saveTemplate = useCallback(() => {
@@ -380,7 +401,7 @@ export default function ReportBuilder() {
           <Play size={16} />
           Generate Report
         </button>
-        {previewData && previewData.rows.length > 0 && (
+        {previewData && previewData.rows.length > 0 && canExportData && (
           <button
             onClick={exportCSV}
             className="flex items-center gap-2 px-4 py-2 border border-[#5B2D8E] text-[#5B2D8E] rounded-lg text-sm font-medium hover:bg-[#5B2D8E]/5 transition-colors"
@@ -389,7 +410,19 @@ export default function ReportBuilder() {
             Export CSV
           </button>
         )}
+        {previewData && previewData.rows.length > 0 && !canExportData && (
+          <span
+            className="flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-400 rounded-lg text-sm font-medium cursor-not-allowed"
+            title="You don't have permission to export this data"
+          >
+            <Lock size={16} />
+            Export CSV
+          </span>
+        )}
       </div>
+      {exportError && (
+        <p role="alert" className="text-sm text-red-600 font-medium -mt-3">{exportError}</p>
+      )}
 
       {/* Report Preview Table */}
       {previewData && previewData.rows.length > 0 && (
