@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Search, Download, ChevronUp, ChevronDown, Lock } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { useExport } from '../../hooks/useExport';
+import { toCsv } from '../../lib/csv';
 
 const EXPORT_MODULE = 'Settings';
 
@@ -75,24 +76,21 @@ export default function AuditLogTable() {
   };
 
   const handleExportCSV = () => {
-    const escapeCSVField = (value) => {
-      const str = String(value ?? '');
-      return `"${str.replace(/"/g, '""')}"`;
-    };
-
     const headers = ['Timestamp', 'User', 'Action', 'Entity Type', 'Entity ID', 'IP Address', 'Details', 'Severity'];
     const rows = filteredAndSorted.map((entry) => [
-      escapeCSVField(entry.timestamp),
-      escapeCSVField(entry.user),
-      escapeCSVField(entry.action),
-      escapeCSVField(entry.entityType),
-      escapeCSVField(entry.entityId),
-      escapeCSVField(entry.ipAddress),
-      escapeCSVField(entry.details),
-      escapeCSVField(entry.severity),
+      entry.timestamp,
+      entry.user,
+      entry.action,
+      entry.entityType,
+      entry.entityId,
+      entry.ipAddress,
+      entry.details,
+      entry.severity,
     ]);
 
-    const csvContent = [headers.map(escapeCSVField).join(','), ...rows.map((r) => r.join(','))].join('\n');
+    // Shared CSV util: neutralizes formula injection (audit Details/User are
+    // free-text) and applies RFC-4180 quoting for every cell.
+    const csvContent = toCsv(rows, { headers });
 
     // The audit log is sensitive — gate behind the Settings permission and
     // audit the attempt (the new entry will itself appear in this log).
