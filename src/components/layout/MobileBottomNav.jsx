@@ -1,6 +1,9 @@
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Users, Briefcase, Bell, Menu } from 'lucide-react';
 
+import { usePermissions } from '../../hooks/usePermissions';
+import { ROUTE_PERMISSIONS } from '../../lib/permissions';
+
 const BOTTOM_NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/nurses', label: 'Nurses', icon: Users },
@@ -9,9 +12,12 @@ const BOTTOM_NAV_ITEMS = [
 ];
 
 export default function MobileBottomNav({ onOpenSidebar }) {
+  const { can } = usePermissions();
+  const visibleItems = BOTTOM_NAV_ITEMS.filter((item) => can(ROUTE_PERMISSIONS[item.path]));
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 h-16 z-40 bg-white border-t border-gray-200 flex items-center justify-around md:hidden">
-      {BOTTOM_NAV_ITEMS.map((item) => {
+      {visibleItems.map((item) => {
         const Icon = item.icon;
         return (
           <NavLink
