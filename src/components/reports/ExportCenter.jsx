@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { useExport } from '../../hooks/useExport';
+import { toCsv } from '../../lib/csv';
 
 const EXPORT_MODULE = 'Analytics';
 
@@ -157,25 +158,12 @@ export default function ExportCenter() {
     });
     const headers = Array.from(headerSet);
 
-    const csvRows = [headers.map((h) => {
-      if (h.includes(',') || h.includes('"')) {
-        return `"${h.replace(/"/g, '""')}"`;
-      }
-      return h;
-    }).join(',')];
-
-    flatData.forEach((row) => {
-      const values = headers.map((h) => {
-        const val = row[h] !== undefined && row[h] !== null ? String(row[h]) : '';
-        if (val.includes(',') || val.includes('"') || val.includes('\n')) {
-          return `"${val.replace(/"/g, '""')}"`;
-        }
-        return val;
-      });
-      csvRows.push(values.join(','));
-    });
-
-    return csvRows.join('\n');
+    // Build via the shared util so headers and every cell are formula-injection
+    // neutralized and RFC-4180 quoted consistently.
+    return toCsv(
+      flatData.map((row) => headers.map((h) => (row[h] !== undefined && row[h] !== null ? row[h] : ''))),
+      { headers }
+    );
   }, [selectedFormat]);
 
   // Handle export

@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { useExport } from '../../hooks/useExport';
+import { toCsv } from '../../lib/csv';
 
 const EXPORT_MODULE = 'Analytics';
 
@@ -370,20 +371,12 @@ export default function ReportBuilder() {
     if (!previewData || previewData.length === 0) return;
 
     const headers = selectedFields.map((f) => f.label);
-    const csvRows = [headers.join(',')];
-
-    previewData.forEach((row) => {
-      const values = selectedFields.map((f) => {
-        const val = row[f.id] !== undefined ? String(row[f.id]) : '';
-        if (val.includes(',') || val.includes('"') || val.includes('\n')) {
-          return `"${val.replace(/"/g, '""')}"`;
-        }
-        return val;
-      });
-      csvRows.push(values.join(','));
-    });
-
-    const csvString = csvRows.join('\n');
+    // Route through the shared CSV util (formula-injection + RFC-4180 safe).
+    // Note the row key (f.id) differs from the header label (f.label).
+    const csvString = toCsv(
+      previewData.map((row) => selectedFields.map((f) => (row[f.id] !== undefined ? row[f.id] : ''))),
+      { headers }
+    );
 
     // Gate + audit the export before producing the file.
     const { allowed, error } = runExport(
