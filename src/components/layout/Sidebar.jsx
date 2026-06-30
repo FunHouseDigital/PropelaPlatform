@@ -1,25 +1,27 @@
-import { NavLink, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import {
-  LayoutDashboard,
-  Users,
-  Building2,
-  GraduationCap,
-  Mail,
-  Briefcase,
   BarChart3,
+  Bell,
+  Briefcase,
+  Building2,
   ClipboardList,
   FileText,
+  GraduationCap,
+  HelpCircle,
+  LayoutDashboard,
+  Mail,
   MessageSquare,
   Puzzle,
-  Shield,
-  Zap,
-  Bell,
-  HelpCircle,
   Settings,
+  Shield,
+  Users,
   X,
+  Zap,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { NavLink, useLocation } from 'react-router-dom';
+
 import { useAppContext } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 
 const NAV_ITEMS = [
   { path: '/', labelKey: 'navigation.dashboard', icon: LayoutDashboard },
@@ -44,8 +46,13 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
   const location = useLocation();
   const { t } = useTranslation();
   const { notifications, notificationAlerts } = useAppContext();
+  const { currentUser } = useAuth();
   const unreadCount = notifications.filter((n) => !n.read).length;
   const notifUnreadCount = notificationAlerts.filter((n) => !n.read).length;
+
+  const displayName = currentUser?.name || 'Guest';
+  const displayRole = currentUser?.role || '';
+  const avatarInitial = displayName.charAt(0).toUpperCase();
 
   const sidebarClasses = isMobile
     ? `fixed start-0 top-0 h-screen w-[220px] flex flex-col z-50 transition-transform duration-300 ${
@@ -66,16 +73,8 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
       <div className="px-5 pt-6 pb-2 flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <img
-              src="/logo.svg"
-              alt="Propela logo"
-              width={32}
-              height={32}
-              className="rounded-lg"
-            />
-            <span className="text-white font-semibold text-lg tracking-tight">
-              propela
-            </span>
+            <img src="/logo.svg" alt="Propela logo" width={32} height={32} className="rounded-lg" />
+            <span className="text-white font-semibold text-lg tracking-tight">propela</span>
           </div>
           <p className="text-white/50 text-[11px] mt-1 ml-10">Ops</p>
         </div>
@@ -104,9 +103,10 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
               onClick={isMobile ? onClose : undefined}
               aria-current={isActive ? 'page' : undefined}
               className={`flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg mb-1 text-sm font-medium transition-all duration-150
-                ${isActive
-                  ? 'bg-white/15 text-white'
-                  : 'text-white/70 hover:bg-white/8 hover:text-white'
+                ${
+                  isActive
+                    ? 'bg-white/15 text-white'
+                    : 'text-white/70 hover:bg-white/8 hover:text-white'
                 }`}
             >
               <Icon size={20} strokeWidth={1.8} />
@@ -130,11 +130,13 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
       <div className="px-4 pb-5 mt-auto">
         <div className="flex items-center gap-3 px-2 py-2">
           <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">
-            A
+            {avatarInitial}
           </div>
-          <div>
-            <p className="text-white text-[13px] font-semibold leading-tight">Aya</p>
-            <p className="text-white/60 text-[11px]">Admin</p>
+          <div className="min-w-0">
+            <p className="text-white text-[13px] font-semibold leading-tight truncate">
+              {displayName}
+            </p>
+            {displayRole && <p className="text-white/60 text-[11px]">{displayRole}</p>}
           </div>
         </div>
       </div>

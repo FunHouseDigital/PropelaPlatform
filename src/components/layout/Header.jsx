@@ -1,11 +1,16 @@
-import { useState, useCallback, useRef } from 'react';
-import { Search, Sparkles, Menu } from 'lucide-react';
-import Breadcrumbs from './Breadcrumbs';
+import { LogOut, Menu, Search, Sparkles } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import { useAuth } from '../../context/AuthContext';
 import SmartSuggestions from '../search/SmartSuggestions';
+import Breadcrumbs from './Breadcrumbs';
 
 export default function Header({ onOpenSearch, onToggleSidebar, isMobile }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const toggleButtonRef = useRef(null);
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
 
   const toggleSuggestions = useCallback(() => {
     setShowSuggestions((prev) => !prev);
@@ -14,6 +19,11 @@ export default function Header({ onOpenSearch, onToggleSidebar, isMobile }) {
   const closeSuggestions = useCallback(() => {
     setShowSuggestions(false);
   }, []);
+
+  const handleLogout = useCallback(() => {
+    logout();
+    navigate('/login', { replace: true });
+  }, [logout, navigate]);
 
   return (
     <header className="sticky top-0 z-30 h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6">
@@ -63,8 +73,32 @@ export default function Header({ onOpenSearch, onToggleSidebar, isMobile }) {
           >
             <Sparkles size={16} />
           </button>
-          <SmartSuggestions isOpen={showSuggestions} onClose={closeSuggestions} toggleButtonRef={toggleButtonRef} />
+          <SmartSuggestions
+            isOpen={showSuggestions}
+            onClose={closeSuggestions}
+            toggleButtonRef={toggleButtonRef}
+          />
         </div>
+
+        {/* Divider */}
+        <span className="hidden sm:block h-6 w-px bg-gray-200" aria-hidden="true" />
+
+        {/* Current user + Logout */}
+        {currentUser && (
+          <span className="hidden md:inline text-sm text-gray-600 max-w-[160px] truncate">
+            {currentUser.name}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={handleLogout}
+          aria-label="Log out"
+          title="Log out"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300 transition-colors"
+        >
+          <LogOut size={16} />
+          <span className="hidden sm:inline">Logout</span>
+        </button>
       </div>
     </header>
   );
