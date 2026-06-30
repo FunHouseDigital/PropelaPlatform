@@ -4,6 +4,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Plus, Trash2, Save, Bell, BellOff } from 'lucide-react';
+import { sanitizeText, MAX_LENGTHS } from '../../lib/validation';
 
 function SortableStageCard({ stage, onRemove, onUpdate }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: stage.id });
@@ -84,7 +85,12 @@ export default function PipelineConfiguration() {
   };
 
   const handleUpdate = (id, field, value) => {
-    setStages((prev) => prev.map((s) => (s.id === id ? { ...s, [field]: value } : s)));
+    // Sanitize free-text stage-name edits (control-char strip + length cap);
+    // trim:false keeps inline typing usable. Numbers/booleans pass through.
+    const cleanValue = typeof value === 'string'
+      ? sanitizeText(value, { maxLength: MAX_LENGTHS.SHORT_TEXT, trim: false })
+      : value;
+    setStages((prev) => prev.map((s) => (s.id === id ? { ...s, [field]: cleanValue } : s)));
   };
 
   const handleRemove = (id) => {

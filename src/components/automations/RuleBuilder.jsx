@@ -4,6 +4,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useAppContext } from '../../context/AppContext';
+import { sanitizeText, validateRequired, MAX_LENGTHS } from '../../lib/validation';
 
 const CONDITION_FIELDS = [
   { value: 'nurse.status', label: 'Nurse Status' },
@@ -99,6 +100,7 @@ function RuleEditorModal({ rule, onSave, onCancel }) {
       ? rule.actions
       : [{ type: 'send_email', params: {} }]
   );
+  const [formError, setFormError] = useState('');
 
   const handleAddConditionGroup = () => {
     setConditions([...conditions, { logic: 'AND', conditions: [{ field: 'nurse.status', operator: 'equals', value: '' }] }]);
@@ -150,17 +152,42 @@ function RuleEditorModal({ rule, onSave, onCancel }) {
   };
 
   const handleSave = () => {
-    if (!name.trim()) return;
-    // Filter out conditions with empty values
+    const cleanName = sanitizeText(name, { maxLength: MAX_LENGTHS.NAME });
+    if (!validateRequired(cleanName)) {
+      setFormError('Rule name is required.');
+      return;
+    }
+    // Filter out conditions with empty values, sanitizing the free-text value.
     const filteredConditions = conditions
       .map((group) => ({
         ...group,
-        conditions: group.conditions.filter((c) => c.value.trim() !== ''),
+        conditions: group.conditions
+          .map((c) => ({ ...c, value: sanitizeText(c.value, { maxLength: MAX_LENGTHS.SHORT_TEXT }) }))
+          .filter((c) => c.value !== ''),
       }))
       .filter((group) => group.conditions.length > 0);
     // Require at least one valid condition
-    if (filteredConditions.length === 0) return;
-    onSave({ name: name.trim(), description: description.trim(), conditions: filteredConditions, actions });
+    if (filteredConditions.length === 0) {
+      setFormError('Add at least one condition with a value.');
+      return;
+    }
+    setFormError('');
+    // Sanitize free-text action params before persisting.
+    const cleanActions = actions.map((a) => ({
+      ...a,
+      params: Object.fromEntries(
+        Object.entries(a.params || {}).map(([k, v]) => [
+          k,
+          typeof v === 'string' ? sanitizeText(v, { maxLength: MAX_LENGTHS.SHORT_TEXT }) : v,
+        ])
+      ),
+    }));
+    onSave({
+      name: cleanName,
+      description: sanitizeText(description, { maxLength: MAX_LENGTHS.LONG_TEXT, allowNewlines: true }),
+      conditions: filteredConditions,
+      actions: cleanActions,
+    });
   };
 
   const getActionParamFields = (type) => {
@@ -319,6 +346,9 @@ function RuleEditorModal({ rule, onSave, onCancel }) {
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 p-5 border-t border-gray-200">
+          {formError && (
+            <p role="alert" className="text-sm text-red-600 mr-auto self-center">{formError}</p>
+          )}
           <button onClick={onCancel} className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
             Cancel
           </button>

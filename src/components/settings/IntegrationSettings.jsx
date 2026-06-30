@@ -3,6 +3,7 @@ import { useAppContext } from '../../context/AppContext';
 import { useExport } from '../../hooks/useExport';
 import { generateApiKey } from '../../lib/secureRandom';
 import { toCsv } from '../../lib/csv';
+import { sanitizeText, validateUrl, MAX_LENGTHS } from '../../lib/validation';
 import { Key, Webhook, Link2, Upload, Download, Save, Plus, Send, Lock } from 'lucide-react';
 
 const EXPORT_MODULE = 'Settings';
@@ -27,6 +28,7 @@ export default function IntegrationSettings() {
   const [webhookTested, setWebhookTested] = useState(false);
   const [importMessage, setImportMessage] = useState('');
   const [transferError, setTransferError] = useState('');
+  const [saveError, setSaveError] = useState('');
   const fileInputRef = useRef(null);
 
   const handleGenerateKey = () => {
@@ -145,7 +147,18 @@ export default function IntegrationSettings() {
   };
 
   const handleSave = () => {
-    const updated = { ...settings, apiKeys, webhooks, integrations };
+    // The webhook endpoint must use http/https when set (the type="url"
+    // attribute alone would accept javascript:/data:/file:). Sanitize the URL
+    // before persisting.
+    const cleanUrl = sanitizeText(webhooks.url, { maxLength: MAX_LENGTHS.URL });
+    if (cleanUrl && !validateUrl(cleanUrl, { protocols: ['http', 'https'] })) {
+      setSaveError('Webhook endpoint URL must use http:// or https://.');
+      return;
+    }
+    setSaveError('');
+    const cleanWebhooks = { ...webhooks, url: cleanUrl };
+    setWebhooks(cleanWebhooks);
+    const updated = { ...settings, apiKeys, webhooks: cleanWebhooks, integrations };
     updateSettings(updated);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -362,7 +375,10 @@ export default function IntegrationSettings() {
       </div>
 
       {/* Save Button */}
-      <div className="flex justify-end">
+      <div className="flex flex-col items-end gap-2">
+        {saveError && (
+          <p role="alert" className="text-sm text-red-600">{saveError}</p>
+        )}
         <button
           onClick={handleSave}
           className="flex items-center gap-2 px-5 py-2.5 bg-[#5B2D8E] text-white rounded-lg text-sm font-medium hover:bg-[#4a2574] transition-colors"

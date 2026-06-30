@@ -18,6 +18,7 @@ import {
   calculateReadinessStatus,
   calculateTier,
 } from '../../lib/calculations';
+import { sanitizeText, validateRequired, MAX_LENGTHS } from '../../lib/validation';
 import {
   AGE_GROUPS,
   COMMITMENT_FEE_STATUSES,
@@ -252,10 +253,16 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
   };
 
   const updateField = (field, value, { debounce = false } = {}) => {
-    const updated = { ...localNurse, [field]: value };
+    // Sanitize free-text edits (control-char strip + length cap) before they
+    // propagate to state/storage. trim:false keeps inline/debounced typing
+    // usable; non-string values (objects, arrays, numbers) pass through.
+    const cleanValue = typeof value === 'string'
+      ? sanitizeText(value, { maxLength: MAX_LENGTHS.LONG_TEXT, trim: false })
+      : value;
+    const updated = { ...localNurse, [field]: cleanValue };
     // Recalculate derived fields
     if (field === 'pipelineStage') {
-      updated.readinessStatus = calculateReadinessStatus(value);
+      updated.readinessStatus = calculateReadinessStatus(cleanValue);
     }
     if (field === 'scorecardFields') {
       updated.cvScore = calculateCVScore(updated);
@@ -290,12 +297,12 @@ export default function NurseCard({ nurse, onClose, onUpdate }) {
   };
 
   const addCommunication = () => {
-    if (!commForm.summary.trim()) return;
+    if (!validateRequired(commForm.summary)) return;
     const entry = {
       date: new Date().toISOString().split('T')[0],
       channel: commForm.channel,
-      summary: commForm.summary,
-      nextAction: commForm.nextAction,
+      summary: sanitizeText(commForm.summary, { maxLength: MAX_LENGTHS.LONG_TEXT, allowNewlines: true }),
+      nextAction: sanitizeText(commForm.nextAction, { maxLength: MAX_LENGTHS.SHORT_TEXT }),
     };
     const log = [...(localNurse.communicationLog || []), entry];
     updateField('communicationLog', log);
