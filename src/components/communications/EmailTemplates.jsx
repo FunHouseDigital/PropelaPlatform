@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Mail, Plus, Eye, Send, Edit2, Trash2, X, Copy } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { sanitizeText, validateForm, MAX_LENGTHS } from '../../lib/validation';
 
 function generateId(prefix) {
   return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
@@ -45,6 +46,7 @@ export default function EmailTemplates() {
     subject: '',
     body: '',
   });
+  const [editError, setEditError] = useState('');
 
   const filteredTemplates = useMemo(() => {
     if (selectedCategory === 'all') return commEmailTemplates;
@@ -60,6 +62,7 @@ export default function EmailTemplates() {
   function handleCreateTemplate() {
     setEditForm({ name: '', category: 'Welcome', subject: '', body: '' });
     setSelectedTemplate(null);
+    setEditError('');
     setShowEditor(true);
   }
 
@@ -71,26 +74,44 @@ export default function EmailTemplates() {
       body: template.body,
     });
     setSelectedTemplate(template);
+    setEditError('');
     setShowEditor(true);
   }
 
   function handleSaveTemplate() {
-    if (!editForm.name || !editForm.subject || !editForm.body) return;
+    const { valid, errors } = validateForm(editForm, {
+      name: { label: 'Template name', required: true, maxLength: MAX_LENGTHS.NAME },
+      subject: { label: 'Subject', required: true, maxLength: MAX_LENGTHS.SHORT_TEXT },
+      body: { label: 'Body', required: true, maxLength: MAX_LENGTHS.LONG_TEXT },
+    });
+    if (!valid) {
+      setEditError(errors.name || errors.subject || errors.body);
+      return;
+    }
+    setEditError('');
 
-    const variables = extractVariables(editForm.subject + ' ' + editForm.body);
+    // Sanitize before persisting. Subject/name are single-line; body keeps
+    // newlines (it is multi-line and uses {{variable}} placeholders).
+    const cleaned = {
+      name: sanitizeText(editForm.name, { maxLength: MAX_LENGTHS.NAME }),
+      category: editForm.category,
+      subject: sanitizeText(editForm.subject, { maxLength: MAX_LENGTHS.SHORT_TEXT }),
+      body: sanitizeText(editForm.body, { maxLength: MAX_LENGTHS.LONG_TEXT, allowNewlines: true }),
+    };
+    const variables = extractVariables(cleaned.subject + ' ' + cleaned.body);
     const now = new Date().toISOString().split('T')[0];
 
     if (selectedTemplate) {
       const updated = commEmailTemplates.map((t) =>
         t.id === selectedTemplate.id
-          ? { ...t, ...editForm, variables, updatedAt: now }
+          ? { ...t, ...cleaned, variables, updatedAt: now }
           : t
       );
       updateCommEmailTemplates(updated);
     } else {
       const newTemplate = {
         id: generateId('email-tmpl'),
-        ...editForm,
+        ...cleaned,
         variables,
         createdAt: now,
         updatedAt: now,
@@ -349,6 +370,9 @@ export default function EmailTemplates() {
               </div>
             </div>
             <div className="flex justify-end gap-2 p-4 border-t border-gray-200">
+              {editError && (
+                <p role="alert" className="text-sm text-red-600 mr-auto self-center">{editError}</p>
+              )}
               <button
                 onClick={() => setShowEditor(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"

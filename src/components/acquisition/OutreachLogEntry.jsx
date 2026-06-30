@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, Plus } from 'lucide-react';
+import { sanitizeText, MAX_LENGTHS } from '../../lib/validation';
 
 const CHANNELS = ['Email', 'LinkedIn', 'Phone', 'WhatsApp', 'In-person', 'Other'];
 const OUTCOMES = [
@@ -28,7 +29,18 @@ export default function OutreachLogEntry({ log = [], onSave }) {
 
   function handleSubmit(e) {
     e.preventDefault();
-    const newEntry = { ...entry, id: `log-${Date.now()}`, createdAt: new Date().toISOString() };
+    // Sanitize free-text fields (trim + length cap + control-char strip) before
+    // the entry is persisted. Date/channel/outcome are constrained inputs.
+    const newEntry = {
+      ...entry,
+      contactPerson: sanitizeText(entry.contactPerson, { maxLength: MAX_LENGTHS.NAME }),
+      templateUsed: sanitizeText(entry.templateUsed, { maxLength: MAX_LENGTHS.SHORT_TEXT }),
+      subjectLine: sanitizeText(entry.subjectLine, { maxLength: MAX_LENGTHS.SHORT_TEXT }),
+      messageSummary: sanitizeText(entry.messageSummary, { maxLength: MAX_LENGTHS.LONG_TEXT, allowNewlines: true }),
+      notes: sanitizeText(entry.notes, { maxLength: MAX_LENGTHS.LONG_TEXT, allowNewlines: true }),
+      id: `log-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
     onSave([newEntry, ...log]);
     setShowForm(false);
     setEntry({

@@ -3,6 +3,7 @@ import {
   Clock, Plus, Trash2, Play, Pause, Mail, X, Check, Calendar,
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { sanitizeText, validateEmail, validateRequired, MAX_LENGTHS } from '../../lib/validation';
 
 const REPORT_TYPES = [
   { value: 'nurse_pipeline_summary', label: 'Nurse Pipeline Summary' },
@@ -70,6 +71,8 @@ export default function ScheduledReports() {
   const [formRecipients, setFormRecipients] = useState([]);
   const [formRecipientInput, setFormRecipientInput] = useState('');
   const [formFormat, setFormFormat] = useState('CSV');
+  const [formError, setFormError] = useState('');
+  const [recipientError, setRecipientError] = useState('');
 
   const resetForm = useCallback(() => {
     setFormName('');
@@ -78,6 +81,8 @@ export default function ScheduledReports() {
     setFormRecipients([]);
     setFormRecipientInput('');
     setFormFormat('CSV');
+    setFormError('');
+    setRecipientError('');
   }, []);
 
   const handleOpenCreate = useCallback(() => {
@@ -86,8 +91,13 @@ export default function ScheduledReports() {
   }, [resetForm]);
 
   const handleAddRecipient = useCallback(() => {
-    const email = formRecipientInput.trim();
-    if (email && !formRecipients.includes(email)) {
+    const email = sanitizeText(formRecipientInput, { maxLength: MAX_LENGTHS.EMAIL });
+    if (!validateEmail(email)) {
+      setRecipientError('Enter a valid email address.');
+      return;
+    }
+    setRecipientError('');
+    if (!formRecipients.includes(email)) {
       setFormRecipients((prev) => [...prev, email]);
       setFormRecipientInput('');
     }
@@ -98,11 +108,16 @@ export default function ScheduledReports() {
   }, []);
 
   const handleCreateSchedule = useCallback(() => {
-    if (!formName.trim()) return;
+    const name = sanitizeText(formName, { maxLength: MAX_LENGTHS.NAME });
+    if (!validateRequired(name)) {
+      setFormError('Report name is required.');
+      return;
+    }
+    setFormError('');
 
     const newSchedule = {
       id: `sched-report-${Date.now()}`,
-      name: formName.trim(),
+      name,
       type: formType,
       frequency: formFrequency,
       recipients: formRecipients,
@@ -416,6 +431,9 @@ export default function ScheduledReports() {
                     Add
                   </button>
                 </div>
+                {recipientError && (
+                  <p role="alert" className="text-sm text-red-600 mb-2">{recipientError}</p>
+                )}
                 {formRecipients.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {formRecipients.map((email) => (
@@ -437,6 +455,9 @@ export default function ScheduledReports() {
 
               {/* Submit */}
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                {formError && (
+                  <p role="alert" className="text-sm text-red-600 mr-auto self-center">{formError}</p>
+                )}
                 <button
                   onClick={() => setShowCreateModal(false)}
                   className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"

@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Plus, Search, Phone, Mail, MessageCircle, MessageSquare, Filter, X } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { sanitizeText, validateForm, MAX_LENGTHS } from '../../lib/validation';
 
 function generateId(prefix) {
   return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
@@ -27,6 +28,7 @@ export default function CommunicationLog() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [formError, setFormError] = useState('');
   const [newComm, setNewComm] = useState({
     nurseId: '',
     channel: 'Email',
@@ -78,11 +80,21 @@ export default function CommunicationLog() {
   }, [communications, searchTerm, channelFilter, dateFrom, dateTo, nurseMap]);
 
   function handleAddCommunication() {
-    if (!newComm.nurseId || !newComm.subject) return;
+    const { valid, errors } = validateForm(newComm, {
+      nurseId: { label: 'Nurse', required: true },
+      subject: { label: 'Subject', required: true, maxLength: MAX_LENGTHS.SHORT_TEXT },
+    });
+    if (!valid) {
+      setFormError(errors.nurseId || errors.subject);
+      return;
+    }
+    setFormError('');
 
     const comm = {
       id: generateId('comm'),
       ...newComm,
+      subject: sanitizeText(newComm.subject, { maxLength: MAX_LENGTHS.SHORT_TEXT }),
+      notes: sanitizeText(newComm.notes, { maxLength: MAX_LENGTHS.LONG_TEXT, allowNewlines: true }),
       date: new Date().toISOString().slice(0, 19),
       status: 'sent',
       linkedEvent: null,
@@ -143,7 +155,7 @@ export default function CommunicationLog() {
         />
 
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => { setFormError(''); setShowAddModal(true); }}
           className="flex items-center gap-2 px-4 py-2 bg-[#5B2D8E] text-white rounded-lg text-sm font-medium hover:bg-[#4a2573] transition-colors"
         >
           <Plus size={16} />
@@ -312,6 +324,9 @@ export default function CommunicationLog() {
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B2D8E]/20 resize-none"
                 />
               </div>
+              {formError && (
+                <p role="alert" className="text-sm text-red-600">{formError}</p>
+              )}
             </div>
             <div className="flex justify-end gap-2 p-4 border-t border-gray-200">
               <button

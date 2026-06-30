@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { COHORT_STATUSES } from '../../lib/constants';
 import { getNurses, saveCohorts, getCohorts } from '../../lib/storage';
+import { sanitizeText, MAX_LENGTHS } from '../../lib/validation';
 import CohortNurseTable from './CohortNurseTable';
 
 function Section({ title, icon: Icon, defaultOpen = false, children }) {
@@ -85,12 +86,18 @@ export default function CohortCard({ cohort, onClose, onUpdate }) {
   const placementRateActual = enrolledCount > 0 ? Math.round((placedCount / enrolledCount) * 100) : 0;
 
   function updateField(path, value) {
+    // Sanitize free-text edits (control-char strip + length cap) before they
+    // are written to state/localStorage. trim:false preserves inline typing;
+    // non-string values (numbers, arrays, booleans) pass through untouched.
+    const cleanValue = typeof value === 'string'
+      ? sanitizeText(value, { maxLength: MAX_LENGTHS.LONG_TEXT, trim: false })
+      : value;
     const newData = { ...data };
     const parts = path.split('.');
     if (parts.length === 1) {
-      newData[parts[0]] = value;
+      newData[parts[0]] = cleanValue;
     } else if (parts.length === 2) {
-      newData[parts[0]] = { ...newData[parts[0]], [parts[1]]: value };
+      newData[parts[0]] = { ...newData[parts[0]], [parts[1]]: cleanValue };
     }
     setData(newData);
 
