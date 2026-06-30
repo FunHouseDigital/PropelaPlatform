@@ -1,8 +1,14 @@
 import { useState, useMemo } from 'react';
-import { Search, Download, Calendar, Filter, BarChart3 } from 'lucide-react';
+import { Search, Download, Filter, BarChart3, Lock } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAppContext } from '../../context/AppContext';
+import { useExport } from '../../hooks/useExport';
 import { ACCESSIBLE_CHART_COLORS } from '../../lib/chartAccessibility';
+
+// Notification history is a user's own notification log (low sensitivity), so
+// it is gated to authenticated users only (no specific module permission).
+// Every export attempt is still recorded in the audit log.
+const EXPORT_MODULE = null;
 
 const CATEGORIES = [
   { id: 'all', label: 'All Categories' },
@@ -45,11 +51,14 @@ function getDateString(timestamp) {
 
 export default function NotificationHistory() {
   const { notificationLog } = useAppContext();
+  const { runExport, canExport } = useExport();
+  const canExportData = canExport(EXPORT_MODULE);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [severityFilter, setSeverityFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [exportError, setExportError] = useState('');
 
   const filteredLog = useMemo(() => {
     let items = [...notificationLog];
@@ -110,13 +119,35 @@ export default function NotificationHistory() {
     ]);
 
     const csv = [headers.join(','), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `notification-history-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+
+    // Auth-only gate (module=null): any signed-in user may export their
+    // notification history, but the attempt is always audited.
+    const { allowed, error } = runExport(
+      {
+        module: EXPORT_MODULE,
+        entityType: 'notification-history',
+        format: 'CSV',
+        recordCount: filteredLog.length,
+        filters: {
+          search: searchQuery,
+          category: categoryFilter,
+          severity: severityFilter,
+          from: dateFrom,
+          to: dateTo,
+        },
+      },
+      () => {
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `notification-history-${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+    );
+
+    setExportError(allowed ? '' : error);
   };
 
   return (
@@ -129,14 +160,27 @@ export default function NotificationHistory() {
             Full searchable history of all past notifications ({filteredLog.length} records)
           </p>
         </div>
-        <button
-          onClick={handleExportCSV}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[#5B2D8E] text-white hover:bg-[#4a2574] transition-colors"
-        >
-          <Download size={16} />
-          Export CSV
-        </button>
+        {canExportData ? (
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[#5B2D8E] text-white hover:bg-[#4a2574] transition-colors"
+          >
+            <Download size={16} />
+            Export CSV
+          </button>
+        ) : (
+          <span
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-400 cursor-not-allowed"
+            title="You don't have permission to export this data"
+          >
+            <Lock size={16} />
+            Export CSV
+          </span>
+        )}
       </div>
+      {exportError && (
+        <p role="alert" className="text-sm text-red-600 font-medium">{exportError}</p>
+      )}
 
       {/* Analytics Chart */}
       <div className="border rounded-lg p-4 bg-white">
