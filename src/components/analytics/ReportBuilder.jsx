@@ -6,6 +6,7 @@ import {
 import { useAppContext } from '../../context/AppContext';
 import { useExport } from '../../hooks/useExport';
 import { getReportTemplates, saveReportTemplates } from '../../lib/storage';
+import { toCsv } from '../../lib/csv';
 
 const EXPORT_MODULE = 'Analytics';
 
@@ -203,20 +204,12 @@ export default function ReportBuilder() {
     if (!previewData || previewData.rows.length === 0) return;
 
     const headers = previewData.columns;
-    const csvRows = [headers.join(',')];
-    previewData.rows.forEach((row) => {
-      const values = headers.map((h) => {
-        const val = row[h] !== undefined ? String(row[h]) : '';
-        // Escape commas and quotes
-        if (val.includes(',') || val.includes('"') || val.includes('\n')) {
-          return `"${val.replace(/"/g, '""')}"`;
-        }
-        return val;
-      });
-      csvRows.push(values.join(','));
-    });
-
-    const csvString = csvRows.join('\n');
+    // Build the CSV via the shared util: it neutralizes formula injection and
+    // applies RFC-4180 quoting for every cell (headers included).
+    const csvString = toCsv(
+      previewData.rows.map((row) => headers.map((h) => (row[h] !== undefined ? row[h] : ''))),
+      { headers }
+    );
 
     // Gate + audit the export before producing the file.
     const { allowed, error } = runExport(
