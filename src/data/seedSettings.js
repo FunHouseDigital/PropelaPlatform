@@ -41,13 +41,18 @@ export function seedSettings() {
       'stage-10': [],
     },
     users: [
+      { id: 'user-superadmin-vuyo', name: 'Vuyo Mahlangu', email: 'Vuyo@propela.co', role: 'Superadmin', status: 'Active', lastActive: '2024-12-18T09:30:00Z' },
+      { id: 'user-superadmin-aya', name: 'Aya Nkosi', email: 'Aya@propela.co', role: 'Superadmin', status: 'Active', lastActive: '2024-12-18T09:15:00Z' },
       { id: 'user-1', name: 'Aya Nkosi', email: 'aya@propela.co.za', role: 'Admin', status: 'Active', lastActive: '2024-12-18T09:15:00Z' },
       { id: 'user-2', name: 'James Okafor', email: 'james@propela.co.za', role: 'Manager', status: 'Active', lastActive: '2024-12-17T16:42:00Z' },
       { id: 'user-3', name: 'Priya Sharma', email: 'priya@propela.co.za', role: 'Recruiter', status: 'Active', lastActive: '2024-12-18T08:30:00Z' },
       { id: 'user-4', name: 'David Mthembu', email: 'david@propela.co.za', role: 'Recruiter', status: 'Active', lastActive: '2024-12-16T14:20:00Z' },
       { id: 'user-5', name: 'Sarah Williams', email: 'sarah@propela.co.za', role: 'Read-only', status: 'Inactive', lastActive: '2024-11-28T10:05:00Z' },
     ],
+    // Superadmin has access to every module. The permission layer (usePermissions)
+    // also short-circuits to grant Superadmins access to any current or future module.
     rolePermissions: {
+      Superadmin: { Dashboard: true, Nurses: true, Acquisition: true, Cohorts: true, Outreach: true, Placements: true, Analytics: true, Settings: true },
       Admin: { Dashboard: true, Nurses: true, Acquisition: true, Cohorts: true, Outreach: true, Placements: true, Analytics: true, Settings: true },
       Manager: { Dashboard: true, Nurses: true, Acquisition: true, Cohorts: true, Outreach: true, Placements: true, Analytics: true, Settings: false },
       Recruiter: { Dashboard: true, Nurses: true, Acquisition: true, Cohorts: true, Outreach: true, Placements: false, Analytics: false, Settings: false },
