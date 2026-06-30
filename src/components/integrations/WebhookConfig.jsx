@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Webhook, Plus, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { generateWebhookSecret } from '../../lib/secureRandom';
 
 const AVAILABLE_EVENTS = [
   'nurse.created',
@@ -12,21 +13,12 @@ const AVAILABLE_EVENTS = [
   'communication.sent',
 ];
 
-function generateSecret() {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let secret = 'whsec_';
-  for (let i = 0; i < 24; i++) {
-    secret += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return secret;
-}
-
 export default function WebhookConfig() {
   const { webhooks, updateWebhooks } = useAppContext();
   const [showForm, setShowForm] = useState(false);
   const [formUrl, setFormUrl] = useState('');
   const [selectedEvents, setSelectedEvents] = useState([]);
-  const [formSecret, setFormSecret] = useState(() => generateSecret());
+  const [formSecret, setFormSecret] = useState(() => generateWebhookSecret());
 
   const handleAddWebhook = useCallback(() => {
     if (!formUrl.trim() || selectedEvents.length === 0) return;
@@ -41,7 +33,7 @@ export default function WebhookConfig() {
     updateWebhooks([...webhooks, newWebhook]);
     setFormUrl('');
     setSelectedEvents([]);
-    setFormSecret(generateSecret());
+    setFormSecret(generateWebhookSecret());
     setShowForm(false);
   }, [webhooks, updateWebhooks, formUrl, selectedEvents, formSecret]);
 
@@ -130,7 +122,7 @@ export default function WebhookConfig() {
               Register
             </button>
             <button
-              onClick={() => { setShowForm(false); setFormUrl(''); setSelectedEvents([]); setFormSecret(generateSecret()); }}
+              onClick={() => { setShowForm(false); setFormUrl(''); setSelectedEvents([]); setFormSecret(generateWebhookSecret()); }}
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-300 transition-colors"
             >
               Cancel
