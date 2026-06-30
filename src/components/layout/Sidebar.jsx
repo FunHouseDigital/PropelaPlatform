@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
@@ -17,9 +17,13 @@ import {
   Bell,
   HelpCircle,
   Settings,
+  LogOut,
   X,
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
+import { usePermissions } from '../../hooks/usePermissions';
+import { ROUTE_PERMISSIONS } from '../../lib/permissions';
 
 const NAV_ITEMS = [
   { path: '/', labelKey: 'navigation.dashboard', icon: LayoutDashboard },
@@ -42,10 +46,24 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ isOpen, onClose, isMobile }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { notifications, notificationAlerts } = useAppContext();
+  const { can } = usePermissions();
+  const { currentUser, logout } = useAuth();
   const unreadCount = notifications.filter((n) => !n.read).length;
   const notifUnreadCount = notificationAlerts.filter((n) => !n.read).length;
+
+  // Only show nav items the current user is permitted to access. Items mapped to
+  // a null permission (e.g. Help, Notifications) are always shown.
+  const visibleNavItems = NAV_ITEMS.filter((item) => can(ROUTE_PERMISSIONS[item.path]));
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
+
+  const userInitial = (currentUser?.name || 'U').trim().charAt(0).toUpperCase();
 
   const sidebarClasses = isMobile
     ? `fixed start-0 top-0 h-screen w-[220px] flex flex-col z-50 transition-transform duration-300 ${
@@ -93,7 +111,7 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
 
       {/* Navigation */}
       <nav className="flex-1 mt-6 px-3 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
+        {visibleNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
 
@@ -130,12 +148,25 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
       <div className="px-4 pb-5 mt-auto">
         <div className="flex items-center gap-3 px-2 py-2">
           <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">
-            A
+            {userInitial}
           </div>
-          <div>
-            <p className="text-white text-[13px] font-semibold leading-tight">Aya</p>
-            <p className="text-white/60 text-[11px]">Admin</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-white text-[13px] font-semibold leading-tight truncate">
+              {currentUser?.name || 'Unknown user'}
+            </p>
+            <p className="text-white/60 text-[11px] truncate">{currentUser?.role || ''}</p>
           </div>
+          {currentUser && (
+            <button
+              type="button"
+              onClick={handleLogout}
+              title="Sign out"
+              aria-label="Sign out"
+              className="min-h-[36px] min-w-[36px] flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors rounded-lg"
+            >
+              <LogOut size={18} strokeWidth={1.8} />
+            </button>
+          )}
         </div>
       </div>
     </aside>
