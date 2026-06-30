@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { X, Plus, Calendar, MapPin } from 'lucide-react';
 import { getEvents, saveEvents } from '../../lib/storage';
+import { sanitizeText, validateForm, MAX_LENGTHS } from '../../lib/validation';
 import OutreachLogEntry from './OutreachLogEntry';
 
 const EVENT_TYPES = ['Career Fair', 'Info Session - Propela', 'Info Session - Hospital', 'Nursing Conference', 'Roadshow', 'Online Webinar', 'Other'];
@@ -36,6 +37,7 @@ export default function EventsTrack({ searchQuery }) {
   const [events, setEvents] = useState(() => getEvents());
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [formError, setFormError] = useState('');
   const [newEvent, setNewEvent] = useState({
     name: '',
     type: 'Career Fair',
@@ -56,8 +58,20 @@ export default function EventsTrack({ searchQuery }) {
 
   function handleAdd(e) {
     e.preventDefault();
+    const { valid, errors } = validateForm(newEvent, {
+      name: { label: 'Event name', required: true, maxLength: MAX_LENGTHS.NAME },
+      budget: { label: 'Budget', number: { min: 0, integer: true } },
+    });
+    if (!valid) {
+      setFormError(errors.name || errors.budget);
+      return;
+    }
+    setFormError('');
     const event = {
       ...newEvent,
+      name: sanitizeText(newEvent.name, { maxLength: MAX_LENGTHS.NAME }),
+      organiser: sanitizeText(newEvent.organiser, { maxLength: MAX_LENGTHS.NAME }),
+      location: sanitizeText(newEvent.location, { maxLength: MAX_LENGTHS.SHORT_TEXT }),
       id: `evt-${Date.now()}`,
       nursesMet: 0,
       leadsGenerated: 0,
@@ -77,13 +91,16 @@ export default function EventsTrack({ searchQuery }) {
   }
 
   function updateEvent(evtId, field, value) {
+    const cleanValue = typeof value === 'string'
+      ? sanitizeText(value, { maxLength: MAX_LENGTHS.LONG_TEXT, trim: false })
+      : value;
     const updated = events.map((e) =>
-      e.id === evtId ? { ...e, [field]: value } : e
+      e.id === evtId ? { ...e, [field]: cleanValue } : e
     );
     setEvents(updated);
     saveEvents(updated);
     if (selectedEvent && selectedEvent.id === evtId) {
-      setSelectedEvent({ ...selectedEvent, [field]: value });
+      setSelectedEvent({ ...selectedEvent, [field]: cleanValue });
     }
   }
 
@@ -92,7 +109,7 @@ export default function EventsTrack({ searchQuery }) {
       <div className="flex items-center justify-between mb-4">
         <span className="text-xs text-gray-400">{filtered.length} events</span>
         <button
-          onClick={() => setShowAddForm(true)}
+          onClick={() => { setFormError(''); setShowAddForm(true); }}
           className="flex items-center gap-1 px-3 py-1.5 bg-propela-purple text-white text-xs font-medium rounded-lg hover:bg-propela-purple/90"
         >
           <Plus size={14} />
@@ -237,6 +254,9 @@ export default function EventsTrack({ searchQuery }) {
                   Add Event
                 </button>
               </div>
+              {formError && (
+                <p role="alert" className="text-sm text-red-600">{formError}</p>
+              )}
             </form>
           </div>
         </div>

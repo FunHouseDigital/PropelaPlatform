@@ -4,6 +4,7 @@ import { Lock, LogIn, Mail } from 'lucide-react';
 
 import Logo from '../components/ui/Logo';
 import { useAuth } from '../context/AuthContext';
+import { validateEmail, validateRequired } from '../lib/validation';
 
 export default function Login() {
   const { login, isAuthenticated } = useAuth();
@@ -26,6 +27,19 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Client-side input validation before hitting the auth flow. This does not
+    // change the auth/session logic from Fixes #1/#2 — it only blocks
+    // obviously-malformed credentials from being submitted.
+    if (!validateRequired(email) || !validateRequired(password)) {
+      setError('Please enter your email and password.');
+      return;
+    }
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const result = await login(email, password);
