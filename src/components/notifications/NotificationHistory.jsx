@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useAppContext } from '../../context/AppContext';
 import { useExport } from '../../hooks/useExport';
 import { ACCESSIBLE_CHART_COLORS } from '../../lib/chartAccessibility';
+import { toCsv } from '../../lib/csv';
 
 // Notification history is a user's own notification log (low sensitivity), so
 // it is gated to authenticated users only (no specific module permission).
@@ -118,7 +119,7 @@ export default function NotificationHistory() {
       item.status,
     ]);
 
-    const csv = [headers.join(','), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const csv = toCsv(rows, { headers });
 
     // Auth-only gate (module=null): any signed-in user may export their
     // notification history, but the attempt is always audited.
