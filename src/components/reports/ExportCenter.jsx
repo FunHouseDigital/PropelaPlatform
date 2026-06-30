@@ -1,9 +1,12 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
   Download, Database, FileText, Users, Building, MessageSquare,
-  Filter, Clock, RefreshCw,
+  Filter, Clock, RefreshCw, Lock,
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { useExport } from '../../hooks/useExport';
+
+const EXPORT_MODULE = 'Analytics';
 
 const DATA_TYPES = [
   { id: 'nurses', label: 'Nurses', icon: Users, description: 'Nurse records and pipeline data' },
@@ -72,9 +75,12 @@ export default function ExportCenter() {
     nurses, placements, documents, communications,
     exportHistory, updateExportHistory, cohorts,
   } = useAppContext();
+  const { runExport, canExport } = useExport();
+  const canExportData = canExport(EXPORT_MODULE);
 
   const [selectedDataType, setSelectedDataType] = useState(null);
   const [selectedFormat, setSelectedFormat] = useState('csv');
+  const [exportError, setExportError] = useState('');
   const [filters, setFilters] = useState({
     stage: 'All',
     cohort: 'All',
@@ -182,34 +188,50 @@ export default function ExportCenter() {
     const content = generateFileContent(data, selectedFormat);
     if (!content) return;
 
-    const mimeType = selectedFormat === 'json' ? 'application/json' : 'text/csv';
-    const extension = selectedFormat === 'json' ? 'json' : 'csv';
-    const fileName = `propela-${selectedDataType}-export-${new Date().toISOString().slice(0, 10)}.${extension}`;
+    // Route every export through the gate: it enforces auth + the Analytics
+    // permission, audits the attempt (allowed or denied), and only then runs
+    // the download below.
+    const { allowed, error } = runExport(
+      {
+        module: EXPORT_MODULE,
+        entityType: selectedDataType,
+        format: selectedFormat,
+        recordCount: data.length,
+        filters,
+      },
+      () => {
+        const mimeType = selectedFormat === 'json' ? 'application/json' : 'text/csv';
+        const extension = selectedFormat === 'json' ? 'json' : 'csv';
+        const fileName = `propela-${selectedDataType}-export-${new Date().toISOString().slice(0, 10)}.${extension}`;
 
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-    // Record in export history
-    const historyEntry = {
-      id: `export-${Date.now()}`,
-      type: selectedDataType,
-      format: selectedFormat.toUpperCase(),
-      filters: { ...filters },
-      timestamp: new Date().toISOString(),
-      fileSize: `${(blob.size / 1024).toFixed(1)} KB`,
-      status: 'completed',
-      fileName,
-    };
+        // Record in export history
+        const historyEntry = {
+          id: `export-${Date.now()}`,
+          type: selectedDataType,
+          format: selectedFormat.toUpperCase(),
+          filters: { ...filters },
+          timestamp: new Date().toISOString(),
+          fileSize: `${(blob.size / 1024).toFixed(1)} KB`,
+          status: 'completed',
+          fileName,
+        };
 
-    updateExportHistory([historyEntry, ...exportHistory]);
-  }, [selectedDataType, selectedFormat, filters, getFilteredData, generateFileContent, exportHistory, updateExportHistory]);
+        updateExportHistory([historyEntry, ...exportHistory]);
+      }
+    );
+
+    setExportError(allowed ? '' : error);
+  }, [selectedDataType, selectedFormat, filters, getFilteredData, generateFileContent, exportHistory, updateExportHistory, runExport]);
 
   // Re-download from history (regenerate file with original filters)
   const handleRedownload = useCallback((entry) => {
@@ -261,20 +283,34 @@ export default function ExportCenter() {
     const content = generateFileContent(data, format);
     if (!content) return;
 
-    const mimeType = format === 'json' ? 'application/json' : 'text/csv';
-    const extension = format === 'json' ? 'json' : 'csv';
-    const fileName = entry.fileName || `propela-${entry.type}-export.${extension}`;
+    // Re-downloads are real data exports too — gate + audit them identically.
+    const { allowed, error } = runExport(
+      {
+        module: EXPORT_MODULE,
+        entityType: entry.type,
+        format,
+        recordCount: data.length,
+        filters: entry.filters || {},
+      },
+      () => {
+        const mimeType = format === 'json' ? 'application/json' : 'text/csv';
+        const extension = format === 'json' ? 'json' : 'csv';
+        const fileName = entry.fileName || `propela-${entry.type}-export.${extension}`;
 
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, [nurses, placements, documents, communications, generateFileContent]);
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    );
+
+    setExportError(allowed ? '' : error);
+  }, [nurses, placements, documents, communications, generateFileContent, runExport]);
 
   const filteredCount = useMemo(() => {
     if (!selectedDataType) return 0;
@@ -435,19 +471,30 @@ export default function ExportCenter() {
       )}
 
       {/* Export Button */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={handleExport}
-          disabled={!selectedDataType || filteredCount === 0}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#5B2D8E] text-white rounded-lg text-sm font-medium hover:bg-[#4a2474] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <Download size={16} />
-          Export {selectedDataType ? `${filteredCount} Records` : 'Data'}
-        </button>
-        {selectedDataType && (
-          <span className="text-xs text-gray-400">
-            Format: {selectedFormat.toUpperCase()} | Type: {selectedDataType}
-          </span>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleExport}
+            disabled={!selectedDataType || filteredCount === 0 || !canExportData}
+            title={!canExportData ? "You don't have permission to export this data" : undefined}
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#5B2D8E] text-white rounded-lg text-sm font-medium hover:bg-[#4a2474] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {canExportData ? <Download size={16} /> : <Lock size={16} />}
+            Export {selectedDataType ? `${filteredCount} Records` : 'Data'}
+          </button>
+          {selectedDataType && (
+            <span className="text-xs text-gray-400">
+              Format: {selectedFormat.toUpperCase()} | Type: {selectedDataType}
+            </span>
+          )}
+        </div>
+        {!canExportData && (
+          <p className="text-xs text-gray-500">
+            You don&apos;t have permission to export this data.
+          </p>
+        )}
+        {exportError && (
+          <p role="alert" className="text-sm text-red-600 font-medium">{exportError}</p>
         )}
       </div>
 
@@ -481,7 +528,7 @@ export default function ExportCenter() {
                     <td className="py-2 px-3 text-gray-700 text-xs">{entry.fileSize}</td>
                     <td className="py-2 px-3"><StatusBadge status={entry.status} /></td>
                     <td className="py-2 px-3">
-                      {entry.status === 'completed' && (
+                      {entry.status === 'completed' && canExportData && (
                         <button
                           onClick={() => handleRedownload(entry)}
                           className="flex items-center gap-1 text-[#5B2D8E] hover:text-[#4a2474] text-xs font-medium transition-colors"
@@ -490,6 +537,12 @@ export default function ExportCenter() {
                           <RefreshCw size={12} />
                           Re-download
                         </button>
+                      )}
+                      {entry.status === 'completed' && !canExportData && (
+                        <span className="flex items-center gap-1 text-gray-400 text-xs" title="You don't have permission to export this data">
+                          <Lock size={12} />
+                          Re-download
+                        </span>
                       )}
                     </td>
                   </tr>
