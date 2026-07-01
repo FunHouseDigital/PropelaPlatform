@@ -12,7 +12,7 @@ fix is branched off the previous fix's branch and opened as a PR against it.
 | 5 | CSV (formula) injection neutralization in all CSV exports | [x] | #31 |
 | 6 | Input validation / sanitization on all forms | [x] | #32 |
 | 7 | HTTP security headers / Content-Security-Policy hardening | [x] | #33 |
-| 8 | _TBD_ | [ ] | — |
+| 8 | Login rate-limiting / account lockout | [x] | #34 |
 | 9 | _TBD_ | [ ] | — |
 | 10 | Key prefix renaming / rotation | [ ] | — |
 
@@ -174,10 +174,147 @@ Auth (#1/#2), export gating/audit (#3), key generation (#4), CSV escaping (#5)
 and form validation (#6) are unchanged and continue to function under the
 tightened CSP (Blob-based CSV downloads, the SW and `manifest.json` all load).
 
+## Fix #8 — login rate-limiting / account lockout (done)
 
-> **NEXT: Fix #8** — to be confirmed against the team's security backlog before
-> starting. The tracker still lists #8/#9 as TBD and #10 as "Key prefix
-> renaming / rotation". Strong candidates to confirm for #8: **login
-> rate-limiting / account lockout**, or **moving auth/session state out of
-> `localStorage`** (e.g. to in-memory + httpOnly cookie semantics) to reduce
-> XSS token-theft risk. Pick one and verify scope with the team first.
+Before this fix, `AuthContext.login()` ran an unbounded credential check on
+every attempt: no throttling, no lockout, and no record of failed attempts, so
+nothing slowed down or recorded repeated online password guesses against the
+sign-in form.
+
+### Policy (all named constants in `src/lib/loginThrottle.js`)
+
+- **Threshold:** lock an email after **`MAX_FAILED_ATTEMPTS = 5`** *consecutive*
+  failed attempts.
+- **Cooldown:** **`LOCKOUT_DURATION_MS = 15 minutes`** from the failure that
+  tripped the lock.
+- **Reset:** a **successful** sign-in clears that email's entry entirely; a
+  failure that occurs **after** a cooldown has fully elapsed starts a fresh
+  streak (the expired lock is "forgiven", so a single post-cooldown mistake
+  does not instantly re-lock).
+- **Keying:** tracked per **normalized email** (`trim().toLowerCase()` — the
+  exact normalization `findAuthUserByEmail` uses), so casing/whitespace variants
+  cannot dodge the counter.
+
+### Pure, testable module + where state lives
+
+`src/lib/loginThrottle.js` holds the logic as **pure functions** (mirroring the
+`exportGuard.js` precedent — no React, no clock reads, no storage access). Every
+decision takes the current state + email + an injected `now`, so tests are
+deterministic:
+
+- `evaluateAttempt(state, email, now)` → `{ allowed, lockedUntil, remainingMs, remainingMinutes, failures }`
+- `recordFailure(state, email, now)` → next state (pure, no mutation)
+- `recordSuccess(state, email)` → next state with the entry removed
+- `pruneExpired(state, now)` → housekeeping that drops fully-expired locks while
+  keeping active locks and in-progress streaks
+- plus `normalizeEmail`, `getEntry`, `remainingLockMs`, `remainingLockMinutes`,
+  and `buildLoginAuditEntry`.
+
+State is persisted via new storage helpers **`getLoginThrottle` /
+`saveLoginThrottle`** (`src/lib/storage.js`) under the
+**`propela_ops_loginThrottle`** localStorage key. It stores **only counters +
+timestamps** per email — `{ failures, firstFailureAt, lastFailureAt, lockedUntil }`
+— **never a password or hash**.
+
+> **Key-hashing choice:** the map is keyed by the plaintext normalized email,
+> not a hash. Hashing was considered and intentionally skipped: it would force
+> the module to become async (Web Crypto), breaking deterministic tests, and
+> buys nothing in a client-only app where the emails are non-secret (the audit
+> log and seed data already store identities in the same localStorage) and an
+> attacker with the bundle already has the account list.
+
+### Wiring into `AuthContext.login()` (hashing + success path unchanged)
+
+The SHA-256 hashing and `authUsers.js` scheme are untouched. `login()` now:
+
+1. **Checks the throttle first** via `evaluateAttempt` — *before* any user
+   lookup or hashing. If the email is locked it returns immediately with a
+   clear, generic-but-actionable message
+   (`"Too many attempts. Try again in N minutes."`) plus `locked`/`lockedUntil`,
+   and performs **no credential comparison**.
+2. On a **failed** comparison (unknown email **or** wrong password — handled by
+   one identical path), records a failure, persists, and re-evaluates: if that
+   failure tripped the lock it surfaces the lockout message; otherwise it keeps
+   the existing generic `"Invalid email or password."` wording.
+3. On **success**, clears the email's throttle entry, then proceeds with the
+   unchanged session-persistence path.
+
+A crypto/environment failure is **not** counted as a credential failure.
+
+**No user enumeration:** unknown emails and known-email-wrong-password are
+throttled identically, share the same messages, and the attempted email is
+tracked regardless of whether the account exists. The audit `details` never
+distinguish the two.
+
+### Audit logging (reuses the Fix #3 infrastructure — no new UI)
+
+Attempts are recorded in the existing audit log so they appear in the Audit
+Trail (`AuditLogTable`) with zero new wiring. `buildLoginAuditEntry` produces the
+standard audit shape and adds three action constants:
+
+| Action | Severity | When |
+|--------|----------|------|
+| `LOGIN_FAILED` | `warning` | a failed credential comparison (below threshold) |
+| `LOGIN_LOCKED_OUT` | `critical` | an attempt blocked by an active lock, or the failure that trips it |
+| `LOGIN_SUCCESS` | `info` | a successful sign-in |
+
+Entries use `entityType: 'auth'`, `entityId: 'login'`, `ipAddress: 'client'`
+(the same no-backend placeholder as `exportGuard.js`'s `CLIENT_IP`), and record
+the **attempted email** as `user`. **No password or hash is ever logged.**
+
+Because `AuthContext` is intentionally decoupled from `AppContext` (and the
+Login page can render outside `AppProvider`), the entry is written **straight to
+storage** via `getAuditLog`/`saveAuditLog` rather than `AppContext.updateAuditLog`.
+`AppContext` reads the persisted log into its in-memory state on the next load,
+so lockout/failure events **surface in the Audit Trail on next load**. Audit
+writes are wrapped in `try/catch` so auditing can never block or break sign-in,
+and the resilient signed-out `useAuth()` fallback is preserved (it also exposes
+the read-only `getLockStatus`).
+
+### Login UI (`pages/Login.jsx`)
+
+When locked, the page shows the cooldown message in the existing
+`role="alert"` box with a **live `m:ss` countdown**, disables the submit button
+(labelled `Locked — m:ss`), and re-enables it automatically when the cooldown
+elapses. It also reflects a pre-existing lock for the typed email on load (via
+`getLockStatus`) so the control starts disabled without needing a fresh failed
+attempt. The Fix #6 validation, the `role="alert"` box and the success-redirect
+logic are all unchanged.
+
+### Honest no-backend caveat
+
+Propela Ops is front-end-only. This throttle state lives in `localStorage`, so
+an attacker can **read the bundled password hashes directly or clear
+`localStorage`** to wipe the counters — it is therefore **trivially bypassable**
+and is **not** a real brute-force / online-guessing defense. It is included as
+(1) defense-in-depth against casual/opportunistic guessing and (2) the correct
+UX and the exact pattern that **MUST be re-implemented and enforced
+server-side** (per-account **and** per-IP, with a real client IP) the moment a
+backend is introduced. This mirrors the same honest framing in `authUsers.js`
+and `exportGuard.js` (`CLIENT_IP`). No backend, no real per-IP limiting, no
+CAPTCHA and no new heavyweight dependency were introduced.
+
+### Tests
+
+`src/lib/__tests__/loginThrottle.test.js` (dependency-free, deterministic via an
+injected fixed `now`) covers: the threshold boundary (no lock at 4, lock at 5),
+lockout active vs expired, the post-cooldown fresh-streak behaviour, success
+resetting both a partial streak and an active lock, purity/no-mutation, the
+`unknown-vs-known email` parity (identical entries, identical remaining time),
+normalization, the remaining-time helpers, `pruneExpired`, and the audit-entry
+shape/severity with an assertion that no `password`/`hash` leaks into the entry.
+The tests fail if the threshold, cooldown, reset or enumeration-parity regress.
+Existing tests stay green (full suite passes).
+
+Auth (#1/#2), export gating/audit (#3), key generation (#4), CSV escaping (#5),
+form validation (#6) and the nginx headers/CSP (#7) are all unchanged.
+
+
+> **NEXT: Fix #9** — to be confirmed against the team's security backlog before
+> starting. Strong candidate: **move auth/session state out of `localStorage`**
+> to reduce XSS token-theft risk. Since a no-backend app cannot use `httpOnly`
+> cookies, the realistic shape is **in-memory + `sessionStorage`** (session
+> cleared on tab close, not readable across tabs, shorter-lived) rather than the
+> persistent `propela_ops_authSession` localStorage key today — with the same
+> honest caveat that only a real backend + `httpOnly` cookies fully mitigates
+> token theft. **Fix #10** remains **key-prefix renaming / rotation**.

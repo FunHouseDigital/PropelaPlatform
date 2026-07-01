@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Lock, LogIn, Mail } from 'lucide-react';
 
@@ -6,8 +6,16 @@ import Logo from '../components/ui/Logo';
 import { useAuth } from '../context/AuthContext';
 import { validateEmail, validateRequired } from '../lib/validation';
 
+/** Format a remaining-ms cooldown as m:ss for the live countdown. */
+function formatCountdown(ms) {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
 export default function Login() {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, getLockStatus } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -16,8 +24,44 @@ export default function Login() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Lockout state (Fix #8). `lockedUntil` is an epoch-ms deadline; `now` ticks
+  // once a second while locked to drive the countdown and auto re-enable.
+  const [lockedUntil, setLockedUntil] = useState(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  const remainingMs = lockedUntil ? Math.max(0, lockedUntil - now) : 0;
+  const isLocked = remainingMs > 0;
+
   // Where to send the user after a successful sign-in.
   const from = location.state?.from?.pathname || '/';
+
+  // Reflect any existing lock for the typed email (e.g. after a refresh) so the
+  // control starts disabled without needing a fresh failed attempt.
+  useEffect(() => {
+    if (typeof getLockStatus !== 'function') return;
+    const status = getLockStatus(email);
+    if (status.allowed) {
+      setLockedUntil(null);
+    } else {
+      setLockedUntil(status.lockedUntil);
+      setNow(Date.now());
+    }
+  }, [email, getLockStatus]);
+
+  // Tick every second while locked; the interval only runs during a cooldown.
+  useEffect(() => {
+    if (!lockedUntil) return undefined;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [lockedUntil]);
+
+  // When the countdown elapses, clear the lock so the button re-enables.
+  useEffect(() => {
+    if (lockedUntil && remainingMs <= 0) {
+      setLockedUntil(null);
+      setError('');
+    }
+  }, [lockedUntil, remainingMs]);
 
   // Already signed in — send them on their way (declarative redirect).
   if (isAuthenticated) {
@@ -27,6 +71,11 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Blocked by an active cooldown — never run the credential check.
+    if (isLocked) {
+      return;
+    }
 
     // Client-side input validation before hitting the auth flow. This does not
     // change the auth/session logic from Fixes #1/#2 — it only blocks
@@ -46,7 +95,16 @@ export default function Login() {
       if (result.success) {
         navigate(from, { replace: true });
       } else {
-        setError(result.error || 'Unable to sign in.');
+        // A lockout response carries `locked` + `lockedUntil`; start the
+        // countdown and disable the button. The live message is rendered from
+        // the countdown below, so we only set `error` for ordinary failures.
+        if (result.locked && result.lockedUntil) {
+          setLockedUntil(result.lockedUntil);
+          setNow(Date.now());
+          setError('');
+        } else {
+          setError(result.error || 'Unable to sign in.');
+        }
       }
     } catch {
       setError('Something went wrong while signing in. Please try again.');
@@ -54,6 +112,10 @@ export default function Login() {
       setSubmitting(false);
     }
   };
+
+  const lockMessage = isLocked
+    ? `Too many attempts. Try again in ${formatCountdown(remainingMs)}.`
+    : '';
 
   return (
     <div
@@ -120,22 +182,26 @@ export default function Login() {
               </div>
             </div>
 
-            {error && (
+            {(isLocked || error) && (
               <div
                 role="alert"
                 className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2"
               >
-                {error}
+                {isLocked ? lockMessage : error}
               </div>
             )}
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || isLocked}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#5B2D8E] text-white rounded-lg text-sm font-medium hover:bg-[#4a2574] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <LogIn size={16} />
-              {submitting ? 'Signing in…' : 'Sign in'}
+              {isLocked
+                ? `Locked — ${formatCountdown(remainingMs)}`
+                : submitting
+                  ? 'Signing in…'
+                  : 'Sign in'}
             </button>
           </form>
         </div>
