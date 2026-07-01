@@ -943,3 +943,21 @@ export function clearAuthSession() {
   removeData('authSession');
 }
 
+/**
+ * Get the persisted login-throttle state (Fix #8) from localStorage.
+ *
+ * Returns a plain map keyed by normalized email, holding ONLY failure counters
+ * + timestamps (never any password/hash). See src/lib/loginThrottle.js for the
+ * shape, policy and the honest no-backend caveat. Returns `{}` when empty.
+ */
+export function getLoginThrottle() {
+  return getData('loginThrottle') || {};
+}
+
+/**
+ * Persist the login-throttle state (Fix #8) to localStorage.
+ */
+export function saveLoginThrottle(state) {
+  setData('loginThrottle', state || {});
+}
+
