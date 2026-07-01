@@ -1,9 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { clearSession, getSession, migrateLegacyAuthSession, setSession } from '../sessionStore';
+import { STORAGE_PREFIX } from '../storageKeys';
 
-// The store deliberately reuses the legacy key name so it can migrate old data.
-const KEY = 'propela_ops_authSession';
+// Fix #10: the mirror now lives under the versioned key. Derive it from the
+// single source of truth so these tests track any future version bump.
+const KEY = `${STORAGE_PREFIX}authSession`; // 'propela_ops_v2_authSession'
+
+// The pre-#9/#10 key an old build persisted the session under (legacy prefix).
+// The one-time migration must find and purge this from localStorage and rotate
+// it out of sessionStorage.
+const LEGACY_KEY = 'propela_ops_authSession';
 
 // A representative session payload — ONLY non-sensitive identity fields, exactly
 // what AuthContext.login() persists (never a password/hash).
@@ -35,11 +42,12 @@ describe('set/get/clear roundtrip', () => {
     expect(sessionStorage.getItem(KEY)).toBeNull();
   });
 
-  it('mirrors to sessionStorage and NEVER writes the session to localStorage', () => {
+  it('mirrors to the versioned sessionStorage key and NEVER writes to localStorage', () => {
     setSession(USER);
     expect(JSON.parse(sessionStorage.getItem(KEY))).toEqual(USER);
     // The whole point of Fix #9: the identity token must not be in localStorage.
     expect(localStorage.getItem(KEY)).toBeNull();
+    expect(localStorage.getItem(LEGACY_KEY)).toBeNull();
   });
 
   it('treats a falsy value passed to setSession as a clear', () => {
@@ -83,18 +91,45 @@ describe('sessionStorage mirror survives a simulated reload', () => {
   });
 });
 
+describe('Fix #10: rotation of the sessionStorage mirror (legacy -> versioned key)', () => {
+  it('rotates a pre-#10 legacy mirror key to the versioned key on getSession', () => {
+    // A currently-signed-in user upgraded from a pre-#10 build: the mirror sits
+    // under the legacy key in sessionStorage, with nothing in-memory yet.
+    sessionStorage.setItem(LEGACY_KEY, JSON.stringify(USER));
+
+    // getSession() triggers hydration, which rotates the mirror first.
+    expect(getSession()).toEqual(USER);
+
+    // The value now lives under the versioned key and the legacy key is gone.
+    expect(JSON.parse(sessionStorage.getItem(KEY))).toEqual(USER);
+    expect(sessionStorage.getItem(LEGACY_KEY)).toBeNull();
+  });
+
+  it('does not overwrite a value already present under the versioned key', () => {
+    const newer = { ...USER, name: 'Newer Session' };
+    sessionStorage.setItem(KEY, JSON.stringify(newer));
+    sessionStorage.setItem(LEGACY_KEY, JSON.stringify(USER));
+
+    // Rotation must never clobber newer data under the current prefix...
+    expect(getSession()).toEqual(newer);
+    expect(JSON.parse(sessionStorage.getItem(KEY))).toEqual(newer);
+    // ...but the stale legacy key must still be removed.
+    expect(sessionStorage.getItem(LEGACY_KEY)).toBeNull();
+  });
+});
+
 describe('one-time migration off localStorage', () => {
   it('moves a legacy localStorage session into the store AND deletes the localStorage key', () => {
     const legacy = { id: 'u-2', name: 'Legacy User', email: 'legacy@propela.co.za', role: 'staff' };
-    localStorage.setItem(KEY, JSON.stringify(legacy));
+    localStorage.setItem(LEGACY_KEY, JSON.stringify(legacy));
 
     // Lazy path: getSession() triggers the migration.
     const migrated = getSession();
 
     expect(migrated).toEqual(legacy);
     // The stale, higher-risk localStorage token must be gone.
-    expect(localStorage.getItem(KEY)).toBeNull();
-    // ...and it must now live in the sessionStorage mirror.
+    expect(localStorage.getItem(LEGACY_KEY)).toBeNull();
+    // ...and it must now live in the versioned sessionStorage mirror.
     expect(JSON.parse(sessionStorage.getItem(KEY))).toEqual(legacy);
   });
 
@@ -104,23 +139,25 @@ describe('one-time migration off localStorage', () => {
   });
 
   it('removes an unparseable legacy key without adopting it', () => {
-    localStorage.setItem(KEY, '{ not valid json');
+    localStorage.setItem(LEGACY_KEY, '{ not valid json');
     expect(migrateLegacyAuthSession()).toBeNull();
     // Even garbage must not be left behind in the higher-risk store.
-    expect(localStorage.getItem(KEY)).toBeNull();
+    expect(localStorage.getItem(LEGACY_KEY)).toBeNull();
     expect(getSession()).toBeNull();
   });
 
   it('is idempotent — a second call finds nothing left to migrate', () => {
-    localStorage.setItem(KEY, JSON.stringify(USER));
+    localStorage.setItem(LEGACY_KEY, JSON.stringify(USER));
     expect(migrateLegacyAuthSession()).toEqual(USER);
     expect(migrateLegacyAuthSession()).toBeNull();
-    expect(localStorage.getItem(KEY)).toBeNull();
+    expect(localStorage.getItem(LEGACY_KEY)).toBeNull();
   });
 
   it('clearSession also purges any lingering legacy localStorage copy', () => {
+    localStorage.setItem(LEGACY_KEY, JSON.stringify(USER));
     localStorage.setItem(KEY, JSON.stringify(USER));
     clearSession();
+    expect(localStorage.getItem(LEGACY_KEY)).toBeNull();
     expect(localStorage.getItem(KEY)).toBeNull();
   });
 });

@@ -38,18 +38,38 @@
  */
 
 /**
- * App-wide storage key prefix. Kept identical to `storage.js` on purpose — key
- * namespacing/versioning is explicitly out of scope for Fix #9 and is handled by
- * Fix #10 (key-prefix renaming / rotation).
+ * App-wide storage key prefix. Fix #10: the versioned prefix and the
+ * legacy-prefix list now live in the single shared module `storageKeys.js`,
+ * imported by both this file and `storage.js`, so the literal is defined in
+ * exactly one place. Fix #9 deliberately kept the prefix as-is (key
+ * namespacing/versioning was out of scope then); Fix #10 rotates it to the
+ * versioned `propela_ops_v2_`.
  */
-const STORAGE_PREFIX = 'propela_ops_';
+import { LEGACY_STORAGE_PREFIXES, rotateStorageKeys,STORAGE_PREFIX } from './storageKeys';
 
 /**
- * The session key. Deliberately the SAME name the legacy localStorage session
- * used (`propela_ops_authSession`) so the one-time migration can find the old
- * value and so nothing else in the app has to learn a new key.
+ * The session key under the CURRENT versioned prefix
+ * (`propela_ops_v2_authSession`). The logical name ('authSession') is unchanged
+ * by Fix #10 — only the physical prefix moved.
  */
 const SESSION_KEY = `${STORAGE_PREFIX}authSession`;
+
+/**
+ * The auth-session keys a value may have been persisted under by an older build,
+ * derived from the shared legacy-prefix list. Used by the one-time migration to
+ * find (and purge) a pre-#10 sessionStorage mirror or a pre-#9 localStorage
+ * token — e.g. the pre-#9/#10 `propela_ops_authSession`.
+ * @type {string[]}
+ */
+const LEGACY_SESSION_KEYS = LEGACY_STORAGE_PREFIXES.map((prefix) => `${prefix}authSession`);
+
+/**
+ * Every localStorage key that could hold an auth token across versions — the
+ * current key plus all legacy-prefixed variants. An auth token must NEVER live
+ * in localStorage (Fix #9), so all of these are purged on migration/clear.
+ * @type {string[]}
+ */
+const ALL_LOCALSTORAGE_SESSION_KEYS = [...new Set([SESSION_KEY, ...LEGACY_SESSION_KEYS])];
 
 /**
  * The in-memory source of truth. `null` means "signed out". This is a plain
@@ -127,27 +147,34 @@ function writeMirror(user) {
 }
 
 /**
- * Remove the session from the sessionStorage mirror. Never throws.
+ * Remove the session from the sessionStorage mirror. Removes the current key and
+ * (Fix #10) any legacy-prefixed mirror key so a logout leaves nothing behind
+ * under a stale namespace. Never throws.
  */
 function clearMirror() {
   const ss = safeSessionStorage();
   if (!ss) return;
-  try {
-    ss.removeItem(SESSION_KEY);
-  } catch {
-    // Ignore — in-memory has already been cleared by the caller.
+  for (const key of [SESSION_KEY, ...LEGACY_SESSION_KEYS]) {
+    try {
+      ss.removeItem(key);
+    } catch {
+      // Ignore — in-memory has already been cleared by the caller.
+    }
   }
 }
 
 /**
  * One-time migration OFF the higher-risk localStorage.
  *
- * If a legacy `propela_ops_authSession` entry exists in `localStorage` (written
- * by pre-Fix-#9 builds), copy it into the new session store (in-memory +
- * sessionStorage mirror) and DELETE the localStorage copy so no stale identity
- * token is left behind in the more exposed, cross-tab, persistent store. This
- * keeps a currently-signed-in user signed in across the upgrade within the same
- * tab. Idempotent and safe to call repeatedly; never throws.
+ * An auth token must never live in localStorage (Fix #9). This scans every
+ * localStorage key that could hold one across versions — the current
+ * `propela_ops_v2_authSession` and all legacy-prefixed variants (e.g. the
+ * pre-#9/#10 `propela_ops_authSession`) — copies the first usable value into the
+ * new session store (in-memory + sessionStorage mirror) and DELETES every such
+ * localStorage key so no stale identity token is left behind in the more
+ * exposed, cross-tab, persistent store. This keeps a currently-signed-in user
+ * signed in across the upgrade within the same tab. Idempotent and safe to call
+ * repeatedly; never throws.
  *
  * @returns {object|null} the migrated session, or `null` if there was nothing to
  * migrate.
@@ -156,34 +183,58 @@ export function migrateLegacyAuthSession() {
   const ls = safeLocalStorage();
   if (!ls) return null;
 
-  let raw;
-  try {
-    raw = ls.getItem(SESSION_KEY);
-  } catch {
-    return null;
-  }
-  if (raw === null || raw === undefined) return null;
+  let adopted = null;
 
-  // Regardless of whether the value is parseable, remove the legacy copy so we
-  // never leave a stale token behind in the higher-risk store.
-  try {
-    ls.removeItem(SESSION_KEY);
-  } catch {
-    // If we cannot remove it we still avoid trusting it below.
+  for (const key of ALL_LOCALSTORAGE_SESSION_KEYS) {
+    let raw;
+    try {
+      raw = ls.getItem(key);
+    } catch {
+      continue;
+    }
+    if (raw === null || raw === undefined) continue;
+
+    // Regardless of whether the value is parseable — and regardless of whether
+    // we already adopted one from an earlier key — remove the localStorage copy
+    // so we never leave a stale token behind in the higher-risk store.
+    try {
+      ls.removeItem(key);
+    } catch {
+      // If we cannot remove it we still avoid trusting it below.
+    }
+
+    if (adopted !== null) continue;
+
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = null;
+    }
+    if (parsed && typeof parsed === 'object') {
+      adopted = parsed;
+    }
   }
 
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    parsed = null;
-  }
-  if (!parsed || typeof parsed !== 'object') return null;
+  if (adopted === null) return null;
 
   // Adopt it into the new store.
-  memorySession = parsed;
-  writeMirror(parsed);
+  memorySession = adopted;
+  writeMirror(adopted);
   return memorySession;
+}
+
+/**
+ * Fix #10: rotate the sessionStorage auth-session mirror from any legacy prefix
+ * to the current versioned key (`propela_ops_authSession` →
+ * `propela_ops_v2_authSession`). Uses the shared, generic `rotateStorageKeys`
+ * helper so a currently-signed-in user stays signed in across the upgrade within
+ * the same tab. Best-effort and never throws; when sessionStorage is
+ * unavailable it simply does nothing. The auth-session path stays entirely
+ * within this module.
+ */
+export function rotateSessionStoreMirror() {
+  rotateStorageKeys(safeSessionStorage());
 }
 
 /**
@@ -193,6 +244,11 @@ export function migrateLegacyAuthSession() {
  * @returns {object|null}
  */
 function hydrateFromPersistence() {
+  // Fix #10: rotate the sessionStorage mirror to the current versioned key
+  // FIRST so `readMirror()` (which reads the current SESSION_KEY) can find a
+  // pre-#10 mirror. Runs on the lazy path too (AuthProvider calls getSession()
+  // during its initial render, before initializeData()'s effect fires).
+  rotateSessionStoreMirror();
   const migrated = migrateLegacyAuthSession();
   if (migrated !== null) return migrated;
   memorySession = readMirror();
@@ -235,13 +291,17 @@ export function setSession(user) {
 export function clearSession() {
   memorySession = null;
   clearMirror();
-  // Defensive: ensure no legacy localStorage token can outlive a logout.
+  // Defensive: ensure no auth token can outlive a logout in localStorage under
+  // the current key OR any legacy prefix (Fix #10 widened this from a single
+  // key to the full set).
   const ls = safeLocalStorage();
   if (ls) {
-    try {
-      ls.removeItem(SESSION_KEY);
-    } catch {
-      // Ignore.
+    for (const key of ALL_LOCALSTORAGE_SESSION_KEYS) {
+      try {
+        ls.removeItem(key);
+      } catch {
+        // Ignore.
+      }
     }
   }
 }

@@ -14,7 +14,7 @@ fix is branched off the previous fix's branch and opened as a PR against it.
 | 7   | HTTP security headers / Content-Security-Policy hardening          | [x]    | #33 |
 | 8   | Login rate-limiting / account lockout                              | [x]    | #34 |
 | 9   | Move auth session out of localStorage (in-memory + sessionStorage) | [x]    | #35 |
-| 10  | Key prefix renaming / rotation                                     | [ ]    | —   |
+| 10  | Key prefix renaming / rotation                                     | [x]    | #36 |
 
 ## Fix #5 — CSV formula injection (done)
 
@@ -423,13 +423,135 @@ Auth (#1/#2), export gating/audit (#3), key generation (#4), CSV escaping (#5),
 form validation (#6), the nginx headers/CSP (#7) and the login throttle/lockout
 (#8 — including keeping its counters in `localStorage`) are all unchanged.
 
-> **NEXT: Fix #10 (final in the series)** — **key-prefix renaming / rotation.**
-> Confirmed against the team's security backlog: namespace/version the app-wide
-> `propela_ops_` storage keys (e.g. a versioned prefix such as
-> `propela_ops_v2_…`) with a **migration path** that moves existing values to the
-> new keys and removes the old ones — the same migration discipline used for the
-> auth session in Fix #9, applied across the remaining keys. This is explicitly
-> the scope that Fix #9 left alone (Fix #9 kept the `propela_ops_` prefix and did
-> not rotate keys). Still no backend / real cookies are introduced by the series;
-> the standing recommendation to move auth + throttle enforcement server-side
-> (httpOnly cookies, per-account/per-IP limiting) remains the real long-term fix.
+## Fix #10 — versioned key prefix + one-time rotation across both stores (done)
+
+Every value the app persists used the flat, unversioned `propela_ops_` prefix in
+both web-storage surfaces. There was no way to namespace against key collisions
+with another app on the same origin, and no clean way to invalidate/upgrade a
+storage schema in future. This final fix introduces a **versioned prefix**
+(`propela_ops_v2_`) and a **one-time, idempotent rotation** that migrates every
+existing value from the legacy prefix to the new one — across **both**
+`localStorage` and `sessionStorage` — leaving nothing behind under the stale
+namespace.
+
+### Single source of truth (`src/lib/storageKeys.js`)
+
+The prefix/version now lives in exactly one small shared module that both
+`storage.js` and `sessionStore.js` import — the literal is no longer hardcoded in
+more than that module:
+
+- `STORAGE_PREFIX_VERSION = 'v2'`
+- `STORAGE_PREFIX = 'propela_ops_v2_'` (derived from the version)
+- `LEGACY_STORAGE_PREFIXES = ['propela_ops_']`
+- `withPrefix(key)` and the generic `rotateStorageKeys(store)` helper.
+
+The file header documents the version history and the rule for future rotations
+(push the old prefix onto `LEGACY_STORAGE_PREFIXES` and bump the version).
+
+### One-time rotation across BOTH stores
+
+`rotateStorageKeys(store)` **enumerates keys generically** (`length` / `key(i)`)
+— it does **not** rely on the seed list, so helper-only keys (`reportTemplates`,
+`notificationPreferences`, `recentSearches`, `savedViews`, `recentlyViewed`, …)
+rotate too. For each key under a legacy prefix it **copies the value to the
+new-prefixed key only if the new key is not already set** (never clobbers newer
+data), then **removes the legacy key**. It is wrapped in `try/catch` per key and
+**never throws** — it degrades to a no-op when a store is unavailable. It is
+**idempotent**: after a full rotation every key is under `STORAGE_PREFIX`, so a
+second run finds nothing to do.
+
+> **The double-prefix trap:** `propela_ops_v2_` itself *begins with* the legacy
+> `propela_ops_`, so rotation explicitly **skips keys already under the current
+> prefix** — otherwise a `v2` key would be re-prefixed into
+> `propela_ops_v2_v2_…`. This is covered by a dedicated test.
+
+Wiring (`initializeData()` in `storage.js`, plus the lazy auth path):
+
+1. `migrateLegacyAuthSession()` runs **first** so any auth token in
+   `localStorage` (current OR legacy prefix) is moved into the session store
+   **before** the bulk `localStorage` rotation — otherwise rotation would simply
+   re-prefix an identity token that must never live in `localStorage`.
+2. `rotateStorageKeys(localStorage)` — bulk app data **and** the Fix #8
+   `loginThrottle` counters.
+3. `rotateSessionStoreMirror()` (exported by `sessionStore.js`) — rotates the
+   `sessionStorage` auth-session mirror via the same shared helper. This also
+   runs on the **lazy** path (`getSession()` → `hydrateFromPersistence()`), which
+   `AuthProvider` triggers during its first render, before `initializeData()`'s
+   effect fires — so a pre-#10 mirror is found under the new key regardless of
+   load order.
+
+### Logical keys, shapes and values are unchanged
+
+`getData` / `setData` / `removeData` keep **identical `(key)` signatures** — only
+the physical prefix they prepend changed. Logical key names stay the same
+(`'nurses'` is still `'nurses'`), every typed helper behaves identically, and no
+stored JSON shape or value was touched. `getAuthSession` / `saveAuthSession` /
+`clearAuthSession`, `ProtectedRoute` and `useAuth()` are unchanged.
+
+### Preserving the #8 / #9 placement decisions
+
+- **`loginThrottle` stays in `localStorage`** and is rotated **there**
+  (`propela_ops_loginThrottle` → `propela_ops_v2_loginThrottle`), so an **active
+  lockout survives the upgrade** and still survives tab close — it is **not**
+  moved to `sessionStorage` (that would let an attacker reset a lockout by
+  closing the tab, weakening Fix #8).
+- **The auth session stays in-memory + `sessionStorage`.** The mirror key is
+  rotated (`propela_ops_authSession` → `propela_ops_v2_authSession`) so a
+  **currently-signed-in user stays signed in across the upgrade within the same
+  tab**, and the pre-#9 legacy `localStorage` auth key is still migrated + purged
+  (now across the current and all legacy prefixes). The throttle logic, audit
+  logging and SHA-256 hashing are untouched. The seeded
+  `propela_ops_userSessions` demo data is rotated like any other key (its
+  semantics are unchanged).
+
+### Honest framing — namespacing/hygiene, NOT a security control
+
+A versioned prefix buys **collision avoidance, clean schema upgrades, and the
+ability to invalidate an old schema version** — it does **not encrypt anything**
+and it is **not an XSS boundary**. Both `localStorage` and `sessionStorage`
+remain plain JavaScript-readable by any script in the tab. Only a real backend
+issuing `httpOnly`, `Secure`, `SameSite` cookies fully mitigates token/identity
+theft, and that remains a server-side task once a backend exists. This mirrors
+the same caveat in `authUsers.js` / `sessionStore.js` / `loginThrottle.js`. Do
+not overstate it.
+
+### Tests
+
+`src/lib/__tests__/storageKeys.test.js` (dependency-free; jsdom) covers: the
+shared prefix constants and the double-prefix guard; the generic helper's
+copy-old→new + delete-old behaviour on an isolated store; idempotency; the
+**no-clobber** rule (never overwrites a value already under the new prefix while
+still deleting the legacy key); graceful no-throw fallback when the store is
+`null`, when enumeration throws, and when a per-key access throws; rotation
+across the **real** `localStorage` and `sessionStorage`; and the full-upgrade
+path via `initializeData()` proving a **signed-in session survives** (mirror
+rotated) and an **active `loginThrottle` lockout survives** (rotated in
+`localStorage`, not moved to `sessionStorage`), with no key left under the stale
+prefix. `storage.test.js` and `sessionStore.test.js` were updated to the
+versioned prefix/key (asserting against the shared `STORAGE_PREFIX` so they track
+future bumps), with the migration tests using an explicit legacy key. No
+auth-flow enumeration tests were added (Fix #8 behaviour preserved). The full
+suite stays green.
+
+Auth (#1/#2), export gating/audit (#3), key generation (#4), CSV escaping (#5),
+form validation (#6), the nginx headers/CSP (#7), the login throttle/lockout
+(#8) and the in-memory + sessionStorage session model (#9) are all unchanged.
+
+## Series complete — all 10 security fixes landed
+
+All 10 hardening fixes are done: (1) authentication scaffold, (2) role-based
+authorization, (3) export gating + audit logging, (4) secure random key/secret
+generation via Web Crypto, (5) CSV formula-injection neutralization, (6) input
+validation/sanitization, (7) HTTP security headers / CSP, (8) login
+rate-limiting / account lockout, (9) moving the auth session out of
+`localStorage` (in-memory + `sessionStorage`), and (10) versioned key prefix +
+rotation.
+
+**Standing recommendation (the real long-term fix):** Propela Ops is
+front-end-only, so several of these controls are necessarily
+client-side/best-effort. **Move authentication, session and rate-limit
+enforcement server-side once a backend exists** — issue the session as an
+`httpOnly`, `Secure`, `SameSite` cookie (out of reach of page scripts) and
+enforce login throttling/lockout on the server per-account **and** per-IP with a
+real client IP. That is what actually mitigates token theft and online password
+guessing; everything the front-end can do here is defense-in-depth on top of it.

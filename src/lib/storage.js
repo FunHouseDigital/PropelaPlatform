@@ -1,21 +1,35 @@
-import { seedNurses } from '../data/seedNurses';
-import { seedFacilities } from '../data/seedFacilities';
-import { seedCohorts } from '../data/seedCohorts';
-import { seedReferrers, seedCommunityChannels, seedEvents } from '../data/seedAcquisition';
-import { seedOutreachTemplates } from '../data/seedOutreach';
-import { seedPlacements } from '../data/seedPlacements';
-import { seedSettings } from '../data/seedSettings';
-import { seedDocuments } from '../data/seedDocuments';
-import { seedCommunications } from '../data/seedCommunications';
-import { seedReports } from '../data/seedReports';
-import { seedIntegrations } from '../data/seedIntegrations';
+import { seedCommunityChannels, seedEvents,seedReferrers } from '../data/seedAcquisition';
 import { seedAuditTrail } from '../data/seedAuditTrail';
 import { seedAutomations } from '../data/seedAutomations';
-import { seedNotifications as seedNotificationsModule } from '../data/seedNotifications';
+import { seedCohorts } from '../data/seedCohorts';
+import { seedCommunications } from '../data/seedCommunications';
+import { seedDocuments } from '../data/seedDocuments';
+import { seedFacilities } from '../data/seedFacilities';
 import { seedHelp } from '../data/seedHelp';
-import { clearSession, getSession, migrateLegacyAuthSession, setSession } from './sessionStore';
+import { seedIntegrations } from '../data/seedIntegrations';
+import { seedNotifications as seedNotificationsModule } from '../data/seedNotifications';
+import { seedNurses } from '../data/seedNurses';
+import { seedOutreachTemplates } from '../data/seedOutreach';
+import { seedPlacements } from '../data/seedPlacements';
+import { seedReports } from '../data/seedReports';
+import { seedSettings } from '../data/seedSettings';
+import {
+  clearSession,
+  getSession,
+  migrateLegacyAuthSession,
+  rotateSessionStoreMirror,
+  setSession,
+} from './sessionStore';
+import { rotateStorageKeys,STORAGE_PREFIX } from './storageKeys';
 
-const STORAGE_PREFIX = 'propela_ops_';
+/**
+ * App-wide localStorage key prefix. Fix #10: the versioned prefix
+ * ('propela_ops_v2_') and the legacy-prefix list now live in the single shared
+ * module `storageKeys.js`; this file no longer hardcodes the literal. getData /
+ * setData / removeData keep identical (key) signatures — only the physical
+ * prefix they prepend changed. Logical key names ('nurses', 'loginThrottle', …)
+ * and all stored shapes/values are UNCHANGED.
+ */
 
 /**
  * Get data from localStorage by key.
@@ -60,13 +74,29 @@ export function removeData(key) {
 export function initializeData() {
   // Fix #9: one-time migration of any legacy auth session out of the higher-risk
   // localStorage and into the in-memory + sessionStorage session store. Runs
-  // before anything else so no stale identity token is left behind in
-  // localStorage after the upgrade. Safe/idempotent when there is nothing to
-  // migrate. Note: AuthProvider seeds currentUser via getAuthSession() during
-  // its initial render, which also triggers this migration lazily — calling it
-  // here as well guarantees the localStorage key is purged even if that render
-  // path is skipped.
+  // FIRST so any auth token in localStorage (under the current OR a legacy
+  // prefix) is moved to the session store BEFORE the generic localStorage
+  // rotation below runs — otherwise the bulk rotation would simply re-prefix an
+  // identity token that must never live in localStorage. Safe/idempotent when
+  // there is nothing to migrate. Note: AuthProvider seeds currentUser via
+  // getAuthSession() during its initial render, which also triggers this
+  // migration lazily — calling it here as well guarantees the localStorage key
+  // is purged even if that render path is skipped.
   migrateLegacyAuthSession();
+
+  // Fix #10: one-time, idempotent prefix rotation across BOTH storage surfaces.
+  // Enumerate every key under a legacy prefix and move it into the current
+  // versioned namespace (copy-if-absent, then delete the legacy key) so no key
+  // is left behind under the stale prefix. Generic enumeration — does NOT rely
+  // on the seed list below — so helper-only keys rotate too. Never throws.
+  //   • localStorage: all bulk app data + the Fix #8 loginThrottle counters (an
+  //     active lockout therefore survives the upgrade, and stays in localStorage
+  //     so it also survives tab close per Fix #8).
+  //   • sessionStorage: the Fix #9 auth-session mirror (rotated via sessionStore
+  //     so a currently-signed-in user stays signed in across the upgrade within
+  //     the same tab). The auth-session path keeps flowing through sessionStore.
+  rotateStorageKeys(typeof localStorage !== 'undefined' ? localStorage : null);
+  rotateSessionStoreMirror();
 
   const nurses = getData('nurses');
   if (!nurses || nurses.length === 0) {
