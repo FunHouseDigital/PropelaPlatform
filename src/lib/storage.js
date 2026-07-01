@@ -13,6 +13,7 @@ import { seedAuditTrail } from '../data/seedAuditTrail';
 import { seedAutomations } from '../data/seedAutomations';
 import { seedNotifications as seedNotificationsModule } from '../data/seedNotifications';
 import { seedHelp } from '../data/seedHelp';
+import { clearSession, getSession, migrateLegacyAuthSession, setSession } from './sessionStore';
 
 const STORAGE_PREFIX = 'propela_ops_';
 
@@ -57,6 +58,16 @@ export function removeData(key) {
  * Seeds nurse and facility data if no data exists.
  */
 export function initializeData() {
+  // Fix #9: one-time migration of any legacy auth session out of the higher-risk
+  // localStorage and into the in-memory + sessionStorage session store. Runs
+  // before anything else so no stale identity token is left behind in
+  // localStorage after the upgrade. Safe/idempotent when there is nothing to
+  // migrate. Note: AuthProvider seeds currentUser via getAuthSession() during
+  // its initial render, which also triggers this migration lazily — calling it
+  // here as well guarantees the localStorage key is purged even if that render
+  // path is skipped.
+  migrateLegacyAuthSession();
+
   const nurses = getData('nurses');
   if (!nurses || nurses.length === 0) {
     const seededNurses = seedNurses();
@@ -143,7 +154,16 @@ export function initializeData() {
   const auditLog = getData('auditLog');
   const userSessions = getData('userSessions');
   const changeHistoryData = getData('changeHistory');
-  if (!activityFeed || activityFeed.length === 0 || !auditLog || auditLog.length === 0 || !userSessions || userSessions.length === 0 || !changeHistoryData || changeHistoryData.length === 0) {
+  if (
+    !activityFeed ||
+    activityFeed.length === 0 ||
+    !auditLog ||
+    auditLog.length === 0 ||
+    !userSessions ||
+    userSessions.length === 0 ||
+    !changeHistoryData ||
+    changeHistoryData.length === 0
+  ) {
     const seededAudit = seedAuditTrail();
     setData('activityFeed', seededAudit.activityFeed);
     setData('auditLog', seededAudit.auditLog);
@@ -166,7 +186,8 @@ export function initializeData() {
     if (!getData('apiEndpoints')) setData('apiEndpoints', seededIntegrations.apiEndpoints);
     if (!getData('apiKeys')) setData('apiKeys', seededIntegrations.apiKeys);
     if (!getData('webhooks')) setData('webhooks', seededIntegrations.webhooks);
-    if (!getData('webhookDeliveryLog')) setData('webhookDeliveryLog', seededIntegrations.webhookDeliveryLog);
+    if (!getData('webhookDeliveryLog'))
+      setData('webhookDeliveryLog', seededIntegrations.webhookDeliveryLog);
     if (!getData('syncStatus')) setData('syncStatus', seededIntegrations.syncStatus);
   }
 
@@ -481,12 +502,14 @@ export function saveAlertHistory(history) {
  * Get notification preferences from localStorage.
  */
 export function getNotificationPreferences() {
-  return getData('notificationPreferences') || {
-    document_expiry: true,
-    compliance_alert: true,
-    pipeline_change: true,
-    placement_update: true,
-  };
+  return (
+    getData('notificationPreferences') || {
+      document_expiry: true,
+      compliance_alert: true,
+      pipeline_change: true,
+      placement_update: true,
+    }
+  );
 }
 
 /**
@@ -810,7 +833,18 @@ export function saveNotificationAlerts(alerts) {
  * Get notification alert configuration from localStorage.
  */
 export function getNotifAlertConfig() {
-  return getData('notifAlertConfig') || { rules: [], quietHours: { enabled: false, startTime: '22:00', endTime: '07:00', timezone: 'Europe/London', exceptCritical: true } };
+  return (
+    getData('notifAlertConfig') || {
+      rules: [],
+      quietHours: {
+        enabled: false,
+        startTime: '22:00',
+        endTime: '07:00',
+        timezone: 'Europe/London',
+        exceptCritical: true,
+      },
+    }
+  );
 }
 
 /**
@@ -838,7 +872,16 @@ export function saveNotificationLog(log) {
  * Get toast preferences from localStorage.
  */
 export function getToastPreferences() {
-  return getData('toastPreferences') || { enabled: true, duration: 5000, maxVisible: 3, position: 'top-right', showForCategories: [], playSoundOnCritical: true };
+  return (
+    getData('toastPreferences') || {
+      enabled: true,
+      duration: 5000,
+      maxVisible: 3,
+      position: 'top-right',
+      showForCategories: [],
+      playSoundOnCritical: true,
+    }
+  );
 }
 
 /**
@@ -866,19 +909,21 @@ export function saveHelpArticles(articles) {
  * Get onboarding state from localStorage.
  */
 export function getOnboardingState() {
-  return getData('onboardingState') || {
-    currentStep: 0,
-    completedSteps: [],
-    isComplete: false,
-    skipped: false,
-    role: '',
-    preferences: {
-      emailNotifications: true,
-      desktopNotifications: false,
-      weeklyDigest: true,
-      compactLayout: false,
-    },
-  };
+  return (
+    getData('onboardingState') || {
+      currentStep: 0,
+      completedSteps: [],
+      isComplete: false,
+      skipped: false,
+      role: '',
+      preferences: {
+        emailNotifications: true,
+        desktopNotifications: false,
+        weeklyDigest: true,
+        compactLayout: false,
+      },
+    }
+  );
 }
 
 /**
@@ -892,11 +937,13 @@ export function saveOnboardingState(state) {
  * Get tour state from localStorage.
  */
 export function getTourState() {
-  return getData('tourState') || {
-    completedTours: [],
-    currentTourId: null,
-    currentTourStep: 0,
-  };
+  return (
+    getData('tourState') || {
+      completedTours: [],
+      currentTourId: null,
+      currentTourStep: 0,
+    }
+  );
 }
 
 /**
@@ -921,26 +968,37 @@ export function saveArticleVotes(votes) {
 }
 
 /**
- * Get the persisted auth session (current user) from localStorage.
- * Returns null when no user is signed in.
+ * Get the current auth session (signed-in user's identity), or null when signed
+ * out.
+ *
+ * Fix #9: the session no longer lives in localStorage. It is now held in-memory
+ * (source of truth) with a sessionStorage mirror for refresh-survival — see
+ * `src/lib/sessionStore.js` for the rationale and the honest XSS caveat. The
+ * function name/signature are unchanged so AuthContext and the resilient
+ * useAuth() fallback do not need to change.
  */
 export function getAuthSession() {
-  return getData('authSession') || null;
+  return getSession();
 }
 
 /**
- * Persist the auth session (current user) to localStorage.
- * Only non-sensitive identity fields should be stored (never the password).
+ * Persist the auth session (current user).
+ *
+ * Fix #9: routes through the in-memory + sessionStorage session store (NOT
+ * localStorage). Only non-sensitive identity fields should be passed in (never
+ * the password/hash) — AuthContext already restricts this to { id, name, email,
+ * role }.
  */
 export function saveAuthSession(user) {
-  setData('authSession', user);
+  setSession(user);
 }
 
 /**
- * Clear the persisted auth session from localStorage.
+ * Clear the persisted auth session (in-memory + sessionStorage mirror, plus any
+ * lingering legacy localStorage copy). Fix #9.
  */
 export function clearAuthSession() {
-  removeData('authSession');
+  clearSession();
 }
 
 /**
@@ -949,15 +1007,24 @@ export function clearAuthSession() {
  * Returns a plain map keyed by normalized email, holding ONLY failure counters
  * + timestamps (never any password/hash). See src/lib/loginThrottle.js for the
  * shape, policy and the honest no-backend caveat. Returns `{}` when empty.
+ *
+ * DELIBERATELY STAYS IN localStorage (NOT moved to sessionStorage by Fix #9):
+ * the lockout counters are anti-abuse state, not a secret/identity token. If
+ * they lived in sessionStorage an attacker could reset an active lockout simply
+ * by closing the tab (sessionStorage is per-tab and cleared on tab close),
+ * weakening Fix #8. Persisting them in localStorage means a lockout survives tab
+ * close as intended. (Both stores are still page-script-readable in this
+ * no-backend app — this control must ultimately move server-side; see
+ * loginThrottle.js.)
  */
 export function getLoginThrottle() {
   return getData('loginThrottle') || {};
 }
 
 /**
- * Persist the login-throttle state (Fix #8) to localStorage.
+ * Persist the login-throttle state (Fix #8) to localStorage. Kept on
+ * localStorage on purpose (see getLoginThrottle) so a lockout survives tab close.
  */
 export function saveLoginThrottle(state) {
   setData('loginThrottle', state || {});
 }
-

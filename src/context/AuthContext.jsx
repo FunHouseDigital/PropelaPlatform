@@ -2,10 +2,17 @@
  * Authentication context for Propela Ops.
  *
  * Provides the currently authenticated user plus login/logout actions. The
- * session is persisted to localStorage so a page refresh keeps the user signed
- * in. Permissions are NOT computed here — they are derived from the live
- * settings in AppContext via the usePermissions() hook, so the stored user only
- * needs to carry its identity and role.
+ * session is held in-memory (source of truth) with a sessionStorage mirror
+ * (Fix #9 — see src/lib/sessionStore.js), so a page refresh within the SAME TAB
+ * keeps the user signed in, while opening a new tab or reopening after the tab
+ * is closed now requires re-login. This is an intentional, security-positive
+ * change: the identity token is no longer persisted in localStorage (shared
+ * across tabs, survives browser close), which shrinks the XSS token-theft blast
+ * radius. AuthContext itself is unchanged by this — it still seeds from
+ * getAuthSession() and calls saveAuthSession()/clearAuthSession(); only where
+ * those helpers store the session moved. Permissions are NOT computed here —
+ * they are derived from the live settings in AppContext via the usePermissions()
+ * hook, so the stored user only needs to carry its identity and role.
  *
  * `useAuth()` is intentionally resilient: when called outside an AuthProvider
  * (e.g. in isolated component tests) it returns a safe, signed-out default

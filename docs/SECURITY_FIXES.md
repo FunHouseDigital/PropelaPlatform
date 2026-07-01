@@ -3,18 +3,18 @@
 A rolling checklist of the 10 security fixes being applied to Propela Ops. Each
 fix is branched off the previous fix's branch and opened as a PR against it.
 
-| # | Fix | Status | PR |
-|---|-----|--------|----|
-| 1 | Authentication scaffold | [x] | #28 |
-| 2 | Role-based authorization | [x] | #28 |
-| 3 | Export gating + audit logging | [x] | #29 |
-| 4 | Secure random key/secret generation (Web Crypto) | [x] | #30 |
-| 5 | CSV (formula) injection neutralization in all CSV exports | [x] | #31 |
-| 6 | Input validation / sanitization on all forms | [x] | #32 |
-| 7 | HTTP security headers / Content-Security-Policy hardening | [x] | #33 |
-| 8 | Login rate-limiting / account lockout | [x] | #34 |
-| 9 | _TBD_ | [ ] | — |
-| 10 | Key prefix renaming / rotation | [ ] | — |
+| #   | Fix                                                                | Status | PR  |
+| --- | ------------------------------------------------------------------ | ------ | --- |
+| 1   | Authentication scaffold                                            | [x]    | #28 |
+| 2   | Role-based authorization                                           | [x]    | #28 |
+| 3   | Export gating + audit logging                                      | [x]    | #29 |
+| 4   | Secure random key/secret generation (Web Crypto)                   | [x]    | #30 |
+| 5   | CSV (formula) injection neutralization in all CSV exports          | [x]    | #31 |
+| 6   | Input validation / sanitization on all forms                       | [x]    | #32 |
+| 7   | HTTP security headers / Content-Security-Policy hardening          | [x]    | #33 |
+| 8   | Login rate-limiting / account lockout                              | [x]    | #34 |
+| 9   | Move auth session out of localStorage (in-memory + sessionStorage) | [x]    | #35 |
+| 10  | Key prefix renaming / rotation                                     | [ ]    | —   |
 
 ## Fix #5 — CSV formula injection (done)
 
@@ -30,7 +30,7 @@ routes through it; no component builds CSV with its own escaping anymore.
    formula. Applied to header cells too.
 2. **RFC-4180 quoting:** values containing `,`, `"`, `\n`, `\r` (or surrounding
    whitespace) are wrapped in double quotes with embedded quotes doubled. The
-   formula prefix lands *inside* the quotes so it stays in the cell.
+   formula prefix lands _inside_ the quotes so it stays in the cell.
 
 Benign values (names, dates, numbers, emails) export unchanged. Export gating
 and audit logging from Fix #3 are unchanged. JSON exports are out of scope.
@@ -183,7 +183,7 @@ sign-in form.
 
 ### Policy (all named constants in `src/lib/loginThrottle.js`)
 
-- **Threshold:** lock an email after **`MAX_FAILED_ATTEMPTS = 5`** *consecutive*
+- **Threshold:** lock an email after **`MAX_FAILED_ATTEMPTS = 5`** _consecutive_
   failed attempts.
 - **Cooldown:** **`LOCKOUT_DURATION_MS = 15 minutes`** from the failure that
   tripped the lock.
@@ -227,7 +227,7 @@ timestamps** per email — `{ failures, firstFailureAt, lastFailureAt, lockedUnt
 
 The SHA-256 hashing and `authUsers.js` scheme are untouched. `login()` now:
 
-1. **Checks the throttle first** via `evaluateAttempt` — *before* any user
+1. **Checks the throttle first** via `evaluateAttempt` — _before_ any user
    lookup or hashing. If the email is locked it returns immediately with a
    clear, generic-but-actionable message
    (`"Too many attempts. Try again in N minutes."`) plus `locked`/`lockedUntil`,
@@ -252,11 +252,11 @@ Attempts are recorded in the existing audit log so they appear in the Audit
 Trail (`AuditLogTable`) with zero new wiring. `buildLoginAuditEntry` produces the
 standard audit shape and adds three action constants:
 
-| Action | Severity | When |
-|--------|----------|------|
-| `LOGIN_FAILED` | `warning` | a failed credential comparison (below threshold) |
+| Action             | Severity   | When                                                               |
+| ------------------ | ---------- | ------------------------------------------------------------------ |
+| `LOGIN_FAILED`     | `warning`  | a failed credential comparison (below threshold)                   |
 | `LOGIN_LOCKED_OUT` | `critical` | an attempt blocked by an active lock, or the failure that trips it |
-| `LOGIN_SUCCESS` | `info` | a successful sign-in |
+| `LOGIN_SUCCESS`    | `info`     | a successful sign-in                                               |
 
 Entries use `entityType: 'auth'`, `entityId: 'login'`, `ipAddress: 'client'`
 (the same no-backend placeholder as `exportGuard.js`'s `CLIENT_IP`), and record
@@ -309,12 +309,127 @@ Existing tests stay green (full suite passes).
 Auth (#1/#2), export gating/audit (#3), key generation (#4), CSV escaping (#5),
 form validation (#6) and the nginx headers/CSP (#7) are all unchanged.
 
+## Fix #9 — move the auth session out of localStorage (done)
 
-> **NEXT: Fix #9** — to be confirmed against the team's security backlog before
-> starting. Strong candidate: **move auth/session state out of `localStorage`**
-> to reduce XSS token-theft risk. Since a no-backend app cannot use `httpOnly`
-> cookies, the realistic shape is **in-memory + `sessionStorage`** (session
-> cleared on tab close, not readable across tabs, shorter-lived) rather than the
-> persistent `propela_ops_authSession` localStorage key today — with the same
-> honest caveat that only a real backend + `httpOnly` cookies fully mitigates
-> token theft. **Fix #10** remains **key-prefix renaming / rotation**.
+Before this fix, the signed-in user's identity lived in **`localStorage`** under
+`propela_ops_authSession` (via `storage.js`'s `getAuthSession` / `saveAuthSession`
+/ `clearAuthSession`). `localStorage` is **shared across every tab** for the
+origin and **persists until explicitly cleared**, so an XSS payload could read
+the identity token from _any_ tab and it **survived tab/browser close** — a large
+blast radius for token/identity theft. This fix relocates that session to
+**in-memory (source of truth) + `sessionStorage` (a refresh-survival mirror)**.
+
+### What moved (and what deliberately did NOT)
+
+- **Moved:** only the **auth session** (`propela_ops_authSession`). It is now held
+  in a module-level in-memory variable in **`src/lib/sessionStore.js`**, mirrored
+  to `sessionStorage` for same-tab refresh survival. The stored shape is
+  unchanged — only the non-sensitive identity fields `{ id, name, email, role }`,
+  **never a password/hash**.
+- **Stayed in `localStorage` on purpose:**
+  - **`propela_ops_loginThrottle`** (Fix #8 lockout counters). These are
+    **anti-abuse state, not a secret/identity token**. Moving them to
+    `sessionStorage` would let an attacker **reset an active lockout by simply
+    closing the tab** (sessionStorage is per-tab, cleared on close), weakening
+    Fix #8. Keeping them in `localStorage` means a lockout **survives tab close**
+    as intended. `getLoginThrottle` / `saveLoginThrottle` are unchanged.
+  - **`propela_ops_userSessions`** — seeded Audit-Trail _demo_ data (not the real
+    auth session), left untouched.
+  - All other bulk app data (nurses, settings, audit log, integrations, …) stays
+    in `localStorage` — out of scope here.
+
+### The session store (`src/lib/sessionStore.js`)
+
+A small, dependency-free, unit-testable module (mirroring the `exportGuard.js` /
+`loginThrottle.js` "pure logic in `lib/`" precedent):
+
+- `getSession()` — returns the in-memory session; when memory is empty (e.g. a
+  fresh page load re-created the module) it hydrates from the `sessionStorage`
+  mirror. In-memory is always the **source of truth** (a tampered mirror is
+  ignored while memory holds a value).
+- `setSession(user)` — updates in-memory first, then best-effort mirrors to
+  `sessionStorage`. A falsy value clears the session.
+- `clearSession()` — clears in-memory, the mirror, and (defensively) any lingering
+  legacy `localStorage` copy so a logout can never leave a token behind.
+- `migrateLegacyAuthSession()` — the one-time migration (below).
+
+**Every** `sessionStorage`/`localStorage` access is wrapped in `try/catch` behind
+`null`-returning safe accessors, so the store **falls back to in-memory-only**
+and never throws when web storage is unavailable or blocked (tests / SSR / Safari
+private mode / storage disabled).
+
+### One-time migration off `localStorage`
+
+On init, `migrateLegacyAuthSession()` checks for a legacy `propela_ops_authSession`
+entry in `localStorage`; if present it **copies it into the new store and deletes
+the `localStorage` key** so no stale identity token is left behind in the
+higher-risk store. This keeps a currently-signed-in user signed in across the
+upgrade **within the same tab**. It runs both **eagerly** (first line of
+`initializeData()` in `storage.js`) and **lazily** (via `getSession()`, which
+`AuthProvider` calls while seeding `currentUser` on its initial render), so the
+key is purged regardless of load order. The migration is idempotent, tolerates an
+unparseable legacy value (removes it without adopting it), and never throws.
+
+### Rewire without changing the public interface
+
+`storage.js`'s `getAuthSession` / `saveAuthSession` / `clearAuthSession` keep the
+**same names and signatures** and simply delegate to
+`getSession` / `setSession` / `clearSession`. `AuthContext` is therefore almost
+untouched: `AuthProvider` still seeds `currentUser` via `getAuthSession()`,
+`login()` still calls `saveAuthSession(sessionUser)`, `logout()` still calls
+`clearAuthSession()`, and the resilient signed-out `useAuth()` fallback is
+unchanged. **The Fix #8 throttle wiring, the audit logging and the SHA-256
+hashing were not touched.** `ProtectedRoute` / `RequirePermission` (which only
+read `isAuthenticated` / `currentUser`) behave identically.
+
+### Intended, security-positive behaviour change
+
+- A **page refresh within the same tab keeps the user signed in** (served from the
+  `sessionStorage` mirror).
+- **Opening a new tab, or reopening after the tab was closed, now requires
+  re-login** — the session is no longer shared across tabs and no longer survives
+  tab close. This is deliberate: it shrinks the XSS token-theft window and removes
+  cross-tab exposure.
+- `logout()` still clears the session **everywhere** (in-memory + mirror + any
+  legacy `localStorage` copy).
+
+### Honest caveat (mirrors `authUsers.js` / `exportGuard.js` / `loginThrottle.js`)
+
+This is a **blast-radius reduction, not a fix**. `sessionStorage` is still plain
+**JavaScript-readable by any script running in the tab**, so in-page XSS can still
+read the session **while the tab is open**. Propela Ops is front-end-only with
+**no backend**, so `httpOnly`, `Secure`, `SameSite` cookies — the only mechanism
+that actually keeps a session token out of reach of page scripts — are impossible
+here. What this change _does_ buy: no cross-tab exposure, no persistence past tab
+close, a shorter theft window, and in-memory as the source of truth. **Full
+mitigation of token theft MUST be done server-side with httpOnly cookies once a
+backend exists.** Do not overstate it.
+
+### Tests
+
+`src/lib/__tests__/sessionStore.test.js` (dependency-free; jsdom provides
+`sessionStorage`/`localStorage`) covers: the set/get/clear roundtrip; that the
+session mirrors to `sessionStorage` and is **never** written to `localStorage`;
+in-memory remaining the source of truth against a tampered mirror; the mirror
+surviving a **simulated reload** (`vi.resetModules()` + re-import → fresh in-memory
+instance re-hydrates from the persisted mirror); the **legacy-`localStorage`
+migration** moving the value **and deleting** the `localStorage` key (plus
+idempotency and unparseable-value handling); and the **graceful in-memory-only
+fallback** when `sessionStorage` access throws. The tests fail if migration/key
+removal, the mirror, or the fallback regress. The full suite stays green and no
+auth-flow enumeration tests were added (Fix #8 behaviour is preserved).
+
+Auth (#1/#2), export gating/audit (#3), key generation (#4), CSV escaping (#5),
+form validation (#6), the nginx headers/CSP (#7) and the login throttle/lockout
+(#8 — including keeping its counters in `localStorage`) are all unchanged.
+
+> **NEXT: Fix #10 (final in the series)** — **key-prefix renaming / rotation.**
+> Confirmed against the team's security backlog: namespace/version the app-wide
+> `propela_ops_` storage keys (e.g. a versioned prefix such as
+> `propela_ops_v2_…`) with a **migration path** that moves existing values to the
+> new keys and removes the old ones — the same migration discipline used for the
+> auth session in Fix #9, applied across the remaining keys. This is explicitly
+> the scope that Fix #9 left alone (Fix #9 kept the `propela_ops_` prefix and did
+> not rotate keys). Still no backend / real cookies are introduced by the series;
+> the standing recommendation to move auth + throttle enforcement server-side
+> (httpOnly cookies, per-account/per-IP limiting) remains the real long-term fix.
