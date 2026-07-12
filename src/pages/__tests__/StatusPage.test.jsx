@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
+
 import { render, screen } from '../../test/utils';
 import StatusPage from '../StatusPage';
 
@@ -13,6 +14,12 @@ vi.mock('../../lib/buildInfo', () => ({
 vi.mock('../../lib/config', () => ({
   default: {
     environment: 'staging',
+  },
+  // Named export consumed by featureFlags.js (reached transitively now that
+  // AppProvider routes through the Data_Layer facade → feature flags).
+  appConfig: {
+    environment: 'staging',
+    featureFlags: '',
   },
 }));
 

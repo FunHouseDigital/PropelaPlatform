@@ -75,3 +75,46 @@ node scripts/check-migrations.mjs
 ```
 
 This is a static text check only — it never connects to a database.
+
+
+## Running the RLS & integration test suites
+
+The property/unit suite (`npx vitest run`) is fully self-contained: property tests
+use an in-memory fake client and the RLS coverage test only scans these migration
+files statically. Neither opens a network connection.
+
+Two additional suites exercise a **real** database and are therefore SKIPPED by
+default (`describe.skipIf`). They run only when the `SUPABASE_TEST_*` environment
+variables are present, so they never fail or hang the default test run:
+
+| Suite | File | What it verifies |
+|-------|------|------------------|
+| Live RLS policy | `src/lib/dataLayer/__tests__/rlsPolicy.live.test.js` | Role matrix (Recruiter vs Admin), deny-by-default, no-role denial, anon-key stays RLS-constrained. |
+| Live integration | `src/lib/dataLayer/__tests__/supabase.integration.live.test.js` | Real read/write through the adapter, `bump_version` trigger, and manual-edit visibility. |
+
+The always-on static counterpart is
+`src/lib/dataLayer/__tests__/rlsPolicyCoverage.test.js`, which asserts the policy
+shape of every domain table (admin-only, per-user, operational) directly from the
+SQL in this folder.
+
+### Steps
+
+```bash
+# 1. Boot a local Supabase stack and apply every migration from scratch.
+supabase start
+supabase db reset
+
+# 2. Export the connection env (values are printed by `supabase start`).
+export SUPABASE_TEST_URL="http://127.0.0.1:54321"
+export SUPABASE_TEST_SERVICE_ROLE_KEY="<service_role key>"
+export SUPABASE_TEST_ANON_KEY="<anon key>"        # optional; recommended for RLS tests
+
+# 3. Run the live suites (now un-skipped).
+npx vitest run src/lib/dataLayer/__tests__/rlsPolicy.live.test.js \
+               src/lib/dataLayer/__tests__/supabase.integration.live.test.js
+```
+
+The `service_role` key is used only to provision test users and seed/clean rows;
+all RLS assertions are made through per-user anon clients so enforcement is
+observed exactly as the browser would experience it. These secrets must live only
+in the local shell / CI secrets — never in `.env` committed to the repo.

@@ -1,0 +1,1036 @@
+{
+  "pbtResults": {
+    "1.2 Write property test for configuration validation completeness": {
+      "status": "passed",
+      "lastRunTimestamp": 1783718067719
+    },
+    "2.5 Write property test for adapter routing mutual exclusion": {
+      "status": "passed",
+      "lastRunTimestamp": 1783719216712
+    },
+    "5.2 Write property test for pagination clamping": {
+      "status": "passed",
+      "lastRunTimestamp": 1783720423799
+    },
+    "5.3 Write property test for empty-result contract": {
+      "status": "passed",
+      "lastRunTimestamp": 1783720426411
+    },
+    "5.4 Write property test for server-side filter soundness and completeness": {
+      "status": "passed",
+      "lastRunTimestamp": 1783720428932
+    },
+    "5.7 Write property test for concurrency conflict detection / no lost updates": {
+      "status": "passed",
+      "lastRunTimestamp": 1783720431480
+    },
+    "5.9 Write property test for validation rejection leaving the database unchanged": {
+      "status": "passed",
+      "lastRunTimestamp": 1783720435323
+    },
+    "5.10 Write property test for write-then-read consistency": {
+      "status": "passed",
+      "lastRunTimestamp": 1783720437744
+    },
+    "5.11 Write property test for update idempotence": {
+      "status": "passed",
+      "lastRunTimestamp": 1783720441321
+    },
+    "5.13 Write property test for async loading/error state discipline": {
+      "status": "passed",
+      "lastRunTimestamp": 1783720443695
+    },
+    "7.3 Write property test for mass-update atomic visibility and rollback": {
+      "status": "passed",
+      "lastRunTimestamp": 1783721004280
+    },
+    "8.6 Write property test for session token attachment": {
+      "status": "passed",
+      "lastRunTimestamp": 1783721484708
+    },
+    "11.4 Write property test for migration round-trip identity preservation": {
+      "status": "passed",
+      "lastRunTimestamp": 1783723054212
+    }
+  },
+  "executionHistory": {
+    "1.1 Extend `src/lib/config.js` with `validateSupabaseConfig()` and a `ConfigError` screen": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667538
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717674849
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717921084
+      }
+    ],
+    "1.3 Create `src/lib/supabaseClient.js` from validated env vars": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667550
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783718089850
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783718237829
+      }
+    ],
+    "1.4 Extend `.env.example` with Supabase placeholders": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667556
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783718241511
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783718278240
+      }
+    ],
+    "1.5 Extend `src/lib/featureFlags.js` with the `SUPABASE_BACKEND` flag (default OFF)": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667567
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783718280809
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783718373631
+      }
+    ],
+    "2.1 Create `src/lib/dataLayer/domains.js` registry": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667572
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783718376833
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783718630770
+      }
+    ],
+    "2.2 Create `src/lib/dataLayer/errors.js` with `mapError` and `DataError`": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667575
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783718634110
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719127291
+      }
+    ],
+    "2.3 Create `src/lib/dataLayer/storageAdapter.js` wrapping `storage.js` behind the async API": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667579
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719130899
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719135146
+      }
+    ],
+    "2.4 Create `src/lib/dataLayer/index.js` flag-based router": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667582
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719137762
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719140368
+      }
+    ],
+    "3. Checkpoint - legacy path intact behind flag": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667585
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719157506
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719387965
+      }
+    ],
+    "4.1 Author core schema migration under `supabase/migrations/`": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667589
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719390385
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719826093
+      }
+    ],
+    "4.2 Add the `bump_version()` trigger to every domain table": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667592
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719829686
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719832294
+      }
+    ],
+    "4.3 Create `profiles` table and `current_role_name()` helper": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667596
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719834955
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719837423
+      }
+    ],
+    "4.4 Enable RLS and add policies for core tables": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667601
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719840020
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719843582
+      }
+    ],
+    "4.5 Author remaining schema-area migrations": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667604
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719846007
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719848491
+      }
+    ],
+    "4.6 Enable RLS and policies for remaining tables, including Admin-only domains": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667608
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719851024
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719853672
+      }
+    ],
+    "5.1 Implement generic `list` in `src/lib/dataLayer/supabaseAdapter.js`": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667611
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719865663
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720491853
+      }
+    ],
+    "5.5 Implement generic `get` and `create`": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667615
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720512536
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720514926
+      }
+    ],
+    "5.6 Implement generic conditional `update` with conflict detection": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667618
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720517453
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720520117
+      }
+    ],
+    "5.8 Implement generic conditional `delete` and validation rejection": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667622
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720528893
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720531380
+      }
+    ],
+    "5.12 Add per-request timeout, loading/error envelope, and session attachment": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667626
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720551022
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720553701
+      }
+    ],
+    "5.14 Wire per-domain Supabase bindings and the `saveX` compatibility shim": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667630
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720561471
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720564096
+      }
+    ],
+    "6. Checkpoint - Supabase adapter verified behind flag": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667633
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720570283
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720669588
+      }
+    ],
+    "7.1 Author `bulk_update_<domain>` transactional RPC migrations": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667636
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720672113
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721037252
+      }
+    ],
+    "7.2 Implement adapter `bulkUpsert<Domain>` wrappers": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667639
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721041023
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721044800
+      }
+    ],
+    "8.1 Create `src/lib/auth.js`": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667643
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721061320
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721582393
+      }
+    ],
+    "8.2 Create `src/context/AuthContext.jsx` and `useAuth()`": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667646
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721585297
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721588060
+      }
+    ],
+    "8.3 Add `RequireAuth` route guard": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667649
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721590704
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721593261
+      }
+    ],
+    "8.4 Build the login screen": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667653
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721597082
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721599709
+      }
+    ],
+    "9.1 Convert synchronous initializers to async per-domain slices": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667657
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721629053
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783722368811
+      }
+    ],
+    "9.2 Implement async write actions carrying `baseVersion` and conflict surfacing": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667660
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783722371715
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783722375988
+      }
+    ],
+    "9.3 Preserve the public context shape": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667663
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783722378624
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783722381245
+      }
+    ],
+    "9.4 Wire stale-data marking and retry control": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667666
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783722383768
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783722386535
+      }
+    ],
+    "10. Checkpoint - full flag-ON path exercised in tests": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667670
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783722397942
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783722498011
+      }
+    ],
+    "11.1 Create `scripts/migrate-seed-data.mjs` transform + ID-preserving upsert": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667673
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783722500727
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723142133
+      }
+    ],
+    "11.2 Add per-related-set transactions with rollback and failing-record reporting": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667676
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723144934
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723147669
+      }
+    ],
+    "11.3 Add per-domain count reporting and failure marking": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667681
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723150414
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723154189
+      }
+    ],
+    "12.1 Add `vercel.json`": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667684
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723169419
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723763811
+      }
+    ],
+    "12.2 Add a build-time required-config guard": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667687
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723766484
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723769129
+      }
+    ],
+    "13.1 Set up fast-check on the existing Vitest configuration": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667691
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723780686
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783724140492
+      }
+    ],
+    "14. Final checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717667694
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783724157342
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783724456302
+      }
+    ],
+    "1.2 Write property test for configuration validation completeness": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783717953126
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783718081320
+      }
+    ],
+    "1. Configuration, client, and feature-flag foundation": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783718373634
+      }
+    ],
+    "2. Data_Layer facade and adapter skeletons (legacy path stays live)": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719140375
+      }
+    ],
+    "2.5 Write property test for adapter routing mutual exclusion": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719147537
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719150393
+      }
+    ],
+    "4. Database schema, triggers, roles, and RLS (core tables first)": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783719853675
+      }
+    ],
+    "5.2 Write property test for pagination clamping": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720495869
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720498350
+      }
+    ],
+    "5.3 Write property test for empty-result contract": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720502108
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720504583
+      }
+    ],
+    "5.4 Write property test for server-side filter soundness and completeness": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720507300
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720509897
+      }
+    ],
+    "5.7 Write property test for concurrency conflict detection / no lost updates": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720522712
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720526303
+      }
+    ],
+    "5.9 Write property test for validation rejection leaving the database unchanged": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720534112
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720536658
+      }
+    ],
+    "5.10 Write property test for write-then-read consistency": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720539342
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720542107
+      }
+    ],
+    "5.11 Write property test for update idempotence": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720544669
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720547181
+      }
+    ],
+    "5.13 Write property test for async loading/error state discipline": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720556296
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720558850
+      }
+    ],
+    "5. Supabase adapter generic operations (validated behind flag)": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783720564099
+      }
+    ],
+    "7. Mass update (atomic) via Postgres RPC": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721044805
+      }
+    ],
+    "7.3 Write property test for mass-update atomic visibility and rollback": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721048544
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721051224
+      }
+    ],
+    "8. Authentication and authorization (frontend)": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721599715
+      }
+    ],
+    "8.5 Write unit tests for auth flows": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721603113
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721605671
+      }
+    ],
+    "8.6 Write property test for session token attachment": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721608256
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783721610827
+      }
+    ],
+    "9. AppContext refactor to async data-layer consumption": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783722386538
+      }
+    ],
+    "9.5 Write unit tests for failure-handling UI behavior": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783722390447
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783722393038
+      }
+    ],
+    "11. Seed-data migration script": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723154192
+      }
+    ],
+    "11.4 Write property test for migration round-trip identity preservation": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723156986
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723159593
+      }
+    ],
+    "11.5 Write unit tests for migration reporting": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723162678
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723165274
+      }
+    ],
+    "12. Deployment configuration and build-time guards": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723769132
+      }
+    ],
+    "12.3 Add CI smoke checks": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723771735
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783723774326
+      }
+    ],
+    "13. Test harness, RLS, and integration suites": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783724140495
+      }
+    ],
+    "13.2 Write RLS policy tests": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783724143173
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783724145797
+      }
+    ],
+    "13.3 Write integration tests against a local Supabase/test project": [
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783724150032
+      },
+      {
+        "executionId": "07e04454-9987-4a9d-89a6-a89b17fdc375",
+        "chatSessionId": "45e8d844-1c94-4919-8878-183ce134bab9",
+        "timestamp": 1783724152732
+      }
+    ]
+  }
+}

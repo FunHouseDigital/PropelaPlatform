@@ -1,9 +1,13 @@
-import { useEffect, lazy } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Layout from './components/layout/Layout';
+import { lazy,useEffect } from 'react';
+import { BrowserRouter, Route,Routes } from 'react-router-dom';
+
 import ErrorBoundary from './components/layout/ErrorBoundary';
-import { initializeData } from './lib/storage';
+import Layout from './components/layout/Layout';
+import RequireAuth from './components/layout/RequireAuth';
 import { AppProvider } from './context/AppContext';
+import { AuthProvider } from './context/AuthContext';
+import { initializeData } from './lib/storage';
+import Login from './pages/Login';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const NurseDatabase = lazy(() => import('./pages/NurseDatabase'));
@@ -32,8 +36,16 @@ export default function App() {
     <ErrorBoundary>
       <AppProvider>
         <BrowserRouter>
+          <AuthProvider>
           <Routes>
-          <Route element={<Layout />}>
+          <Route path="/login" element={<Login />} />
+          <Route
+            element={
+              <RequireAuth>
+                <Layout />
+              </RequireAuth>
+            }
+          >
             <Route path="/" element={<Dashboard />} />
             <Route path="/nurses" element={<NurseDatabase />} />
             <Route path="/acquisition" element={<AcquisitionHub />} />
@@ -53,6 +65,7 @@ export default function App() {
             <Route path="/status" element={<StatusPage />} />
           </Route>
         </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </AppProvider>
     </ErrorBoundary>
