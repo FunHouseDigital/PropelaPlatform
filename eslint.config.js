@@ -58,6 +58,8 @@ export default defineConfig([
     files: ['src/**/__tests__/**/*.{js,jsx}', 'src/test/**/*.{js,jsx}'],
     languageOptions: {
       globals: {
+        // Env-guarded live suites read Supabase test credentials from process.env
+        process: 'readonly',
         describe: 'readonly',
         it: 'readonly',
         expect: 'readonly',
