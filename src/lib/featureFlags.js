@@ -10,6 +10,10 @@ export const FEATURE_FLAGS = {
   WORKFLOW_AUTOMATION_V2: 'WORKFLOW_AUTOMATION_V2',
   DARK_MODE: 'DARK_MODE',
   AI_SUGGESTIONS: 'AI_SUGGESTIONS',
+  // Routes the Data_Layer to the Supabase backend when enabled. Default OFF so
+  // the legacy localStorage storage path stays live; enable via VITE_FEATURE_FLAGS
+  // or a localStorage override to cut over to Supabase.
+  SUPABASE_BACKEND: 'SUPABASE_BACKEND',
 };
 
 const STORAGE_KEY = 'propela_feature_flags_override';

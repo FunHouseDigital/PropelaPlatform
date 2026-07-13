@@ -1,12 +1,14 @@
-import { useEffect, lazy } from 'react';
+import { lazy, useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import RequirePermission from './components/auth/RequirePermission';
 import ErrorBoundary from './components/layout/ErrorBoundary';
 import Layout from './components/layout/Layout';
+import RequireAuth from './components/layout/RequireAuth';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
+import { isFeatureEnabled } from './lib/featureFlags';
 import { ROUTE_PERMISSIONS } from './lib/permissions';
 import { initializeData } from './lib/storage';
 import Login from './pages/Login';
@@ -52,40 +54,77 @@ const PROTECTED_ROUTES = [
   { path: '/status', element: <StatusPage /> },
 ];
 
+/**
+ * Flag OFF (default / live): hardened localStorage auth + RBAC. Routes are
+ * gated by ProtectedRoute (requires an authenticated user) and each page is
+ * additionally wrapped in RequirePermission using ROUTE_PERMISSIONS.
+ */
+function LegacyRoutes() {
+  return (
+    <Routes>
+      {/* Public route */}
+      <Route path="/login" element={<Login />} />
+
+      {/* Authenticated routes (redirect to /login when signed out) */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<Layout />}>
+          {PROTECTED_ROUTES.map(({ path, element }) => (
+            <Route
+              key={path}
+              path={path}
+              element={
+                <RequirePermission module={ROUTE_PERMISSIONS[path]}>
+                  {element}
+                </RequirePermission>
+              }
+            />
+          ))}
+        </Route>
+      </Route>
+
+      {/* Unknown routes fall back to the dashboard (which itself is gated) */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+/**
+ * Flag ON: Supabase auth. Routes are gated by RequireAuth, which redirects to
+ * /login when there is no active (non-expired) session.
+ */
+function SupabaseRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route
+        element={
+          <RequireAuth>
+            <Layout />
+          </RequireAuth>
+        }
+      >
+        {PROTECTED_ROUTES.map(({ path, element }) => (
+          <Route key={path} path={path} element={element} />
+        ))}
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
 export default function App() {
   useEffect(() => {
     initializeData();
   }, []);
+
+  const useSupabase = isFeatureEnabled('SUPABASE_BACKEND');
 
   return (
     <ErrorBoundary>
       <AppProvider>
         <AuthProvider>
           <BrowserRouter>
-            <Routes>
-              {/* Public route */}
-              <Route path="/login" element={<Login />} />
-
-              {/* Authenticated routes (redirect to /login when signed out) */}
-              <Route element={<ProtectedRoute />}>
-                <Route element={<Layout />}>
-                  {PROTECTED_ROUTES.map(({ path, element }) => (
-                    <Route
-                      key={path}
-                      path={path}
-                      element={
-                        <RequirePermission module={ROUTE_PERMISSIONS[path]}>
-                          {element}
-                        </RequirePermission>
-                      }
-                    />
-                  ))}
-                </Route>
-              </Route>
-
-              {/* Unknown routes fall back to the dashboard (which itself is gated) */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            {useSupabase ? <SupabaseRoutes /> : <LegacyRoutes />}
           </BrowserRouter>
         </AuthProvider>
       </AppProvider>

@@ -1,24 +1,41 @@
 /**
- * Authentication context for Propela Ops.
+ * Authentication context for Propela Ops — FLAG-SWITCHED HYBRID.
  *
- * Provides the currently authenticated user plus login/logout actions. The
- * session is held in-memory (source of truth) with a sessionStorage mirror
- * (Fix #9 — see src/lib/sessionStore.js), so a page refresh within the SAME TAB
- * keeps the user signed in, while opening a new tab or reopening after the tab
- * is closed now requires re-login. This is an intentional, security-positive
- * change: the identity token is no longer persisted in localStorage (shared
- * across tabs, survives browser close), which shrinks the XSS token-theft blast
- * radius. AuthContext itself is unchanged by this — it still seeds from
- * getAuthSession() and calls saveAuthSession()/clearAuthSession(); only where
- * those helpers store the session moved. Permissions are NOT computed here —
- * they are derived from the live settings in AppContext via the usePermissions()
- * hook, so the stored user only needs to carry its identity and role.
+ * A single `AuthProvider` / `useAuth()` pair serves two auth systems and picks
+ * one at runtime based on the `SUPABASE_BACKEND` feature flag:
  *
- * `useAuth()` is intentionally resilient: when called outside an AuthProvider
- * (e.g. in isolated component tests) it returns a safe, signed-out default
+ *   • Flag OFF (the DEFAULT / live path) → hardened localStorage auth (PR #36):
+ *     sha256-hashed credential check, rate-limit / account lockout (loginThrottle),
+ *     login audit logging, and identity held in-memory + sessionStorage. It
+ *     exposes the legacy contract the app consumers depend on:
+ *     `currentUser`, `isAuthenticated`, `login`, `logout`, `getLockStatus`.
+ *
+ *   • Flag ON → Supabase auth (main): hydrates the session, subscribes to auth
+ *     state changes, and derives the role from the `profiles` table for UI
+ *     gating only (RLS is authoritative). It exposes the Supabase contract:
+ *     `user`, `role`, `session`, `loading`, `error`, `enabled`, `signIn`,
+ *     `signOut`.
+ *
+ * Both providers publish a SUPERSET context value so consumers from either group
+ * resolve without crashing in either mode. In flag-ON mode the provider also
+ * derives a sensible `currentUser` / `isAuthenticated` from the Supabase session
+ * + role, and maps `login`/`logout` onto `signIn`/`signOut`, so the app's
+ * primary (legacy-contract) consumers — Sidebar, useExport, usePermissions,
+ * Forbidden, ProtectedRoute — keep working in BOTH modes. In flag-OFF mode the
+ * Supabase-specific fields are null/inert.
+ *
+ * `useAuth()` is intentionally resilient: when called outside a provider (e.g.
+ * in isolated component tests) it returns a safe, signed-out superset default
  * instead of throwing.
  */
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import { findAuthUserByEmail, sha256Hex } from '../data/authUsers';
 import {
@@ -37,6 +54,9 @@ import {
   recordFailure,
   recordSuccess,
 } from '../lib/loginThrottle';
+import * as supabaseAuth from '../lib/auth';
+import { isFeatureEnabled } from '../lib/featureFlags';
+import { getSupabaseClient } from '../lib/supabaseClient';
 
 const AuthContext = createContext(null);
 
@@ -88,15 +108,34 @@ function readLockStatus(email) {
   }
 }
 
-const SIGNED_OUT_DEFAULT = {
+/**
+ * Superset signed-out default returned by useAuth() when used outside a
+ * provider. Carries BOTH the legacy contract and the Supabase contract so any
+ * consumer stays import-safe regardless of which mode it expects.
+ */
+const SIGNED_OUT_DEFAULT = Object.freeze({
+  // Legacy (hardened localStorage) contract
   currentUser: null,
   isAuthenticated: false,
   login: async () => ({ success: false, error: 'Authentication is not available.' }),
   logout: () => {},
   getLockStatus: readLockStatus,
-};
+  // Supabase contract
+  user: null,
+  role: null,
+  session: null,
+  loading: false,
+  error: null,
+  enabled: false,
+  signIn: async () => ({ data: null, error: null }),
+  signOut: async () => ({ error: null }),
+});
 
-export function AuthProvider({ children }) {
+/**
+ * Flag-OFF provider: PR #36's hardened localStorage auth. Publishes the legacy
+ * contract plus inert Supabase fields so Supabase-shaped consumers don't crash.
+ */
+function LegacyAuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => getAuthSession());
 
   const login = useCallback(async (email, password) => {
@@ -201,11 +240,21 @@ export function AuthProvider({ children }) {
 
   const value = useMemo(
     () => ({
+      // Legacy (live) contract
       currentUser,
       isAuthenticated: !!currentUser,
       login,
       logout,
       getLockStatus: readLockStatus,
+      // Supabase contract — inert on the legacy path
+      user: null,
+      role: currentUser?.role ?? null,
+      session: null,
+      loading: false,
+      error: null,
+      enabled: false,
+      signIn: async () => ({ data: null, error: null }),
+      signOut: async () => ({ error: null }),
     }),
     [currentUser, login, logout]
   );
@@ -213,10 +262,177 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+/**
+ * Flag-ON provider: main's Supabase auth. Publishes the Supabase contract plus
+ * a DERIVED legacy contract (currentUser/isAuthenticated/login/logout) so the
+ * app's primary consumers keep working while the backend is active.
+ *
+ * On mount it hydrates the current session via {@link supabaseAuth.getSession},
+ * subscribes to auth state changes, and looks up the user's role from the
+ * `profiles` table for UI gating only — the authoritative authorization
+ * decision always lives in Postgres RLS. A user with no `profiles` row resolves
+ * to a `null` role.
+ */
+function SupabaseAuthProvider({ children }) {
+  const enabled = true; // only rendered when the flag is ON
+
+  const [session, setSession] = useState(null);
+  const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  /**
+   * Look up the caller's role from `profiles` for UI gating. No profile row ⇒
+   * role null. Failures degrade gracefully to a null role rather than throwing;
+   * RLS remains the authoritative gate regardless.
+   */
+  const fetchRole = useCallback(async (activeSession) => {
+    const userId = activeSession?.user?.id;
+    if (!userId) {
+      setRole(null);
+      return;
+    }
+    try {
+      const client = getSupabaseClient();
+      const { data, error: roleError } = await client
+        .from('profiles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+      setRole(roleError ? null : (data?.role ?? null));
+    } catch {
+      setRole(null);
+    }
+  }, []);
+
+  // Hydrate session + subscribe to auth changes.
+  useEffect(() => {
+    let active = true;
+
+    (async () => {
+      const { session: current, error: sessionError } = await supabaseAuth.getSession();
+      if (!active) return;
+      if (sessionError) setError(sessionError);
+      setSession(current);
+      await fetchRole(current);
+      if (active) setLoading(false);
+    })();
+
+    let subscription;
+    try {
+      const { data } = supabaseAuth.onAuthStateChange((_event, nextSession) => {
+        setSession(nextSession);
+        fetchRole(nextSession);
+      });
+      subscription = data?.subscription;
+    } catch {
+      // If subscription cannot be established, session hydration above still
+      // drives the initial state; nothing else to do here.
+    }
+
+    return () => {
+      active = false;
+      if (subscription && typeof subscription.unsubscribe === 'function') {
+        subscription.unsubscribe();
+      }
+    };
+  }, [fetchRole]);
+
+  const signIn = useCallback(
+    async (email, password) => {
+      setError(null);
+      const { data, error: signInError } = await supabaseAuth.signIn(email, password);
+      if (signInError) {
+        setError(signInError);
+        return { data: null, error: signInError };
+      }
+      // Update eagerly; the onAuthStateChange subscription will also fire.
+      if (data?.session) {
+        setSession(data.session);
+        await fetchRole(data.session);
+      }
+      return { data, error: null };
+    },
+    [fetchRole]
+  );
+
+  const signOut = useCallback(async () => {
+    const result = await supabaseAuth.signOut();
+    // Clear local auth state regardless of the network result so the UI never
+    // shows a stale authenticated state after logout.
+    setSession(null);
+    setRole(null);
+    setError(null);
+    return result;
+  }, []);
+
+  // Derived legacy identity so legacy-contract consumers keep working when the
+  // Supabase backend is active.
+  const currentUser = useMemo(() => {
+    const u = session?.user;
+    if (!u) return null;
+    return {
+      id: u.id,
+      email: u.email ?? null,
+      name: u.user_metadata?.name ?? u.email ?? 'User',
+      role: role ?? null,
+    };
+  }, [session, role]);
+
+  // Legacy login() bridged onto signIn() so the shared Login flow / consumers
+  // resolve identically in both modes.
+  const login = useCallback(
+    async (email, password) => {
+      const { error: signInError } = await signIn(email, password);
+      if (signInError) {
+        return { success: false, error: signInError.message || 'Unable to sign in.' };
+      }
+      return { success: true };
+    },
+    [signIn]
+  );
+
+  const value = useMemo(
+    () => ({
+      // Supabase contract
+      user: session?.user ?? null,
+      role,
+      session,
+      loading,
+      error,
+      enabled,
+      signIn,
+      signOut,
+      // Derived legacy contract
+      currentUser,
+      isAuthenticated: !!session?.user,
+      login,
+      logout: signOut,
+      getLockStatus: readLockStatus,
+    }),
+    [session, role, loading, error, enabled, signIn, signOut, currentUser, login]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+/**
+ * Public provider. Picks the concrete auth implementation from the
+ * `SUPABASE_BACKEND` feature flag at render time.
+ */
+export function AuthProvider({ children }) {
+  const useSupabase = isFeatureEnabled('SUPABASE_BACKEND');
+  return useSupabase ? (
+    <SupabaseAuthProvider>{children}</SupabaseAuthProvider>
+  ) : (
+    <LegacyAuthProvider>{children}</LegacyAuthProvider>
+  );
+}
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    // Resilient fallback for usage outside a provider (e.g. isolated tests).
+    // Resilient superset fallback for usage outside a provider (e.g. isolated tests).
     return SIGNED_OUT_DEFAULT;
   }
   return context;

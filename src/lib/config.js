@@ -31,4 +31,32 @@ export const isDevelopment = appConfig.environment === 'development';
 export const isStaging = appConfig.environment === 'staging';
 export const isProduction = appConfig.environment === 'production';
 
+/**
+ * Required Supabase configuration variable names (Req 7.1).
+ * These are the only Supabase secrets that may be exposed to the frontend;
+ * the service_role key and DB password are intentionally excluded (Req 7.2).
+ */
+export const REQUIRED_SUPABASE_CONFIG = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'];
+
+/**
+ * Validates that the required Supabase configuration values are present and
+ * non-empty at startup (Req 7.1, 7.3).
+ *
+ * A value is considered missing when the environment variable is absent, an
+ * empty string, or a string containing only whitespace.
+ *
+ * @returns {{ ok: boolean, missing: string[] }} `ok` is true only when every
+ *   required value is present; `missing` lists the names of every required
+ *   value that is absent or empty (in declaration order).
+ */
+export function validateSupabaseConfig() {
+  const env = import.meta.env || {};
+  const missing = REQUIRED_SUPABASE_CONFIG.filter((name) => {
+    const value = env[name];
+    return typeof value !== 'string' || value.trim() === '';
+  });
+
+  return { ok: missing.length === 0, missing };
+}
+
 export default appConfig;

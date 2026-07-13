@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('config module', () => {
   beforeEach(() => {
@@ -60,5 +60,79 @@ describe('config module', () => {
     expect(appConfig).toHaveProperty('environment');
     expect(appConfig).toHaveProperty('logLevel');
     expect(appConfig).toHaveProperty('featureFlags');
+  });
+});
+
+describe('validateSupabaseConfig', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('reports both variables missing when neither is set', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', undefined);
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', undefined);
+    const { validateSupabaseConfig } = await import('../config');
+
+    const result = validateSupabaseConfig();
+
+    expect(result.ok).toBe(false);
+    expect(result.missing).toEqual(['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY']);
+  });
+
+  it('returns ok with no missing when both are present', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://example.supabase.co');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon-key-123');
+    const { validateSupabaseConfig } = await import('../config');
+
+    const result = validateSupabaseConfig();
+
+    expect(result.ok).toBe(true);
+    expect(result.missing).toEqual([]);
+  });
+
+  it('reports only the missing variable when one is present', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://example.supabase.co');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', undefined);
+    const { validateSupabaseConfig } = await import('../config');
+
+    const result = validateSupabaseConfig();
+
+    expect(result.ok).toBe(false);
+    expect(result.missing).toEqual(['VITE_SUPABASE_ANON_KEY']);
+  });
+
+  it('treats an empty string as missing', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', '');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon-key-123');
+    const { validateSupabaseConfig } = await import('../config');
+
+    const result = validateSupabaseConfig();
+
+    expect(result.ok).toBe(false);
+    expect(result.missing).toEqual(['VITE_SUPABASE_URL']);
+  });
+
+  it('treats a whitespace-only string as missing', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', '   ');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', '\t\n');
+    const { validateSupabaseConfig } = await import('../config');
+
+    const result = validateSupabaseConfig();
+
+    expect(result.ok).toBe(false);
+    expect(result.missing).toEqual(['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY']);
+  });
+
+  it('preserves the declaration order of REQUIRED_SUPABASE_CONFIG', async () => {
+    const { REQUIRED_SUPABASE_CONFIG } = await import('../config');
+
+    expect(REQUIRED_SUPABASE_CONFIG).toEqual([
+      'VITE_SUPABASE_URL',
+      'VITE_SUPABASE_ANON_KEY',
+    ]);
   });
 });

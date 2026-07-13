@@ -23,10 +23,11 @@ describe('featureFlags module', () => {
       expect(FEATURE_FLAGS.WORKFLOW_AUTOMATION_V2).toBe('WORKFLOW_AUTOMATION_V2');
       expect(FEATURE_FLAGS.DARK_MODE).toBe('DARK_MODE');
       expect(FEATURE_FLAGS.AI_SUGGESTIONS).toBe('AI_SUGGESTIONS');
+      expect(FEATURE_FLAGS.SUPABASE_BACKEND).toBe('SUPABASE_BACKEND');
     });
 
-    it('has exactly 4 flags defined', () => {
-      expect(Object.keys(FEATURE_FLAGS)).toHaveLength(4);
+    it('has exactly 5 flags defined', () => {
+      expect(Object.keys(FEATURE_FLAGS)).toHaveLength(5);
     });
   });
 
@@ -38,6 +39,7 @@ describe('featureFlags module', () => {
       expect(flags.WORKFLOW_AUTOMATION_V2).toBe(false);
       expect(flags.DARK_MODE).toBe(false);
       expect(flags.AI_SUGGESTIONS).toBe(false);
+      expect(flags.SUPABASE_BACKEND).toBe(false);
     });
 
     it('returns flags matching known flag names only', () => {
@@ -118,6 +120,36 @@ describe('featureFlags module', () => {
       setLocalStorageOverrides({ DARK_MODE: false });
 
       expect(isFeatureEnabled('DARK_MODE')).toBe(false);
+    });
+  });
+
+  describe('SUPABASE_BACKEND flag (Requirements 9.1, 9.2)', () => {
+    it('defaults to false so the legacy localStorage path stays live', () => {
+      expect(isFeatureEnabled('SUPABASE_BACKEND')).toBe(false);
+      expect(getFeatureFlags().SUPABASE_BACKEND).toBe(false);
+    });
+
+    it('can be enabled via the localStorage override mechanism', () => {
+      setLocalStorageOverrides({ SUPABASE_BACKEND: true });
+
+      expect(isFeatureEnabled('SUPABASE_BACKEND')).toBe(true);
+    });
+
+    it('can be enabled via the VITE_FEATURE_FLAGS env mechanism', async () => {
+      vi.resetModules();
+      vi.doMock('../config', () => ({
+        appConfig: { featureFlags: 'SUPABASE_BACKEND' },
+      }));
+
+      const { isFeatureEnabled: isEnabled } = await import('../featureFlags');
+      expect(isEnabled('SUPABASE_BACKEND')).toBe(true);
+
+      vi.doUnmock('../config');
+    });
+
+    it('returns a boolean readable at module-init time', () => {
+      const value = isFeatureEnabled('SUPABASE_BACKEND');
+      expect(typeof value).toBe('boolean');
     });
   });
 });
