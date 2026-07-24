@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS placements (
   id                   text PRIMARY KEY,                          -- 'placement-001'
   owner_id             uuid REFERENCES auth.users(id),
   nurse_id             text REFERENCES nurses(id)     ON DELETE RESTRICT,
-  facility_id          text REFERENCES facilities(id) ON DELETE RESTRICT,
+  facility_id          text,                                      -- placement DESTINATION facility (UK/Ireland, uk-*/ie-* namespace). Intentionally NOT a foreign key: destinations are a distinct concept from the SA acquisition `facilities` table, so no FK to facilities(id).
   current_stage        text,                                      -- common filter (Req 12.4)
   target_country       text,
   visa_status          text,
