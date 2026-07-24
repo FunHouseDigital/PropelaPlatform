@@ -1,3 +1,5 @@
+import { seedNurses } from './seedNurses';
+
 // Deterministic pseudo-random using a seed
 function seededRandom(seed) {
   let s = seed;
@@ -173,11 +175,16 @@ export function seedDocuments() {
   const verificationQueue = [];
   let docIndex = 0;
 
+  // Canonical nurse list — documents (and verification queue entries) must
+  // reference EXISTING nurses so the documents.nurse_id → nurses(id) FK is
+  // satisfied on Supabase migration.
+  const nurseIds = seedNurses().map((n) => n.id);
+
   let nurseIndex = 0;
 
   for (const { stage, count: nurseCount } of STAGE_DISTRIBUTION) {
     for (let n = 0; n < nurseCount; n++) {
-      const nurseId = `nurse-${String(nurseIndex + 1).padStart(3, '0')}`;
+      const nurseId = nurseIds[nurseIndex % nurseIds.length];
       const docCount = getDocCountForStage(stage, rand);
       const docTypes = getDocTypesForStage(stage, rand, docCount);
 

@@ -1,3 +1,5 @@
+import { seedNurses } from './seedNurses';
+
 // Deterministic pseudo-random using a seed
 function seededRandom(seed) {
   let s = seed;
@@ -26,13 +28,6 @@ const PLACEMENT_STAGES = [
   'Visa Processing',
   'Placed',
   'Settled',
-];
-
-const NURSE_NAMES = [
-  'Lilian Majola', 'Nomsa Dlamini', 'Thandi Nkosi', 'Zanele Mthembu',
-  'Precious Ngcobo', 'Busisiwe Zulu', 'Lindiwe Ndlovu', 'Sipho Khumalo',
-  'Ayanda Mokoena', 'Mbali Molefe', 'Nonhlanhla Pillay', 'Lerato Naidoo',
-  'Thandeka Govender', 'Webson Mkhize', 'Nokwanda Sithole',
 ];
 
 const SPECIALTIES = [
@@ -86,6 +81,12 @@ export function seedPlacements() {
   const rand = seededRandom(77);
   const placements = [];
 
+  // Canonical nurse list — placements must reference EXISTING nurses so the
+  // placements.nurse_id → nurses(id) FK is satisfied on Supabase migration.
+  const nurses = seedNurses();
+  const nurseIds = nurses.map((n) => n.id);
+  const nurseNameById = new Map(nurses.map((n) => [n.id, n.fullName]));
+
   // Distribute across stages
   const stageDistribution = [
     { stage: 'Ready for Placement', count: 3 },
@@ -101,7 +102,9 @@ export function seedPlacements() {
 
   for (const { stage, count } of stageDistribution) {
     for (let i = 0; i < count; i++) {
-      const nurseName = NURSE_NAMES[placementIndex % NURSE_NAMES.length];
+      const nurseId = nurseIds[placementIndex % nurseIds.length];
+      // Keep the denormalized display name consistent with the referenced nurse.
+      const nurseName = nurseNameById.get(nurseId);
       const targetCountry = rand() > 0.4 ? 'UK' : 'Ireland';
       const facilities = targetCountry === 'UK' ? UK_FACILITIES : IRELAND_FACILITIES;
       const facility = pick(facilities, rand);
@@ -152,7 +155,7 @@ export function seedPlacements() {
 
       placements.push({
         id: `placement-${String(placementIndex + 1).padStart(3, '0')}`,
-        nurseId: `nurse-${String(placementIndex + 1).padStart(3, '0')}`,
+        nurseId,
         nurseName,
         targetCountry,
         facilityId: facility.id,
