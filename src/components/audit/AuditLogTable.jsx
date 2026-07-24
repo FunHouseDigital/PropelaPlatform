@@ -1,6 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Search, Download, ChevronUp, ChevronDown, FileText } from 'lucide-react';
+import { Search, Download, ChevronUp, ChevronDown, Lock } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { useExport } from '../../hooks/useExport';
+import { toCsv } from '../../lib/csv';
+
+const EXPORT_MODULE = 'Settings';
 
 const SEVERITY_BADGES = {
   info: 'bg-blue-100 text-blue-700',
@@ -12,11 +16,14 @@ const PAGE_SIZES = [10, 25, 50, 100];
 
 export default function AuditLogTable() {
   const { auditLog } = useAppContext();
+  const { runExport, canExport } = useExport();
+  const canExportData = canExport(EXPORT_MODULE);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState('timestamp');
   const [sortDirection, setSortDirection] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [exportError, setExportError] = useState('');
 
   const filteredAndSorted = useMemo(() => {
     let entries = [...auditLog];
@@ -69,33 +76,46 @@ export default function AuditLogTable() {
   };
 
   const handleExportCSV = () => {
-    const escapeCSVField = (value) => {
-      const str = String(value ?? '');
-      return `"${str.replace(/"/g, '""')}"`;
-    };
-
     const headers = ['Timestamp', 'User', 'Action', 'Entity Type', 'Entity ID', 'IP Address', 'Details', 'Severity'];
     const rows = filteredAndSorted.map((entry) => [
-      escapeCSVField(entry.timestamp),
-      escapeCSVField(entry.user),
-      escapeCSVField(entry.action),
-      escapeCSVField(entry.entityType),
-      escapeCSVField(entry.entityId),
-      escapeCSVField(entry.ipAddress),
-      escapeCSVField(entry.details),
-      escapeCSVField(entry.severity),
+      entry.timestamp,
+      entry.user,
+      entry.action,
+      entry.entityType,
+      entry.entityId,
+      entry.ipAddress,
+      entry.details,
+      entry.severity,
     ]);
 
-    const csvContent = [headers.map(escapeCSVField).join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `audit_log_export_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    // Shared CSV util: neutralizes formula injection (audit Details/User are
+    // free-text) and applies RFC-4180 quoting for every cell.
+    const csvContent = toCsv(rows, { headers });
+
+    // The audit log is sensitive — gate behind the Settings permission and
+    // audit the attempt (the new entry will itself appear in this log).
+    const { allowed, error } = runExport(
+      {
+        module: EXPORT_MODULE,
+        entityType: 'audit-log',
+        format: 'CSV',
+        recordCount: filteredAndSorted.length,
+        filters: searchQuery ? { search: searchQuery } : null,
+      },
+      () => {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `audit_log_export_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    );
+
+    setExportError(allowed ? '' : error);
   };
 
   const SortIndicator = ({ field }) => {
@@ -124,14 +144,27 @@ export default function AuditLogTable() {
             className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[#5B2D8E]/20"
           />
         </div>
-        <button
-          onClick={handleExportCSV}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#5B2D8E] rounded-md hover:bg-[#4a2574] transition-colors"
-        >
-          <Download size={14} />
-          Export CSV
-        </button>
+        {canExportData ? (
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#5B2D8E] rounded-md hover:bg-[#4a2574] transition-colors"
+          >
+            <Download size={14} />
+            Export CSV
+          </button>
+        ) : (
+          <span
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-md cursor-not-allowed"
+            title="You don't have permission to export the audit log"
+          >
+            <Lock size={14} />
+            Export CSV
+          </span>
+        )}
       </div>
+      {exportError && (
+        <p role="alert" className="text-sm text-red-600 font-medium">{exportError}</p>
+      )}
 
       {/* Table */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">

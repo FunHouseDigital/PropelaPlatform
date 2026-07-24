@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { AlertTriangle, Plus, ToggleLeft, ToggleRight, Clock, Trash2, Edit2, X, History } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { sanitizeText, validateNumber, MAX_LENGTHS } from '../../lib/validation';
 
 function generateId(prefix) {
   return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
@@ -35,6 +36,7 @@ export default function AutomatedAlerts() {
     name: '',
     description: '',
   });
+  const [formError, setFormError] = useState('');
 
   const nurseMap = useMemo(() => {
     const map = {};
@@ -58,6 +60,7 @@ export default function AutomatedAlerts() {
   function handleCreateRule() {
     setRuleForm({ trigger: 'document_expiry', value: 30, name: '', description: '' });
     setEditingRule(null);
+    setFormError('');
     setShowCreateModal(true);
   }
 
@@ -69,6 +72,7 @@ export default function AutomatedAlerts() {
       description: rule.description,
     });
     setEditingRule(rule);
+    setFormError('');
     setShowCreateModal(true);
   }
 
@@ -76,13 +80,23 @@ export default function AutomatedAlerts() {
     const triggerOption = TRIGGER_OPTIONS.find((t) => t.value === ruleForm.trigger);
     if (!triggerOption) return;
 
-    const name = ruleForm.name || triggerOption.label;
-    const description = ruleForm.description || `Alert when ${triggerOption.label.toLowerCase()} threshold of ${ruleForm.value} ${triggerOption.unit} is reached`;
+    // Threshold must be a whole number >= 1 (matches the input's min={1}).
+    if (!validateNumber(ruleForm.value, { min: 1, integer: true })) {
+      setFormError(`${triggerOption.fieldLabel} must be a whole number of at least 1.`);
+      return;
+    }
+    setFormError('');
+
+    const value = Number(ruleForm.value);
+    const name = sanitizeText(ruleForm.name, { maxLength: MAX_LENGTHS.NAME }) || triggerOption.label;
+    const description =
+      sanitizeText(ruleForm.description, { maxLength: MAX_LENGTHS.LONG_TEXT, allowNewlines: true }) ||
+      `Alert when ${triggerOption.label.toLowerCase()} threshold of ${value} ${triggerOption.unit} is reached`;
 
     if (editingRule) {
       const updated = alertRules.map((r) =>
         r.id === editingRule.id
-          ? { ...r, trigger: ruleForm.trigger, value: ruleForm.value, field: triggerOption.field, name, description }
+          ? { ...r, trigger: ruleForm.trigger, value, field: triggerOption.field, name, description }
           : r
       );
       updateAlertRules(updated);
@@ -92,7 +106,7 @@ export default function AutomatedAlerts() {
         name,
         trigger: ruleForm.trigger,
         field: triggerOption.field,
-        value: ruleForm.value,
+        value,
         enabled: true,
         createdAt: new Date().toISOString().split('T')[0],
         lastTriggered: null,
@@ -361,6 +375,9 @@ export default function AutomatedAlerts() {
               </div>
             </div>
             <div className="flex justify-end gap-2 p-4 border-t border-gray-200">
+              {formError && (
+                <p role="alert" className="text-sm text-red-600 mr-auto self-center">{formError}</p>
+              )}
               <button
                 onClick={() => setShowCreateModal(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"

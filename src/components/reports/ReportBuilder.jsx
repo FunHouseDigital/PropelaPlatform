@@ -25,8 +25,13 @@ import {
   Users,
   Building2,
   MessageSquare,
+  Lock,
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { useExport } from '../../hooks/useExport';
+import { toCsv } from '../../lib/csv';
+
+const EXPORT_MODULE = 'Analytics';
 
 const REPORT_TYPES = [
   { id: 'nurse_pipeline_summary', label: 'Nurse Pipeline Summary', icon: Users },
@@ -131,12 +136,15 @@ function AvailableFieldChip({ field, onAdd }) {
 export default function ReportBuilder() {
   // eslint-disable-next-line no-unused-vars
   const { nurses, cohorts, placements, facilities, communications } = useAppContext();
+  const { runExport, canExport } = useExport();
+  const canExportData = canExport(EXPORT_MODULE);
 
   const [reportType, setReportType] = useState('nurse_pipeline_summary');
   const [selectedFields, setSelectedFields] = useState([]);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [grouping, setGrouping] = useState('none');
   const [previewData, setPreviewData] = useState(null);
+  const [exportError, setExportError] = useState('');
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -363,30 +371,37 @@ export default function ReportBuilder() {
     if (!previewData || previewData.length === 0) return;
 
     const headers = selectedFields.map((f) => f.label);
-    const csvRows = [headers.join(',')];
+    // Route through the shared CSV util (formula-injection + RFC-4180 safe).
+    // Note the row key (f.id) differs from the header label (f.label).
+    const csvString = toCsv(
+      previewData.map((row) => selectedFields.map((f) => (row[f.id] !== undefined ? row[f.id] : ''))),
+      { headers }
+    );
 
-    previewData.forEach((row) => {
-      const values = selectedFields.map((f) => {
-        const val = row[f.id] !== undefined ? String(row[f.id]) : '';
-        if (val.includes(',') || val.includes('"') || val.includes('\n')) {
-          return `"${val.replace(/"/g, '""')}"`;
-        }
-        return val;
-      });
-      csvRows.push(values.join(','));
-    });
+    // Gate + audit the export before producing the file.
+    const { allowed, error } = runExport(
+      {
+        module: EXPORT_MODULE,
+        entityType: reportType,
+        format: 'CSV',
+        recordCount: previewData.length,
+        filters: { grouping, start: dateRange.start, end: dateRange.end },
+      },
+      () => {
+        const blob = new Blob([csvString], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `propela-${reportType}-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    );
 
-    const csvString = csvRows.join('\n');
-    const blob = new Blob([csvString], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `propela-${reportType}-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, [previewData, selectedFields, reportType]);
+    setExportError(allowed ? '' : error);
+  }, [previewData, selectedFields, reportType, grouping, dateRange, runExport]);
 
   return (
     <div className="space-y-6">
@@ -535,7 +550,7 @@ export default function ReportBuilder() {
           <Play size={16} />
           Generate Report
         </button>
-        {previewData && previewData.length > 0 && (
+        {previewData && previewData.length > 0 && canExportData && (
           <button
             onClick={exportCSV}
             className="flex items-center gap-2 px-4 py-2 border border-[#5B2D8E] text-[#5B2D8E] rounded-lg text-sm font-medium hover:bg-[#5B2D8E]/5 transition-colors"
@@ -544,7 +559,19 @@ export default function ReportBuilder() {
             Export CSV
           </button>
         )}
+        {previewData && previewData.length > 0 && !canExportData && (
+          <span
+            className="flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-400 rounded-lg text-sm font-medium cursor-not-allowed"
+            title="You don't have permission to export this data"
+          >
+            <Lock size={16} />
+            Export CSV
+          </span>
+        )}
       </div>
+      {exportError && (
+        <p role="alert" className="text-sm text-red-600 font-medium -mt-3">{exportError}</p>
+      )}
 
       {/* Report Preview Table */}
       {previewData && previewData.length > 0 && (

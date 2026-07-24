@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { Webhook, Plus, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { generateWebhookSecret } from '../../lib/secureRandom';
+import { sanitizeText, validateUrl, MAX_LENGTHS } from '../../lib/validation';
 
 const AVAILABLE_EVENTS = [
   'nurse.created',
@@ -12,27 +14,30 @@ const AVAILABLE_EVENTS = [
   'communication.sent',
 ];
 
-function generateSecret() {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let secret = 'whsec_';
-  for (let i = 0; i < 24; i++) {
-    secret += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return secret;
-}
-
 export default function WebhookConfig() {
   const { webhooks, updateWebhooks } = useAppContext();
   const [showForm, setShowForm] = useState(false);
   const [formUrl, setFormUrl] = useState('');
   const [selectedEvents, setSelectedEvents] = useState([]);
-  const [formSecret, setFormSecret] = useState(() => generateSecret());
+  const [formSecret, setFormSecret] = useState(() => generateWebhookSecret());
+  const [formError, setFormError] = useState('');
 
   const handleAddWebhook = useCallback(() => {
-    if (!formUrl.trim() || selectedEvents.length === 0) return;
+    // Enforce an http/https protocol allowlist in JS (the HTML type="url"
+    // attribute alone would accept javascript:, data:, file:, internal hosts…).
+    const url = sanitizeText(formUrl, { maxLength: MAX_LENGTHS.URL });
+    if (!validateUrl(url, { protocols: ['http', 'https'] })) {
+      setFormError('Enter a valid webhook URL using http:// or https://.');
+      return;
+    }
+    if (selectedEvents.length === 0) {
+      setFormError('Select at least one event type.');
+      return;
+    }
+    setFormError('');
     const newWebhook = {
       id: `wh-${Date.now()}`,
-      url: formUrl.trim(),
+      url,
       events: [...selectedEvents],
       secret: formSecret,
       status: 'active',
@@ -41,7 +46,7 @@ export default function WebhookConfig() {
     updateWebhooks([...webhooks, newWebhook]);
     setFormUrl('');
     setSelectedEvents([]);
-    setFormSecret(generateSecret());
+    setFormSecret(generateWebhookSecret());
     setShowForm(false);
   }, [webhooks, updateWebhooks, formUrl, selectedEvents, formSecret]);
 
@@ -100,6 +105,9 @@ export default function WebhookConfig() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#5B2D8E]/30 focus:border-[#5B2D8E]"
             />
           </div>
+          {formError && (
+            <p role="alert" className="text-sm text-red-600">{formError}</p>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Event Types</label>
             <div className="flex flex-wrap gap-2">
@@ -130,7 +138,7 @@ export default function WebhookConfig() {
               Register
             </button>
             <button
-              onClick={() => { setShowForm(false); setFormUrl(''); setSelectedEvents([]); setFormSecret(generateSecret()); }}
+              onClick={() => { setShowForm(false); setFormUrl(''); setSelectedEvents([]); setFormSecret(generateWebhookSecret()); setFormError(''); }}
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-300 transition-colors"
             >
               Cancel

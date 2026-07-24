@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Plus, Calendar, List, Clock, Globe, X, AlertCircle } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { sanitizeText, validateNumber, validateRequired, MAX_LENGTHS } from '../../lib/validation';
 
 const CRON_PRESETS = [
   { label: 'Daily at 9am', value: '0 9 * * *' },
@@ -50,6 +51,7 @@ function ScheduledActionForm({ action, onSave, onCancel }) {
   const [timezone, setTimezone] = useState(action?.timezone || 'Europe/London');
   const [batchSize, setBatchSize] = useState(action?.batchSize || 25);
   const [enabled, setEnabled] = useState(action?.enabled ?? true);
+  const [formError, setFormError] = useState('');
 
   const handlePresetChange = (presetLabel) => {
     setSelectedPreset(presetLabel);
@@ -60,14 +62,28 @@ function ScheduledActionForm({ action, onSave, onCancel }) {
   };
 
   const handleSave = () => {
-    if (!ruleName.trim()) return;
+    const cleanName = sanitizeText(ruleName, { maxLength: MAX_LENGTHS.NAME });
+    const cleanCron = sanitizeText(cronExpression, { maxLength: MAX_LENGTHS.SHORT_TEXT });
+    if (!validateRequired(cleanName)) {
+      setFormError('Rule name is required.');
+      return;
+    }
+    if (!validateRequired(cleanCron)) {
+      setFormError('A cron expression is required.');
+      return;
+    }
+    if (!validateNumber(batchSize, { min: 1, max: 500, integer: true })) {
+      setFormError('Batch size must be a whole number between 1 and 500.');
+      return;
+    }
+    setFormError('');
     onSave({
-      ruleName: ruleName.trim(),
-      cronExpression,
+      ruleName: cleanName,
+      cronExpression: cleanCron,
       timezone,
       batchSize: Number(batchSize),
       enabled,
-      description: cronToReadable(cronExpression),
+      description: cronToReadable(cleanCron),
     });
   };
 
@@ -159,6 +175,9 @@ function ScheduledActionForm({ action, onSave, onCancel }) {
           </div>
         </div>
         <div className="flex items-center justify-end gap-3 p-5 border-t border-gray-200">
+          {formError && (
+            <p role="alert" className="text-sm text-red-600 mr-auto self-center">{formError}</p>
+          )}
           <button onClick={onCancel} className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
             Cancel
           </button>

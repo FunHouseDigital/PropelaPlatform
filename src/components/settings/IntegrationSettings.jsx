@@ -1,6 +1,12 @@
 import { useState, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { Key, Webhook, Link2, Upload, Download, Save, Plus, Send } from 'lucide-react';
+import { useExport } from '../../hooks/useExport';
+import { generateApiKey } from '../../lib/secureRandom';
+import { toCsv } from '../../lib/csv';
+import { sanitizeText, validateUrl, MAX_LENGTHS } from '../../lib/validation';
+import { Key, Webhook, Link2, Upload, Download, Save, Plus, Send, Lock } from 'lucide-react';
+
+const EXPORT_MODULE = 'Settings';
 
 const WEBHOOK_EVENTS = [
   'nurse.created',
@@ -13,19 +19,23 @@ const WEBHOOK_EVENTS = [
 
 export default function IntegrationSettings() {
   const { settings, updateSettings } = useAppContext();
+  const { runExport, canExport } = useExport();
+  const canExportData = canExport(EXPORT_MODULE);
   const [apiKeys, setApiKeys] = useState([...settings.apiKeys]);
   const [webhooks, setWebhooks] = useState({ ...settings.webhooks });
   const [integrations, setIntegrations] = useState([...settings.integrations]);
   const [saved, setSaved] = useState(false);
   const [webhookTested, setWebhookTested] = useState(false);
   const [importMessage, setImportMessage] = useState('');
+  const [transferError, setTransferError] = useState('');
+  const [saveError, setSaveError] = useState('');
   const fileInputRef = useRef(null);
 
   const handleGenerateKey = () => {
     const newKey = {
       id: `key-${Date.now()}`,
       name: `API Key ${apiKeys.length + 1}`,
-      key: `pk_live_${Math.random().toString(36).slice(2, 18)}`,
+      key: generateApiKey(),
       createdDate: new Date().toISOString().split('T')[0],
       status: 'Active',
     };
@@ -63,34 +73,92 @@ export default function IntegrationSettings() {
   };
 
   const handleImportClick = () => {
+    // Defense in depth + UX: don't even open the file picker without permission.
+    if (!canExportData) {
+      runExport({
+        module: EXPORT_MODULE,
+        entityType: 'users',
+        format: 'CSV',
+        verb: 'import',
+      });
+      setTransferError("You don't have permission to import data.");
+      return;
+    }
+    setTransferError('');
     fileInputRef.current?.click();
   };
 
   const handleFileSelected = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setImportMessage('File imported successfully');
-      setTimeout(() => setImportMessage(''), 3000);
-    }
-    // Reset input so same file can be selected again
+    // Reset input early so the same file can be selected again.
     e.target.value = '';
+    if (!file) return;
+
+    // Handler-level enforcement: even a force-called select cannot bypass this.
+    const { allowed, error } = runExport(
+      {
+        module: EXPORT_MODULE,
+        entityType: 'users',
+        format: 'CSV',
+        verb: 'import',
+      },
+      () => {
+        setImportMessage('File imported successfully');
+        setTimeout(() => setImportMessage(''), 3000);
+      }
+    );
+    setTransferError(allowed ? '' : error);
   };
 
   const handleExport = () => {
     const users = settings.users || [];
-    const header = 'Name,Email,Role,Status';
-    const rows = users.map((u) => `${u.name},${u.email},${u.role},${u.status}`);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [header, ...rows].join('\n');
-    const link = document.createElement('a');
-    link.setAttribute('href', encodeURI(csvContent));
-    link.setAttribute('download', 'propela_export.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const headers = ['Name', 'Email', 'Role', 'Status'];
+    // Build via the shared util (formula-injection + RFC-4180 safe). Names are
+    // user-controlled, so this is a real injection surface.
+    const csvContent = toCsv(
+      users.map((u) => [u.name, u.email, u.role, u.status]),
+      { headers }
+    );
+
+    // Gate + audit the export of user records behind the Settings permission.
+    const { allowed, error } = runExport(
+      {
+        module: EXPORT_MODULE,
+        entityType: 'users',
+        format: 'CSV',
+        recordCount: users.length,
+      },
+      () => {
+        // Use a Blob download (consistent with the other exporters) instead of
+        // a `data:` URI: it avoids encodeURI quirks and keeps the escaped CSV
+        // content byte-for-byte intact.
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'propela_export.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    );
+    setTransferError(allowed ? '' : error);
   };
 
   const handleSave = () => {
-    const updated = { ...settings, apiKeys, webhooks, integrations };
+    // The webhook endpoint must use http/https when set (the type="url"
+    // attribute alone would accept javascript:/data:/file:). Sanitize the URL
+    // before persisting.
+    const cleanUrl = sanitizeText(webhooks.url, { maxLength: MAX_LENGTHS.URL });
+    if (cleanUrl && !validateUrl(cleanUrl, { protocols: ['http', 'https'] })) {
+      setSaveError('Webhook endpoint URL must use http:// or https://.');
+      return;
+    }
+    setSaveError('');
+    const cleanWebhooks = { ...webhooks, url: cleanUrl };
+    setWebhooks(cleanWebhooks);
+    const updated = { ...settings, apiKeys, webhooks: cleanWebhooks, integrations };
     updateSettings(updated);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -244,12 +312,22 @@ export default function IntegrationSettings() {
       {/* Data Import/Export */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Data Import / Export</h3>
+        {!canExportData && (
+          <p className="text-xs text-gray-500 mb-4 flex items-center gap-1.5">
+            <Lock size={12} />
+            You don&apos;t have permission to import or export data.
+          </p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <h4 className="text-sm font-medium text-gray-700 mb-2">Import Data</h4>
             <div
               onClick={handleImportClick}
-              className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#5B2D8E]/40 transition-colors cursor-pointer"
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                canExportData
+                  ? 'border-gray-300 hover:border-[#5B2D8E]/40 cursor-pointer'
+                  : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+              }`}
             >
               <Upload size={24} className="mx-auto text-gray-400 mb-2" />
               {importMessage ? (
@@ -272,19 +350,35 @@ export default function IntegrationSettings() {
           <div>
             <h4 className="text-sm font-medium text-gray-700 mb-2">Export Data</h4>
             <p className="text-xs text-gray-500 mb-3">Download all data as CSV</p>
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-1.5 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <Download size={14} />
-              Export CSV
-            </button>
+            {canExportData ? (
+              <button
+                onClick={handleExport}
+                className="flex items-center gap-1.5 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <Download size={14} />
+                Export CSV
+              </button>
+            ) : (
+              <span
+                className="inline-flex items-center gap-1.5 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed"
+                title="You don't have permission to export this data"
+              >
+                <Lock size={14} />
+                Export CSV
+              </span>
+            )}
           </div>
         </div>
+        {transferError && (
+          <p role="alert" className="text-sm text-red-600 font-medium mt-4">{transferError}</p>
+        )}
       </div>
 
       {/* Save Button */}
-      <div className="flex justify-end">
+      <div className="flex flex-col items-end gap-2">
+        {saveError && (
+          <p role="alert" className="text-sm text-red-600">{saveError}</p>
+        )}
         <button
           onClick={handleSave}
           className="flex items-center gap-2 px-5 py-2.5 bg-[#5B2D8E] text-white rounded-lg text-sm font-medium hover:bg-[#4a2574] transition-colors"

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { UserPlus, Save } from 'lucide-react';
+import { sanitizeText, validateForm, MAX_LENGTHS } from '../../lib/validation';
 
 const MODULES = ['Dashboard', 'Nurses', 'Acquisition', 'Cohorts', 'Outreach', 'Placements', 'Analytics', 'Settings'];
-const ROLES = ['Admin', 'Manager', 'Recruiter', 'Read-only'];
+const ROLES = ['Superadmin', 'Admin', 'Manager', 'Recruiter', 'Read-only'];
 
 export default function UserManagement() {
   const { settings, updateSettings } = useAppContext();
@@ -11,14 +12,25 @@ export default function UserManagement() {
   const [permissions, setPermissions] = useState({ ...settings.rolePermissions });
   const [activityLog] = useState([...settings.userActivityLog]);
   const [inviteForm, setInviteForm] = useState({ name: '', email: '', role: 'Recruiter' });
+  const [inviteError, setInviteError] = useState('');
   const [saved, setSaved] = useState(false);
 
   const handleInvite = () => {
-    if (!inviteForm.name || !inviteForm.email) return;
+    // Validate + sanitize through the shared util (replaces the old
+    // `if (!name || !email) return;` truthiness guard).
+    const { valid, errors } = validateForm(inviteForm, {
+      name: { label: 'Name', required: true, maxLength: MAX_LENGTHS.NAME },
+      email: { label: 'Email', required: true, email: true },
+    });
+    if (!valid) {
+      setInviteError(errors.name || errors.email);
+      return;
+    }
+    setInviteError('');
     const newUser = {
       id: `user-${Date.now()}`,
-      name: inviteForm.name,
-      email: inviteForm.email,
+      name: sanitizeText(inviteForm.name, { maxLength: MAX_LENGTHS.NAME }),
+      email: sanitizeText(inviteForm.email, { maxLength: MAX_LENGTHS.EMAIL }),
       role: inviteForm.role,
       status: 'Invited',
       lastActive: null,
@@ -133,6 +145,9 @@ export default function UserManagement() {
             Invite
           </button>
         </div>
+        {inviteError && (
+          <p role="alert" className="mt-3 text-sm text-red-600">{inviteError}</p>
+        )}
       </div>
 
       {/* Role Permissions Matrix */}
