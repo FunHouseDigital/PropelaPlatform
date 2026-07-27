@@ -7,6 +7,7 @@ import { seedPlacements } from '../data/seedPlacements';
 import { seedSettings } from '../data/seedSettings';
 import { seedDocuments } from '../data/seedDocuments';
 import { seedCommunications } from '../data/seedCommunications';
+import { seedReports } from '../data/seedReports';
 
 const STORAGE_PREFIX = 'propela_ops_';
 
@@ -121,6 +122,16 @@ export function initializeData() {
     setData('commEmailTemplates', seededComms.emailTemplates);
     setData('alertRules', seededComms.alertRules);
     setData('alertHistory', seededComms.alertHistory);
+  }
+
+  const scheduledReports = getData('scheduledReports');
+  if (!scheduledReports || scheduledReports.length === 0) {
+    const seededReports = seedReports();
+    setData('scheduledReports', seededReports.scheduledReports);
+    setData('exportHistory', seededReports.exportHistory);
+    setData('dashboardLayouts', seededReports.dashboardLayouts);
+    // Store the full layout object for consistency (not just the ID string)
+    setData('activeDashboardLayout', seededReports.dashboardLayouts[0] || null);
   }
 }
 
@@ -393,4 +404,62 @@ export function getNotificationPreferences() {
  */
 export function saveNotificationPreferences(preferences) {
   setData('notificationPreferences', preferences);
+}
+
+/**
+ * Get all scheduled reports from localStorage.
+ */
+export function getScheduledReports() {
+  return getData('scheduledReports') || [];
+}
+
+/**
+ * Save all scheduled reports to localStorage.
+ */
+export function saveScheduledReports(reports) {
+  setData('scheduledReports', reports);
+}
+
+/**
+ * Get all export history from localStorage.
+ */
+export function getExportHistory() {
+  return getData('exportHistory') || [];
+}
+
+/**
+ * Save all export history to localStorage.
+ */
+export function saveExportHistory(history) {
+  setData('exportHistory', history);
+}
+
+/**
+ * Get all dashboard layouts from localStorage.
+ */
+export function getDashboardLayouts() {
+  return getData('dashboardLayouts') || [];
+}
+
+/**
+ * Save all dashboard layouts to localStorage.
+ */
+export function saveDashboardLayouts(layouts) {
+  setData('dashboardLayouts', layouts);
+}
+
+/**
+ * Get active dashboard layout from localStorage.
+ * Returns a full layout object (with id, name, widgets).
+ */
+export function getActiveDashboardLayout() {
+  return getData('activeDashboardLayout') || null;
+}
+
+/**
+ * Save active dashboard layout to localStorage.
+ * Accepts a full layout object (with id, name, widgets).
+ */
+export function saveActiveDashboardLayout(layout) {
+  setData('activeDashboardLayout', layout);
 }

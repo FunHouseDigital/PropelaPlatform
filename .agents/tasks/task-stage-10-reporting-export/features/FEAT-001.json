@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Set up the Reports page scaffold with tabbed navigation, route, sidebar link, seed data, storage helpers, and AppContext integration for the Reporting & Export module",
+  "status": "completed",
+  "steps": [
+    "Create src/data/seedReports.js with deterministic seed data for: scheduled reports (6-8 items with id, name, type, frequency, recipients array, format, lastRun timestamp, status, reportConfig), export history (10-15 items with id, type, format, filters, timestamp, fileSize, status), and dashboard layouts (2-3 preset layouts with id, name, widgets array containing widgetId, type, title, size, position). Report types should include: nurse_pipeline_summary, compliance_status, placement_outcomes, cohort_progress, communication_activity.",
+    "Add storage helpers in src/lib/storage.js: getScheduledReports/saveScheduledReports, getExportHistory/saveExportHistory, getDashboardLayouts/saveDashboardLayouts, getActiveDashboardLayout/saveActiveDashboardLayout. Follow the existing get/save pattern with getData/setData.",
+    "Add initialization in the initializeData() function in src/lib/storage.js to seed reports data if not already present (same pattern as communications seeding).",
+    "Add state and updaters to src/context/AppContext.jsx for scheduledReports, exportHistory, dashboardLayouts, activeDashboardLayout - following the exact same useState + useCallback + save pattern used for other entities.",
+    "Create src/pages/Reports.jsx with the tabbed page pattern (matching Communications.jsx exactly). Tabs: Report Builder (FileText icon), Scheduled Reports (Clock icon), Export Center (Download icon), Dashboard Widgets (LayoutGrid icon). Import placeholder components from src/components/reports/.",
+    "Create placeholder components in src/components/reports/: ReportBuilder.jsx, ScheduledReports.jsx, ExportCenter.jsx, DashboardWidgets.jsx - each returning a simple div with the tab name as text.",
+    "Add the /reports route in src/App.jsx after /communications, importing the Reports page component.",
+    "Add Reports nav item in src/components/layout/Sidebar.jsx NAV_ITEMS array (path: '/reports', label: 'Reports', icon: ClipboardList from lucide-react), positioned between Analytics and Documents."
+  ],
+  "acceptance_criteria": [
+    "npm run build succeeds with no errors",
+    "npm run lint passes",
+    "/reports route exists in App.jsx",
+    "Reports appears in sidebar navigation between Analytics and Documents",
+    "Reports.jsx renders 4 tabs that switch content",
+    "Storage helpers and AppContext state for reports data are wired up",
+    "Seed data initializes on first load"
+  ],
+  "verification": [
+    "Run npm run build and confirm exit code 0",
+    "Run npm run lint and confirm no errors"
+  ],
+  "blocked_reason": null,
+  "findings": "Build succeeds. Pre-existing lint errors in AppContext.jsx (unused useEffect import and react-refresh/only-export-components warning) confirmed not caused by this feature. All new files pass lint cleanly. node_modules needed npm install before build could run."
+}
