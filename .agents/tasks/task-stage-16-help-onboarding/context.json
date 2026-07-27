@@ -1,0 +1,24 @@
+{
+  "project_type": "React + Vite + Tailwind CSS v4 SPA",
+  "language": "JavaScript (JSX)",
+  "build_system": "Vite via npm scripts",
+  "test_framework": "No test framework configured (no test files exist)",
+  "build_command": "npm run build",
+  "test_command": "npm run lint",
+  "verification_instructions": "Run npm run build to verify the project compiles without errors. Run npm run lint to check for lint issues.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd /projects/sandbox/PropelaPlatform && npm install",
+  "environment_constraints": "Open internet available. No test runner configured - verification is build + lint only.",
+  "contribution_requirements": "Follow existing module pattern: page component in src/pages/, components in src/components/<module>/, route in App.jsx, nav item in Sidebar.jsx, seed data in src/data/, storage helpers in src/lib/storage.js",
+  "key_patterns": "Each module has: a page component (src/pages/X.jsx) with tab navigation, sub-components in src/components/x/, seed data function in src/data/seedX.js, localStorage get/save helpers in src/lib/storage.js, context state+updater in src/context/AppContext.jsx. Tabs use a TABS array with id/label/icon rendered as pill buttons. Lucide icons throughout. Purple brand color #5B2D8E.",
+  "relevant_files": [
+    "src/App.jsx",
+    "src/components/layout/Sidebar.jsx",
+    "src/components/layout/Layout.jsx",
+    "src/context/AppContext.jsx",
+    "src/lib/storage.js",
+    "src/pages/Notifications.jsx",
+    "src/data/seedNotifications.js"
+  ],
+  "directory_structure": "src/pages/ - page-level route components; src/components/<module>/ - feature components; src/data/ - seed data factories; src/lib/ - utilities (storage.js); src/hooks/ - custom hooks; src/context/ - AppContext global state"
+}

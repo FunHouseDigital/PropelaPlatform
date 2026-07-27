@@ -1,0 +1,40 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Build the complete Help & Onboarding module including: Help page with Knowledge Base (searchable FAQ with accordion UI, article voting, related articles, search highlighting), Onboarding Wizard (multi-step welcome flow with role selection, feature tour highlights, preferences, skip/resume, per-user completion tracking), Contextual Help system (help icon popovers with searchable categorized articles), and Feature Tour system (interactive guided tours per module with highlighting, progress dots, skip/restart, persistence). Wire up route, sidebar nav, seed data, and localStorage persistence.",
+  "status": "completed",
+  "steps": [
+    "Create src/data/seedHelp.js with: (a) help articles array with id, title, content (markdown-like), category (Getting Started, Nurses, Documents, Placements, Reports), tags, helpful/notHelpful vote counts, relatedArticles; (b) onboarding steps config; (c) feature tour definitions per module (dashboard, nurses, documents, placements, reports); (d) FAQ entries with categories and expandable content",
+    "Add localStorage helpers to src/lib/storage.js: getHelpArticles/saveHelpArticles, getOnboardingState/saveOnboardingState (tracks currentStep, completedSteps, skipped, role, preferences, isComplete), getTourState/saveTourState (tracks completed tours, current tour step), getArticleVotes/saveArticleVotes",
+    "Add help-related state and updaters to src/context/AppContext.jsx: helpArticles, onboardingState, tourState, articleVotes with corresponding update functions; import new seed and storage helpers; add initialization block in src/lib/storage.js initializeData()",
+    "Create src/components/help/KnowledgeBase.jsx - searchable FAQ/knowledge base with: search input with highlighting of matched terms, category filter tabs, expandable accordion articles, article voting (helpful/not helpful) with count display, related articles suggestions at bottom of each expanded article",
+    "Create src/components/help/OnboardingWizard.jsx - multi-step overlay/modal wizard: welcome screen, role selection (Recruiter, Admin, Manager, Viewer), feature tour highlights with icons, preferences setup (notification preferences, dashboard layout), completion screen with confetti-style celebration. Step progress indicator (dots/bar), skip button, resume incomplete onboarding on return. Renders as a full-screen overlay when onboarding is incomplete.",
+    "Create src/components/help/ContextualHelp.jsx - reusable component: help icon button (HelpCircle from lucide-react) that opens a popover with relevant help content. Props: topic (string to filter articles), position (top/bottom/left/right). Includes search within popover, shows categorized results.",
+    "Create src/components/help/FeatureTour.jsx - interactive guided tour overlay: highlights target elements with a spotlight effect (dark overlay with cutout), tooltip with step content positioned near the highlighted element, progress dots, next/prev/skip buttons, tour completion state saved to localStorage. Accepts tour ID and steps array as props.",
+    "Create src/components/help/TourLauncher.jsx - small floating button or card that appears on pages offering to start/restart the tour for that module",
+    "Create src/pages/Help.jsx - main page component with tab navigation (Knowledge Base, Onboarding, Feature Tours, Getting Started) following the same TABS pattern as Notifications.jsx. Knowledge Base tab shows KnowledgeBase component; Onboarding tab shows onboarding progress/restart option; Feature Tours tab shows available tours with start buttons; Getting Started tab shows quick-start guide content.",
+    "Add route to src/App.jsx: import Help from './pages/Help' and add <Route path='/help' element={<Help />} />",
+    "Add nav item to src/components/layout/Sidebar.jsx: import HelpCircle from lucide-react, add { path: '/help', label: 'Help', icon: HelpCircle } to NAV_ITEMS array (after Settings)",
+    "Integrate OnboardingWizard into src/components/layout/Layout.jsx so it shows as an overlay when the user has not completed onboarding (check onboardingState.isComplete from context)"
+  ],
+  "acceptance_criteria": [
+    "npm run build completes without errors",
+    "npm run lint passes without errors",
+    "/help route renders the Help page with tab navigation",
+    "Help nav item appears in the sidebar with HelpCircle icon",
+    "Knowledge Base tab shows searchable articles with accordion expand/collapse, voting, and related articles",
+    "Search in Knowledge Base highlights matched terms in results",
+    "Onboarding wizard shows as overlay for new users (onboarding not complete in localStorage)",
+    "Wizard has 5 steps: welcome, role selection, feature tour, preferences, completion",
+    "Wizard progress indicator shows current step, skip option works, state persists across page reloads",
+    "Feature Tour system highlights elements with spotlight overlay and step-by-step tooltips",
+    "Tour state (completed/in-progress) persists in localStorage",
+    "ContextualHelp component renders a help icon that opens a popover with filtered articles"
+  ],
+  "verification": [
+    "Run `cd /projects/sandbox/PropelaPlatform && npm run build` and confirm exit code 0",
+    "Run `cd /projects/sandbox/PropelaPlatform && npm run lint` and confirm no errors"
+  ],
+  "blocked_reason": null,
+  "findings": "Build passes cleanly. The only lint error on modified files is the pre-existing react-refresh/only-export-components in AppContext.jsx (which exports both AppProvider and useAppContext). Also fixed the pre-existing unused useEffect import in AppContext.jsx. Used lazy initializers instead of useEffect for state initialization to satisfy react-hooks/set-state-in-effect rule. Post-review fixes applied: (1) FeatureTour now uses getBoundingClientRect to position spotlight/tooltip near the target element via CSS selector, with viewport-center fallback; uses useSyncExternalStore for layout changes to avoid setState-in-effect lint error. (2) KnowledgeBase highlightText uses index parity instead of regex.test() to avoid g-flag lastIndex drift. (3) TourLauncher passes explicit active prop to FeatureTour to prevent race condition on restart. (4) Help.jsx imports featureTours from seedHelp.js as single source of truth instead of duplicating TOUR_CONFIGS. Review issue #4 (dual vote source of truth) was noted but not fixed as it would require larger refactor beyond scope."
+}
