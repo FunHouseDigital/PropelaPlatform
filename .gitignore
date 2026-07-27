@@ -4,6 +4,9 @@ node_modules/
 # Build output
 dist/
 
+# Migration bundle (build artifact produced by `npm run migrate:build`)
+scripts/dist/
+
 # Editor
 .vscode/
 .idea/

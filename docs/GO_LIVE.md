@@ -74,15 +74,50 @@ Run the seed migration **locally** (or in CI) with the two server-only env vars 
 **Do not commit or paste these values.** Get the `service_role` key from Supabase →
 **Project Settings** → **API**.
 
+> **SECURITY:** the `service_role` key bypasses RLS. **Never commit or paste it**
+> into the repo, chat, tickets, or the SQL Editor. Pass it only via an environment
+> variable for this one-time step. These vars are **not** `VITE_`-prefixed, so they
+> never reach the browser bundle.
+
+### Recommended for launch — start clean apart from the live nurses
+
+For the **"start clean apart from the live nurses"** cutover, seed **ONLY the 7 live
+nurses** and leave everything else empty. Set `MIGRATE_DOMAINS=nurses`:
+
+```bash
+MIGRATE_DOMAINS=nurses \
+SUPABASE_URL="https://erlmsfxpwskufxmmeztg.supabase.co" \
+SUPABASE_SERVICE_ROLE_KEY="<service_role key — DO NOT COMMIT>" \
+npm run migrate:seed
+```
+
+> **NOTE:** `npm run migrate:seed` first bundles the migration script (via
+> esbuild) into `scripts/dist/migrate-seed.mjs`, then runs that bundle under
+> Node. Bundling resolves the app's extension-less relative imports so the
+> script runs under plain `node` (its `node_modules` deps stay external).
+
+With this, **everything else stays EMPTY** — facilities, placements, documents,
+communications, reports, etc. — and can be added later. In particular, **facilities
+will be added alongside CVs**. The script logs exactly which domain(s) it will
+migrate before it starts.
+
+`MIGRATE_DOMAINS` is a **comma-separated** list of **case-sensitive** domain names
+(e.g. `nurses` or `nurses,cohorts`). If any name is not a valid domain, the script
+prints the list of valid names and **exits without contacting the database**.
+
+### Migrate everything instead
+
+To migrate **all** domains, simply **omit** `MIGRATE_DOMAINS` (the default,
+unchanged behavior):
+
 ```bash
 SUPABASE_URL="https://erlmsfxpwskufxmmeztg.supabase.co" \
 SUPABASE_SERVICE_ROLE_KEY="<service_role key — DO NOT COMMIT>" \
-node scripts/migrate-seed-data.mjs
+npm run migrate:seed
 ```
 
-The script fails fast if either variable is missing and exits non-zero on any
-per-domain count mismatch. These vars are **not** `VITE_`-prefixed, so they never
-reach the browser bundle.
+The script fails fast if either required variable is missing and exits non-zero on
+any per-domain count mismatch.
 
 ---
 

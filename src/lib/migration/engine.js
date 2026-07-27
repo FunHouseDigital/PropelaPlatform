@@ -51,6 +51,83 @@ export function migrationOrder() {
 }
 
 /**
+ * Parse a raw `MIGRATE_DOMAINS`-style selection string into a clean list of
+ * domain names. Splits on commas, trims surrounding whitespace, and drops empty
+ * entries. A null/undefined/blank input yields an empty array, which every
+ * consumer here treats as "no selection ⇒ migrate ALL domains" (Req: backward
+ * compatible default).
+ *
+ * @param {string|null|undefined} raw
+ * @returns {string[]}
+ */
+export function parseDomainSelection(raw) {
+  if (raw == null) return [];
+  return String(raw)
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+/**
+ * Validate that every requested domain name exists in the domain registry.
+ * Throws an Error whose message names the unknown selection(s) and lists every
+ * valid domain name, so the CLI can print a clear error and exit BEFORE
+ * contacting the database. An empty selection is valid (⇒ all domains).
+ *
+ * @param {string[]} names
+ * @returns {string[]} the same validated names (for convenient chaining).
+ */
+export function validateDomainNames(names) {
+  const valid = new Set(listDomainNames());
+  const unknown = (names || []).filter((n) => !valid.has(n));
+  if (unknown.length > 0) {
+    throw new Error(
+      `Unknown domain name(s): ${unknown.join(', ')}. ` +
+        `Valid domain names are: ${listDomainNames().join(', ')}`,
+    );
+  }
+  return names || [];
+}
+
+/**
+ * Restrict a migration order to a selected subset of domain names while
+ * PRESERVING the referential-integrity ordering (independents before their
+ * dependents). An empty/null selection returns a copy of the full order
+ * unchanged (⇒ migrate everything).
+ *
+ * @param {string[]} order Full order (e.g. from {@link migrationOrder}).
+ * @param {string[]} names Selected domain names (may be empty).
+ * @returns {string[]}
+ */
+export function selectOrder(order, names) {
+  if (!names || names.length === 0) return [...order];
+  const wanted = new Set(names);
+  return order.filter((n) => wanted.has(n));
+}
+
+/**
+ * Restrict a `{ domainName: sourceData }` map to a selected subset of domain
+ * names. An empty/null selection returns a shallow copy of the full map
+ * unchanged (⇒ migrate everything). Selected names with no entry in the source
+ * map are simply omitted; the engine already treats a missing source as an
+ * empty set, so ordering (which may still include the name) stays consistent.
+ *
+ * @param {Record<string, unknown>} allSources
+ * @param {string[]} names Selected domain names (may be empty).
+ * @returns {Record<string, unknown>}
+ */
+export function selectSources(allSources, names) {
+  if (!names || names.length === 0) return { ...allSources };
+  const selected = {};
+  for (const name of names) {
+    if (Object.prototype.hasOwnProperty.call(allSources, name)) {
+      selected[name] = allSources[name];
+    }
+  }
+  return selected;
+}
+
+/**
  * Extract the offending record id from a PostgREST/driver error, if the driver
  * surfaced it (our `.mjs` wrapper and the test fakes place it in `details`).
  */

@@ -19,12 +19,27 @@
  *     when a required variable is missing.
  *
  * USAGE:
+ *   # Migrate ALL domains (default, unchanged behavior):
  *   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/migrate-seed-data.mjs
+ *
+ *   # Migrate ONLY a subset of domains (e.g. a "start clean apart from the live
+ *   # nurses" cutover). MIGRATE_DOMAINS is a comma-separated list of
+ *   # case-sensitive registry domain names:
+ *   MIGRATE_DOMAINS=nurses \
+ *   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/migrate-seed-data.mjs
+ *
+ * ENVIRONMENT:
+ *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY  required, server-only (see SECURITY).
+ *   MIGRATE_DOMAINS                          optional. When set and non-empty,
+ *     ONLY the listed domains are migrated (referential-integrity ordering is
+ *     preserved, filtered to the selection). Each name must be a valid registry
+ *     domain; an unknown name aborts (exit 1) BEFORE the database is contacted.
+ *     When unset/empty, ALL domains are migrated (default).
  *
  * EXIT CODES:
  *   0  migration succeeded (every domain loaded == source)
- *   1  configuration missing, an unexpected error, or migration marked FAILED
- *      (any per-domain count mismatch — Req 5.7)
+ *   1  configuration missing, an unknown MIGRATE_DOMAINS name, an unexpected
+ *      error, or migration marked FAILED (any per-domain count mismatch — Req 5.7)
  */
 
 import process from 'node:process';
@@ -36,7 +51,11 @@ import { loadSeedSources } from '../src/lib/migration/loader.js';
 import {
   formatReport,
   migrationOrder,
+  parseDomainSelection,
   runMigration,
+  selectOrder,
+  selectSources,
+  validateDomainNames,
 } from '../src/lib/migration/engine.js';
 
 /**
@@ -78,16 +97,48 @@ function createMigrationClient(url, serviceRoleKey) {
   return supabase;
 }
 
+/**
+ * Resolve the optional `MIGRATE_DOMAINS` selection. Parses the env var, then
+ * validates every requested name against the domain registry. On an unknown
+ * name it prints a clear error listing all valid domain names and exits 1
+ * BEFORE any database client is created/contacted.
+ *
+ * @returns {string[]} validated selection ([] ⇒ migrate all domains).
+ */
+function readDomainSelection() {
+  const selection = parseDomainSelection(process.env.MIGRATE_DOMAINS);
+  try {
+    validateDomainNames(selection);
+  } catch (err) {
+    console.error('Migration aborted: ' + err.message);
+    process.exit(1);
+  }
+  return selection;
+}
+
 async function main() {
+  // Resolve + validate the domain selection first, so an invalid MIGRATE_DOMAINS
+  // fails fast BEFORE we construct a service-role client or touch the database.
+  const selection = readDomainSelection();
+
   const { url, serviceRoleKey } = readConfig();
   const client = createMigrationClient(url, serviceRoleKey);
 
-  const sources = loadSeedSources();
-  const report = await runMigration({
-    client,
-    sources,
-    order: migrationOrder(),
-  });
+  const sources = selectSources(loadSeedSources(), selection);
+  const order = selectOrder(migrationOrder(), selection);
+
+  if (selection.length > 0) {
+    console.log(
+      `MIGRATE_DOMAINS set — migrating ONLY these ${order.length} domain(s): ` +
+        order.join(', '),
+    );
+  } else {
+    console.log(
+      `MIGRATE_DOMAINS unset — migrating ALL ${order.length} domains.`,
+    );
+  }
+
+  const report = await runMigration({ client, sources, order });
 
   console.log(formatReport(report));
 
