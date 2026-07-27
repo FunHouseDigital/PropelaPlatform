@@ -28,8 +28,8 @@ const HASH_PROPELAH = '254a2bd816f78a82e76078582dbd91429e88afb6c2e08b022bfab908c
 const HASH_DEMO = 'fc5b9ec55812fb2112a68c9c0ccad5bacb33f6b4de166b4dc53367692df071d5';
 
 export const AUTH_USERS = [
-  { id: 'user-superadmin-vuyo', name: 'Vuyo Mahlangu', email: 'Vuyo@propela.co', role: 'Superadmin', passwordHash: HASH_PROPELAH },
-  { id: 'user-superadmin-aya', name: 'Aya Nkosi', email: 'Aya@propela.co', role: 'Superadmin', passwordHash: HASH_PROPELAH },
+  { id: 'user-superadmin-vuyo', name: 'Vuyo Pakade', email: 'Vuyo@propela.co', role: 'Superadmin', passwordHash: HASH_PROPELAH },
+  { id: 'user-superadmin-aya', name: 'Aya Yokwana', email: 'Aya@propela.co', role: 'Superadmin', passwordHash: HASH_PROPELAH },
   { id: 'user-1', name: 'Aya Nkosi', email: 'admin@propela.co.za', role: 'Admin', passwordHash: HASH_DEMO },
   { id: 'user-2', name: 'James Okafor', email: 'james@propela.co.za', role: 'Manager', passwordHash: HASH_DEMO },
   { id: 'user-3', name: 'Priya Sharma', email: 'priya@propela.co.za', role: 'Recruiter', passwordHash: HASH_DEMO },

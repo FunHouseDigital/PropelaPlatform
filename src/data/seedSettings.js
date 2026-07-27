@@ -41,8 +41,8 @@ export function seedSettings() {
       'stage-10': [],
     },
     users: [
-      { id: 'user-superadmin-vuyo', name: 'Vuyo Mahlangu', email: 'Vuyo@propela.co', role: 'Superadmin', status: 'Active', lastActive: '2024-12-18T09:30:00Z' },
-      { id: 'user-superadmin-aya', name: 'Aya Nkosi', email: 'Aya@propela.co', role: 'Superadmin', status: 'Active', lastActive: '2024-12-18T09:15:00Z' },
+      { id: 'user-superadmin-vuyo', name: 'Vuyo Pakade', email: 'Vuyo@propela.co', role: 'Superadmin', status: 'Active', lastActive: '2024-12-18T09:30:00Z' },
+      { id: 'user-superadmin-aya', name: 'Aya Yokwana', email: 'Aya@propela.co', role: 'Superadmin', status: 'Active', lastActive: '2024-12-18T09:15:00Z' },
       { id: 'user-1', name: 'Aya Nkosi', email: 'aya@propela.co.za', role: 'Admin', status: 'Active', lastActive: '2024-12-18T09:15:00Z' },
       { id: 'user-2', name: 'James Okafor', email: 'james@propela.co.za', role: 'Manager', status: 'Active', lastActive: '2024-12-17T16:42:00Z' },
       { id: 'user-3', name: 'Priya Sharma', email: 'priya@propela.co.za', role: 'Recruiter', status: 'Active', lastActive: '2024-12-18T08:30:00Z' },
