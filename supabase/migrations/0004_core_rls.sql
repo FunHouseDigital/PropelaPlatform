@@ -5,7 +5,9 @@
 -- =============================================================================
 -- Enables Row Level Security on every core domain table and defines two
 -- policies per operational table:
---   * admin_all      — Admin has full access to all rows (Req 4.4)
+--   * admin_all      — Admin AND Superadmin have full access to all rows (Req 4.4).
+--                      Superadmin is the go-live top-level role and shares the
+--                      exact same full access as Admin on every table.
 --   * recruiter_ops  — Recruiter has operational read/write access (Req 4.2)
 --
 -- RLS relies on DENY-BY-DEFAULT: with RLS enabled and no matching policy, the
@@ -25,7 +27,7 @@ ALTER TABLE nurses ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS admin_all     ON nurses;
 DROP POLICY IF EXISTS recruiter_ops ON nurses;
 CREATE POLICY admin_all ON nurses FOR ALL
-  USING (current_role_name() = 'Admin')      WITH CHECK (current_role_name() = 'Admin');
+  USING (current_role_name() IN ('Admin','Superadmin'))      WITH CHECK (current_role_name() IN ('Admin','Superadmin'));
 CREATE POLICY recruiter_ops ON nurses FOR ALL
   USING (current_role_name() = 'Recruiter')  WITH CHECK (current_role_name() = 'Recruiter');
 
@@ -34,7 +36,7 @@ ALTER TABLE facilities ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS admin_all     ON facilities;
 DROP POLICY IF EXISTS recruiter_ops ON facilities;
 CREATE POLICY admin_all ON facilities FOR ALL
-  USING (current_role_name() = 'Admin')      WITH CHECK (current_role_name() = 'Admin');
+  USING (current_role_name() IN ('Admin','Superadmin'))      WITH CHECK (current_role_name() IN ('Admin','Superadmin'));
 CREATE POLICY recruiter_ops ON facilities FOR ALL
   USING (current_role_name() = 'Recruiter')  WITH CHECK (current_role_name() = 'Recruiter');
 
@@ -43,7 +45,7 @@ ALTER TABLE cohorts ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS admin_all     ON cohorts;
 DROP POLICY IF EXISTS recruiter_ops ON cohorts;
 CREATE POLICY admin_all ON cohorts FOR ALL
-  USING (current_role_name() = 'Admin')      WITH CHECK (current_role_name() = 'Admin');
+  USING (current_role_name() IN ('Admin','Superadmin'))      WITH CHECK (current_role_name() IN ('Admin','Superadmin'));
 CREATE POLICY recruiter_ops ON cohorts FOR ALL
   USING (current_role_name() = 'Recruiter')  WITH CHECK (current_role_name() = 'Recruiter');
 
@@ -52,7 +54,7 @@ ALTER TABLE placements ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS admin_all     ON placements;
 DROP POLICY IF EXISTS recruiter_ops ON placements;
 CREATE POLICY admin_all ON placements FOR ALL
-  USING (current_role_name() = 'Admin')      WITH CHECK (current_role_name() = 'Admin');
+  USING (current_role_name() IN ('Admin','Superadmin'))      WITH CHECK (current_role_name() IN ('Admin','Superadmin'));
 CREATE POLICY recruiter_ops ON placements FOR ALL
   USING (current_role_name() = 'Recruiter')  WITH CHECK (current_role_name() = 'Recruiter');
 
@@ -61,7 +63,7 @@ ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS admin_all     ON documents;
 DROP POLICY IF EXISTS recruiter_ops ON documents;
 CREATE POLICY admin_all ON documents FOR ALL
-  USING (current_role_name() = 'Admin')      WITH CHECK (current_role_name() = 'Admin');
+  USING (current_role_name() IN ('Admin','Superadmin'))      WITH CHECK (current_role_name() IN ('Admin','Superadmin'));
 CREATE POLICY recruiter_ops ON documents FOR ALL
   USING (current_role_name() = 'Recruiter')  WITH CHECK (current_role_name() = 'Recruiter');
 
@@ -70,7 +72,7 @@ ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS admin_all     ON audit_log;
 DROP POLICY IF EXISTS recruiter_ops ON audit_log;
 CREATE POLICY admin_all ON audit_log FOR ALL
-  USING (current_role_name() = 'Admin')      WITH CHECK (current_role_name() = 'Admin');
+  USING (current_role_name() IN ('Admin','Superadmin'))      WITH CHECK (current_role_name() IN ('Admin','Superadmin'));
 CREATE POLICY recruiter_ops ON audit_log FOR ALL
   USING (current_role_name() = 'Recruiter')  WITH CHECK (current_role_name() = 'Recruiter');
 
@@ -81,9 +83,9 @@ CREATE POLICY recruiter_ops ON audit_log FOR ALL
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS profiles_admin_all   ON profiles;
 DROP POLICY IF EXISTS profiles_self_select ON profiles;
--- Admin: full read/write of all profiles (role administration).
+-- Admin/Superadmin: full read/write of all profiles (role administration).
 CREATE POLICY profiles_admin_all ON profiles FOR ALL
-  USING (current_role_name() = 'Admin')      WITH CHECK (current_role_name() = 'Admin');
+  USING (current_role_name() IN ('Admin','Superadmin'))      WITH CHECK (current_role_name() IN ('Admin','Superadmin'));
 -- Any authenticated user: read own profile row (for UI role gating).
 CREATE POLICY profiles_self_select ON profiles FOR SELECT
   USING (user_id = auth.uid());
