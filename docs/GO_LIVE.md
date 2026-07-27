@@ -88,8 +88,13 @@ nurses** and leave everything else empty. Set `MIGRATE_DOMAINS=nurses`:
 MIGRATE_DOMAINS=nurses \
 SUPABASE_URL="https://erlmsfxpwskufxmmeztg.supabase.co" \
 SUPABASE_SERVICE_ROLE_KEY="<service_role key — DO NOT COMMIT>" \
-node scripts/migrate-seed-data.mjs
+npm run migrate:seed
 ```
+
+> **NOTE:** `npm run migrate:seed` first bundles the migration script (via
+> esbuild) into `scripts/dist/migrate-seed.mjs`, then runs that bundle under
+> Node. Bundling resolves the app's extension-less relative imports so the
+> script runs under plain `node` (its `node_modules` deps stay external).
 
 With this, **everything else stays EMPTY** — facilities, placements, documents,
 communications, reports, etc. — and can be added later. In particular, **facilities
@@ -108,7 +113,7 @@ unchanged behavior):
 ```bash
 SUPABASE_URL="https://erlmsfxpwskufxmmeztg.supabase.co" \
 SUPABASE_SERVICE_ROLE_KEY="<service_role key — DO NOT COMMIT>" \
-node scripts/migrate-seed-data.mjs
+npm run migrate:seed
 ```
 
 The script fails fast if either required variable is missing and exits non-zero on
