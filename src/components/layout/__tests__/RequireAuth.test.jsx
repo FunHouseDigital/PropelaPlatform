@@ -46,8 +46,7 @@ beforeEach(() => {
   authState.value = { session: null, loading: false };
 });
 
-// DEFERRED: Supabase auth-UI is deferred; re-enable when it ships (hybrid: flag OFF uses hardened localStorage auth).
-describe.skip('RequireAuth', () => {
+describe('RequireAuth', () => {
   it('renders children with no gating when the flag is OFF (Req 9.1)', () => {
     flag.value = false;
     authState.value = { session: null, loading: false };

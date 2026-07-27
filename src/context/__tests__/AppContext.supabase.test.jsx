@@ -67,9 +67,7 @@ async function renderAndSettle() {
   return utils;
 }
 
-// DEFERRED: Supabase auth-UI rollout is deferred. These flag-ON AppContext tests are
-// temporarily skipped; re-enable (remove .skip) when the Supabase auth-UI ships. (PR #37)
-describe.skip('AppContext Supabase path (flag ON)', () => {
+describe('AppContext Supabase path (flag ON)', () => {
   beforeEach(() => {
     localStorage.clear();
     latest = null;
