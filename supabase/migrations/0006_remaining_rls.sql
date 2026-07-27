@@ -8,15 +8,19 @@
 --
 --   1. ADMIN-ONLY (adminOnly in domains.js): integrations, api_endpoints,
 --      api_keys, webhooks, webhook_delivery_log, sync_status, settings.
---      ONLY an Admin policy exists, so Recruiters (and everyone else) are denied
---      by deny-by-default (Req 4.3).
+--      ONLY an Admin/Superadmin policy exists, so Recruiters (and everyone else)
+--      are denied by deny-by-default (Req 4.3).
 --
 --   2. PER-USER (perUser in domains.js): rows are scoped to owner_id = auth.uid()
---      so a user sees/writes only their own rows, while Admin can access all
+--      so a user sees/writes only their own rows, while Admin/Superadmin can
+--      access all (Req 4.2, 4.4).
+--
+--   3. OPERATIONAL (everything else): Admin/Superadmin full access + Recruiter
+--      operational access — the same pattern as the core recruitment tables
 --      (Req 4.2, 4.4).
 --
---   3. OPERATIONAL (everything else): Admin full access + Recruiter operational
---      access — the same pattern as the core recruitment tables (Req 4.2, 4.4).
+-- Superadmin is the go-live top-level role and is granted the SAME full access
+-- as Admin everywhere via `current_role_name() IN ('Admin','Superadmin')`.
 --
 -- RLS is enabled on every table (Req 10.3); with no matching policy the request
 -- returns zero rows (Req 10.4). Policies are dropped-if-exists then recreated so
@@ -37,8 +41,8 @@ BEGIN
     EXECUTE format('DROP POLICY IF EXISTS admin_only ON %I;', t);
     EXECUTE format(
       'CREATE POLICY admin_only ON %I FOR ALL '
-      || 'USING (current_role_name() = ''Admin'') '
-      || 'WITH CHECK (current_role_name() = ''Admin'');', t);
+      || 'USING (current_role_name() IN (''Admin'',''Superadmin'')) '
+      || 'WITH CHECK (current_role_name() IN (''Admin'',''Superadmin''));', t);
   END LOOP;
 END;
 $$;
@@ -58,11 +62,11 @@ BEGIN
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY;', t);
     EXECUTE format('DROP POLICY IF EXISTS admin_all ON %I;', t);
     EXECUTE format('DROP POLICY IF EXISTS owner_rw  ON %I;', t);
-    -- Admin: full access to all rows.
+    -- Admin/Superadmin: full access to all rows.
     EXECUTE format(
       'CREATE POLICY admin_all ON %I FOR ALL '
-      || 'USING (current_role_name() = ''Admin'') '
-      || 'WITH CHECK (current_role_name() = ''Admin'');', t);
+      || 'USING (current_role_name() IN (''Admin'',''Superadmin'')) '
+      || 'WITH CHECK (current_role_name() IN (''Admin'',''Superadmin''));', t);
     -- Owner: read/write only their own rows.
     EXECUTE format(
       'CREATE POLICY owner_rw ON %I FOR ALL '
@@ -73,7 +77,7 @@ END;
 $$;
 
 -- ---- 3. Operational tables ------------------------------------------------
--- Admin full access + Recruiter operational access (core-table pattern).
+-- Admin/Superadmin full access + Recruiter operational access (core-table pattern).
 DO $$
 DECLARE
   t text;
@@ -102,8 +106,8 @@ BEGIN
     EXECUTE format('DROP POLICY IF EXISTS recruiter_ops ON %I;', t);
     EXECUTE format(
       'CREATE POLICY admin_all ON %I FOR ALL '
-      || 'USING (current_role_name() = ''Admin'') '
-      || 'WITH CHECK (current_role_name() = ''Admin'');', t);
+      || 'USING (current_role_name() IN (''Admin'',''Superadmin'')) '
+      || 'WITH CHECK (current_role_name() IN (''Admin'',''Superadmin''));', t);
     EXECUTE format(
       'CREATE POLICY recruiter_ops ON %I FOR ALL '
       || 'USING (current_role_name() = ''Recruiter'') '
