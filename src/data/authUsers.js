@@ -11,29 +11,18 @@
  * effective permissions are driven by the live settings (editable in the
  * Settings > User Management screen), not by anything hardcoded here.
  *
- * Demo credentials:
+ * Credentials — Propela Ops is operated by exactly two superadmins:
  *   Superadmins (full access to everything):
  *     - Vuyo@propela.co  / PropelaH
  *     - Aya@propela.co   / PropelaH
- *   Role demo accounts (password: Propela123!):
- *     - admin@propela.co.za    (Admin)
- *     - james@propela.co.za    (Manager)
- *     - priya@propela.co.za    (Recruiter)
- *     - sarah@propela.co.za    (Read-only)
  */
 
 // SHA-256("PropelaH")
 const HASH_PROPELAH = '254a2bd816f78a82e76078582dbd91429e88afb6c2e08b022bfab908ce53e554';
-// SHA-256("Propela123!")
-const HASH_DEMO = 'fc5b9ec55812fb2112a68c9c0ccad5bacb33f6b4de166b4dc53367692df071d5';
 
 export const AUTH_USERS = [
   { id: 'user-superadmin-vuyo', name: 'Vuyo Pakade', email: 'Vuyo@propela.co', role: 'Superadmin', passwordHash: HASH_PROPELAH },
   { id: 'user-superadmin-aya', name: 'Aya Yokwana', email: 'Aya@propela.co', role: 'Superadmin', passwordHash: HASH_PROPELAH },
-  { id: 'user-1', name: 'Aya Nkosi', email: 'admin@propela.co.za', role: 'Admin', passwordHash: HASH_DEMO },
-  { id: 'user-2', name: 'James Okafor', email: 'james@propela.co.za', role: 'Manager', passwordHash: HASH_DEMO },
-  { id: 'user-3', name: 'Priya Sharma', email: 'priya@propela.co.za', role: 'Recruiter', passwordHash: HASH_DEMO },
-  { id: 'user-5', name: 'Sarah Williams', email: 'sarah@propela.co.za', role: 'Read-only', passwordHash: HASH_DEMO },
 ];
 
 /**

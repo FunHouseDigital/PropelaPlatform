@@ -62,7 +62,8 @@ export default function UserManagement() {
     <div className="space-y-6">
       {/* Users Table */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Users</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-1">Users</h3>
+        <p className="text-sm text-gray-500 mb-4">Propela Ops is operated by its two superadmins.</p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
