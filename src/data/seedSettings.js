@@ -43,11 +43,6 @@ export function seedSettings() {
     users: [
       { id: 'user-superadmin-vuyo', name: 'Vuyo Pakade', email: 'Vuyo@propela.co', role: 'Superadmin', status: 'Active', lastActive: '2024-12-18T09:30:00Z' },
       { id: 'user-superadmin-aya', name: 'Aya Yokwana', email: 'Aya@propela.co', role: 'Superadmin', status: 'Active', lastActive: '2024-12-18T09:15:00Z' },
-      { id: 'user-1', name: 'Aya Nkosi', email: 'aya@propela.co.za', role: 'Admin', status: 'Active', lastActive: '2024-12-18T09:15:00Z' },
-      { id: 'user-2', name: 'James Okafor', email: 'james@propela.co.za', role: 'Manager', status: 'Active', lastActive: '2024-12-17T16:42:00Z' },
-      { id: 'user-3', name: 'Priya Sharma', email: 'priya@propela.co.za', role: 'Recruiter', status: 'Active', lastActive: '2024-12-18T08:30:00Z' },
-      { id: 'user-4', name: 'David Mthembu', email: 'david@propela.co.za', role: 'Recruiter', status: 'Active', lastActive: '2024-12-16T14:20:00Z' },
-      { id: 'user-5', name: 'Sarah Williams', email: 'sarah@propela.co.za', role: 'Read-only', status: 'Inactive', lastActive: '2024-11-28T10:05:00Z' },
     ],
     // Superadmin has access to every module. The permission layer (usePermissions)
     // also short-circuits to grant Superadmins access to any current or future module.
@@ -58,19 +53,7 @@ export function seedSettings() {
       Recruiter: { Dashboard: true, Nurses: true, Acquisition: true, Cohorts: true, Outreach: true, Placements: false, Analytics: false, Settings: false },
       'Read-only': { Dashboard: true, Nurses: true, Acquisition: false, Cohorts: false, Outreach: false, Placements: false, Analytics: true, Settings: false },
     },
-    userActivityLog: [
-      { id: 'log-1', timestamp: '2024-12-18T09:15:00Z', user: 'Aya Nkosi', action: 'Login', detail: 'Signed in from 192.168.1.10' },
-      { id: 'log-2', timestamp: '2024-12-18T08:55:00Z', user: 'Priya Sharma', action: 'Nurse Created', detail: 'Added nurse Grace Adeyemi' },
-      { id: 'log-3', timestamp: '2024-12-17T16:42:00Z', user: 'James Okafor', action: 'Stage Updated', detail: 'Moved Nurse #N-042 to OET Preparation' },
-      { id: 'log-4', timestamp: '2024-12-17T14:20:00Z', user: 'David Mthembu', action: 'Document Upload', detail: 'Uploaded passport scan for Nurse #N-038' },
-      { id: 'log-5', timestamp: '2024-12-17T11:30:00Z', user: 'Aya Nkosi', action: 'Settings Changed', detail: 'Updated pipeline SLA thresholds' },
-      { id: 'log-6', timestamp: '2024-12-16T15:10:00Z', user: 'Priya Sharma', action: 'Cohort Created', detail: 'Created cohort Q1-2025-A' },
-      { id: 'log-7', timestamp: '2024-12-16T14:20:00Z', user: 'David Mthembu', action: 'Login', detail: 'Signed in from 10.0.0.5' },
-      { id: 'log-8', timestamp: '2024-12-16T10:45:00Z', user: 'James Okafor', action: 'Placement Assigned', detail: 'Assigned Nurse #N-029 to St Thomas Hospital' },
-      { id: 'log-9', timestamp: '2024-12-15T09:00:00Z', user: 'Aya Nkosi', action: 'User Invited', detail: 'Sent invitation to sarah@propela.co.za' },
-      { id: 'log-10', timestamp: '2024-12-15T08:30:00Z', user: 'Priya Sharma', action: 'Report Generated', detail: 'Exported Pipeline Summary report' },
-      { id: 'log-11', timestamp: '2024-12-14T16:00:00Z', user: 'James Okafor', action: 'Integration Connected', detail: 'Connected NHS Jobs integration' },
-    ],
+    userActivityLog: [],
     apiKeys: [
       { id: 'key-1', name: 'Production API Key', key: 'pk_live_xxxxxxxxxxxxxxxx', createdDate: '2024-09-15', status: 'Active' },
       { id: 'key-2', name: 'Staging API Key', key: 'pk_test_xxxxxxxxxxxxxxxx', createdDate: '2024-10-01', status: 'Active' },
