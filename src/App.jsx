@@ -55,6 +55,29 @@ const PROTECTED_ROUTES = [
 ];
 
 /**
+ * The per-page route elements, each wrapped in RequirePermission so the LIVE
+ * role-permission matrix (settings.rolePermissions, via usePermissions) gates
+ * every page. This RBAC layer is UNIFIED across both auth modes: it is driven
+ * only by AuthContext's derived `currentUser.role`, which resolves to the
+ * hardened-localStorage user's role when the flag is OFF and to the Supabase
+ * `profiles` role when the flag is ON. A Superadmin/Admin therefore sees
+ * everything and a Read-only / no-role user is gated identically in both modes.
+ */
+function guardedPageRoutes() {
+  return PROTECTED_ROUTES.map(({ path, element }) => (
+    <Route
+      key={path}
+      path={path}
+      element={
+        <RequirePermission module={ROUTE_PERMISSIONS[path]}>
+          {element}
+        </RequirePermission>
+      }
+    />
+  ));
+}
+
+/**
  * Flag OFF (default / live): hardened localStorage auth + RBAC. Routes are
  * gated by ProtectedRoute (requires an authenticated user) and each page is
  * additionally wrapped in RequirePermission using ROUTE_PERMISSIONS.
@@ -67,19 +90,7 @@ function LegacyRoutes() {
 
       {/* Authenticated routes (redirect to /login when signed out) */}
       <Route element={<ProtectedRoute />}>
-        <Route element={<Layout />}>
-          {PROTECTED_ROUTES.map(({ path, element }) => (
-            <Route
-              key={path}
-              path={path}
-              element={
-                <RequirePermission module={ROUTE_PERMISSIONS[path]}>
-                  {element}
-                </RequirePermission>
-              }
-            />
-          ))}
-        </Route>
+        <Route element={<Layout />}>{guardedPageRoutes()}</Route>
       </Route>
 
       {/* Unknown routes fall back to the dashboard (which itself is gated) */}
@@ -89,8 +100,15 @@ function LegacyRoutes() {
 }
 
 /**
- * Flag ON: Supabase auth. Routes are gated by RequireAuth, which redirects to
- * /login when there is no active (non-expired) session.
+ * Flag ON: Supabase auth. The AUTH gate is RequireAuth (rather than
+ * ProtectedRoute) because the Supabase path needs behaviour ProtectedRoute
+ * does not provide: it waits out session hydration (avoiding a premature
+ * redirect on a transient null) and forces re-authentication on an expired
+ * session. The RBAC layer, however, is the SAME `guardedPageRoutes()` used by
+ * the legacy path — so RequirePermission enforces the identical permission
+ * model on the Supabase routes, driven by the profile role surfaced through
+ * AuthContext. (Only two Superadmins exist today, so in practice they see every
+ * page; the gating exists so a null/Read-only role is still correctly blocked.)
  */
 function SupabaseRoutes() {
   return (
@@ -103,9 +121,7 @@ function SupabaseRoutes() {
           </RequireAuth>
         }
       >
-        {PROTECTED_ROUTES.map(({ path, element }) => (
-          <Route key={path} path={path} element={element} />
-        ))}
+        {guardedPageRoutes()}
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

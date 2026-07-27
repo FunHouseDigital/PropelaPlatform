@@ -8,13 +8,19 @@
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DataError, DataErrorCode } from '../../lib/dataLayer/errors';
 import Login from '../Login';
 
 const signInMock = vi.fn();
+
+// Force the SUPABASE_BACKEND flag ON so <Login> renders the Supabase sign-in
+// (SupabaseLogin). These tests exercise the flag-ON auth-UI contract.
+vi.mock('../../lib/featureFlags', () => ({
+  isFeatureEnabled: () => true,
+}));
 
 vi.mock('../../context/AuthContext', () => ({
   useAuth: () => ({ signIn: signInMock }),
@@ -32,8 +38,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-// DEFERRED: Supabase auth-UI is deferred; re-enable when it ships (hybrid: flag OFF uses hardened localStorage auth).
-describe.skip('Login', () => {
+describe('Login (flag ON — Supabase sign-in)', () => {
   it('rejects submission when a field is empty and does not call the auth service (Req 3.5)', async () => {
     const user = userEvent.setup();
     renderLogin();
@@ -79,5 +84,26 @@ describe.skip('Login', () => {
     expect(error.textContent).toMatch(/temporarily unavailable/i);
     // The entered email must be preserved for resubmission.
     expect(emailField).toHaveValue('keep@example.com');
+  });
+
+  it('signs in and navigates into the app on success (Req 3.2)', async () => {
+    signInMock.mockResolvedValue({ data: { session: {} }, error: null });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<div>home dashboard</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await user.type(screen.getByLabelText(/email/i), 'user@example.com');
+    await user.type(screen.getByLabelText(/password/i), 'secret');
+    await user.click(screen.getByRole('button', { name: /sign in/i }));
+
+    // On success the user is routed into the app (default redirect target '/').
+    expect(await screen.findByText('home dashboard')).toBeInTheDocument();
+    expect(signInMock).toHaveBeenCalledWith('user@example.com', 'secret');
   });
 });
