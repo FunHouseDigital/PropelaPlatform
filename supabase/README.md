@@ -15,12 +15,17 @@ policies that back Propela Ops once the `SUPABASE_BACKEND` feature flag is enabl
 |------:|------|---------|
 | 1 | `0001_core_schema.sql` | Core tables: `nurses`, `facilities`, `cohorts`, `placements`, `documents`, `audit_log` (common columns + typed/JSONB, FKs, filter indexes). |
 | 2 | `0002_bump_version_trigger.sql` | `bump_version()` function + `BEFORE UPDATE` triggers on the core tables (optimistic-concurrency token). |
-| 3 | `0003_profiles_and_roles.sql` | `profiles` table (`Recruiter`/`Admin`) + `current_role_name()` helper. |
-| 4 | `0004_core_rls.sql` | Enables RLS + Admin/Recruiter policies on core tables and `profiles`. |
+| 3 | `0003_profiles_and_roles.sql` | `profiles` table with the full app role set, `current_role_name()` helper, and least-privilege profile provisioning. |
+| 4 | `0004_core_rls.sql` | Enables RLS + Superadmin/Admin/Recruiter policies on core tables and self-read/admin policies on `profiles`. |
 | 5 | `0005_remaining_schema.sql` | Tables for every remaining domain in `src/lib/dataLayer/domains.js` + their `bump_version` triggers. |
 | 6 | `0006_remaining_rls.sql` | Enables RLS + Admin-only / per-user / operational policies on the remaining tables. |
+| 7 | `0007_bulk_update_rpcs.sql` | Adds the RLS-constrained, version-gated `bulk_update` RPC for transactional all-or-none mass updates. |
+| 8 | `0008_nurse_owner_invariants.sql` | Enforces authenticated nurse ownership on insert and prevents later `owner_id` changes without weakening operational RLS. |
 
-The files are numbered so they apply deterministically in order.
+The files are numbered so they apply deterministically in order. The paste-ready
+`bundled_migration.sql` contains the exact content of every numbered migration in
+that same order; `npm run check:migrations` fails if a numbered file is added,
+removed, reordered, or changed without regenerating the bundle.
 
 ## Applying the migrations (Supabase CLI)
 
@@ -60,9 +65,10 @@ supabase db reset       # applies all migrations from scratch to the local DB
 - **`bump_version()`** advances `version` and `updated_at` on every `UPDATE`
   (including manual edits in the Supabase table editor), which powers
   optimistic-concurrency conflict detection in the Data_Layer.
-- **RLS is deny-by-default**: enabled on every table. Admin-only domains have only
-  an Admin policy; per-user domains scope rows to `owner_id = auth.uid()`;
-  operational domains grant Admin full access + Recruiter operational access.
+- **RLS is deny-by-default**: enabled on every table. Admin-only domains have
+  only a Superadmin/Admin policy; per-user domains scope rows to
+  `owner_id = auth.uid()`; operational domains grant Superadmin/Admin full
+  access + Recruiter operational access.
 
 ## Sanity check
 
@@ -71,10 +77,13 @@ every domain declared in `src/lib/dataLayer/domains.js` has a corresponding
 `CREATE TABLE` in these migrations and that RLS is enabled for it. Run:
 
 ```bash
-node scripts/check-migrations.mjs
+npm run check:migrations
 ```
 
-This is a static text check only — it never connects to a database.
+This deterministic static check never connects to a database. In addition to
+schema/RLS sanity checks, it verifies that every numbered migration appears once
+in `bundled_migration.sql`, in filename order, with byte-equivalent SQL content
+(after line-ending normalization).
 
 
 ## Running the RLS & integration test suites

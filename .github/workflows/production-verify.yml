@@ -1,0 +1,30 @@
+name: Verify production
+
+on:
+  workflow_dispatch:
+    inputs:
+      production_url:
+        description: HTTPS production origin to verify
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Read-only production verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Verify production
+        env:
+          PRODUCTION_URL: ${{ inputs.production_url }}
+        run: npm run verify:production

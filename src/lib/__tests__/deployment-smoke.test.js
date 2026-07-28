@@ -99,6 +99,43 @@ describe('smoke: vercel.json shape', () => {
 });
 
 // ---------------------------------------------------------------------------
+// CI production-like Supabase build (production readiness)
+// ---------------------------------------------------------------------------
+describe('smoke: CI production-like build', () => {
+  const ci = readRepoFile('.github', 'workflows', 'ci.yml');
+  const buildJob = ci.slice(ci.indexOf('  build:'));
+
+  it('uses explicit dummy public Supabase config with the backend enabled', () => {
+    expect(buildJob).toContain("REQUIRE_SUPABASE: '1'");
+    expect(buildJob).toContain('VITE_FEATURE_FLAGS: SUPABASE_BACKEND');
+    expect(buildJob).toContain(
+      'VITE_SUPABASE_URL: https://ci-placeholder.supabase.co',
+    );
+    expect(buildJob).toContain(
+      'VITE_SUPABASE_ANON_KEY: ci-public-anon-key-placeholder',
+    );
+    expect(buildJob).not.toMatch(/service[_-]?role/i);
+    expect(buildJob).not.toMatch(/password/i);
+  });
+
+  it('builds, smoke-checks, then uploads dist in that order', () => {
+    const buildIndex = buildJob.indexOf('run: npm run build:vercel');
+    const smokeIndex = buildJob.indexOf('run: npm run smoke');
+    const uploadIndex = buildJob.indexOf('uses: actions/upload-artifact@v4');
+    expect(buildIndex).toBeGreaterThan(-1);
+    expect(smokeIndex).toBeGreaterThan(buildIndex);
+    expect(uploadIndex).toBeGreaterThan(smokeIndex);
+    expect(buildJob).toContain('path: dist/');
+  });
+
+  it('keeps the migration bundle check in the test job', () => {
+    const testJob = ci.slice(ci.indexOf('  test:'), ci.indexOf('  build:'));
+    expect(testJob).toContain('run: npx vitest run');
+    expect(testJob).toContain('run: npm run check:migrations');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // RLS enabled + indexes on every domain table (Req 10.3, 12.4)
 // ---------------------------------------------------------------------------
 describe('smoke: migrations enable RLS and index every domain table', () => {
