@@ -1,7 +1,17 @@
+import { AlertTriangle, Flag, GitMerge, GripVertical, LoaderCircle, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
-import { Flag, GripVertical } from 'lucide-react';
-import { PIPELINE_STAGES } from '../../lib/constants';
+
 import { calculateReadinessStatus } from '../../lib/calculations';
+import { PIPELINE_STAGES } from '../../lib/constants';
+
+const PIPELINE_ERROR_TITLES = {
+  AUTH: 'Sign in before moving this nurse.',
+  FORBIDDEN: 'You do not have permission to move this nurse.',
+  NETWORK: 'The pipeline move could not be confirmed because of a network error.',
+  STORAGE: 'The pipeline move could not be saved to browser storage.',
+  VALIDATION: 'The pipeline move was rejected as invalid.',
+  UNKNOWN: 'The pipeline move could not be confirmed.',
+};
 
 function getNextActionColor(nurse) {
   if (!nurse.nextAction || nurse.nextAction === 'No action required') {
@@ -33,54 +43,74 @@ function getReadinessColor(status) {
   }
 }
 
-function KanbanCard({ nurse, onNurseClick, onDragStart }) {
+function KanbanCard({ nurse, onNurseClick, onDragStart, onDragEnd, moveBlocked, movePending }) {
   const initials = nurse.fullName
     .split(' ')
-    .map((n) => n[0])
+    .map((name) => name[0])
     .join('')
     .slice(0, 2);
 
   return (
     <div
-      draggable
-      onDragStart={(e) => onDragStart(e, nurse)}
+      data-testid={`pipeline-card-${nurse.id}`}
+      draggable={!moveBlocked}
+      role="button"
+      tabIndex={0}
+      aria-label={`Open ${nurse.fullName}`}
+      aria-disabled={moveBlocked || undefined}
+      onDragStart={(event) => onDragStart(event, nurse)}
+      onDragEnd={onDragEnd}
       onClick={() => onNurseClick(nurse)}
-      className={`bg-white rounded-lg border p-2.5 cursor-pointer hover:shadow-sm transition-shadow ${
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onNurseClick(nurse);
+        }
+      }}
+      className={`rounded-lg border bg-white p-2.5 transition-shadow hover:shadow-sm ${
+        moveBlocked ? 'cursor-not-allowed opacity-65' : 'cursor-pointer'
+      } ${
         nurse.pipelineStage === 'Dropped Out'
           ? 'border-red-200 bg-red-50'
           : nurse.pipelineStage === 'Deferred'
-          ? 'border-yellow-200 bg-yellow-50'
-          : 'border-gray-100'
+            ? 'border-yellow-200 bg-yellow-50'
+            : 'border-gray-100'
       }`}
     >
-      <div className="flex items-center gap-2 mb-1.5">
-        <GripVertical size={12} className="text-gray-300 shrink-0" />
+      <div className="mb-1.5 flex items-center gap-2">
+        {movePending ? (
+          <LoaderCircle size={12} className="shrink-0 animate-spin text-propela-purple" />
+        ) : (
+          <GripVertical size={12} className="shrink-0 text-gray-300" />
+        )}
         {nurse.photoURL ? (
           <img
             src={nurse.photoURL}
             alt={nurse.fullName}
-            className="w-7 h-7 rounded-full object-cover"
+            className="h-7 w-7 rounded-full object-cover"
           />
         ) : (
-          <div className="w-7 h-7 rounded-full bg-propela-purple flex items-center justify-center text-white text-xs font-medium shrink-0">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-propela-purple text-xs font-medium text-white">
             {initials}
           </div>
         )}
-        <span className="text-xs font-medium text-gray-800 truncate flex-1">
-          {nurse.fullName}
-        </span>
+        <span className="flex-1 truncate text-xs font-medium text-gray-800">{nurse.fullName}</span>
         {nurse.flags > 0 && (
-          <span className="flex items-center gap-0.5 text-xs text-red-500 shrink-0">
+          <span className="flex shrink-0 items-center gap-0.5 text-xs text-red-500">
             <Flag size={10} className="fill-red-500" />
             {nurse.flags}
           </span>
         )}
       </div>
-      <div className="flex items-center gap-1 flex-wrap">
-        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${getNextActionColor(nurse)}`}>
+      <div className="flex flex-wrap items-center gap-1">
+        <span
+          className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${getNextActionColor(nurse)}`}
+        >
           {(nurse.nextAction || 'No action').replace('Needs: ', '')}
         </span>
-        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${getReadinessColor(nurse.readinessStatus)}`}>
+        <span
+          className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${getReadinessColor(nurse.readinessStatus)}`}
+        >
           {nurse.readinessStatus}
         </span>
       </div>
@@ -88,7 +118,93 @@ function KanbanCard({ nurse, onNurseClick, onDragStart }) {
   );
 }
 
-export default function PipelineView({ nurses, onNurseClick, onUpdateNurse }) {
+function PipelineDecision({
+  nurse,
+  progress,
+  onRetryPipeline,
+  onReloadPipeline,
+  onRebasePipeline,
+  canChangePipeline,
+}) {
+  const decision = progress.decision;
+  if (!decision) return null;
+
+  const isConflict = decision.type === 'pipelineConflict';
+  const isLoading = progress.state === 'loading';
+  const errorMessage =
+    progress.error?.message ||
+    PIPELINE_ERROR_TITLES[progress.error?.code] ||
+    PIPELINE_ERROR_TITLES.UNKNOWN;
+  const latest = decision.latest;
+
+  return (
+    <div
+      role="alert"
+      className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"
+    >
+      <div className="flex items-start gap-2">
+        <AlertTriangle size={17} className="mt-0.5 shrink-0 text-amber-700" />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold">
+            {isConflict ? 'Pipeline move conflicted' : 'Pipeline move was not confirmed'}
+          </p>
+          <p className="mt-0.5 text-xs text-amber-900">
+            {isConflict
+              ? `${nurse?.fullName || 'This nurse'} changed on the server${
+                  latest?.pipelineStage ? ` and is now in ${latest.pipelineStage}` : ''
+                }. Reload or rebase to version ${latest?.version ?? 'the latest version'} before moving again.`
+              : `${errorMessage} The previous stage and readiness are still displayed.`}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {!isConflict && decision.retryAvailable && canChangePipeline && (
+              <button
+                type="button"
+                disabled={isLoading}
+                onClick={() => onRetryPipeline(nurse.id)}
+                className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-900 disabled:opacity-60"
+              >
+                <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
+                Retry move
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={() => onReloadPipeline(nurse.id)}
+              className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-900 disabled:opacity-60"
+            >
+              <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
+              Reload from server
+            </button>
+            {isConflict && canChangePipeline && (
+              <button
+                type="button"
+                disabled={isLoading}
+                onClick={() => onRebasePipeline(nurse.id)}
+                className="inline-flex items-center gap-1 rounded-md bg-amber-800 px-2.5 py-1 text-xs font-medium text-white disabled:opacity-60"
+              >
+                <GitMerge size={12} />
+                Rebase on latest
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function PipelineView({
+  nurses,
+  onNurseClick,
+  onPipelineChange,
+  pipeline = {},
+  onRetryPipeline,
+  onReloadPipeline,
+  onRebasePipeline,
+  permissions = { canChangePipeline: true },
+}) {
+  const canChangePipeline = permissions.canChangePipeline !== false;
   const [draggedNurse, setDraggedNurse] = useState(null);
   const [dragOverStage, setDragOverStage] = useState(null);
 
@@ -102,15 +218,23 @@ export default function PipelineView({ nurses, onNurseClick, onUpdateNurse }) {
     }
   });
 
-  const handleDragStart = (e, nurse) => {
+  const isMoveBlocked = (id) =>
+    !canChangePipeline || pipeline[id]?.state === 'loading' || Boolean(pipeline[id]?.decision);
+
+  const handleDragStart = (event, nurse) => {
+    if (isMoveBlocked(nurse.id)) {
+      event.preventDefault();
+      return;
+    }
     setDraggedNurse(nurse);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', nurse.id);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', nurse.id);
   };
 
-  const handleDragOver = (e, stage) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+  const handleDragOver = (event, stage) => {
+    if (!canChangePipeline) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
     setDragOverStage(stage);
   };
 
@@ -118,65 +242,95 @@ export default function PipelineView({ nurses, onNurseClick, onUpdateNurse }) {
     setDragOverStage(null);
   };
 
-  const handleDrop = (e, targetStage) => {
-    e.preventDefault();
+  const handleDragEnd = () => {
+    setDraggedNurse(null);
     setDragOverStage(null);
-    if (draggedNurse && draggedNurse.pipelineStage !== targetStage) {
-      const updated = {
-        ...draggedNurse,
+  };
+
+  const handleDrop = (event, targetStage) => {
+    event.preventDefault();
+    setDragOverStage(null);
+    if (
+      canChangePipeline &&
+      draggedNurse &&
+      !isMoveBlocked(draggedNurse.id) &&
+      draggedNurse.pipelineStage !== targetStage
+    ) {
+      onPipelineChange({
+        id: draggedNurse.id,
+        baseVersion: draggedNurse.version,
         pipelineStage: targetStage,
         readinessStatus: calculateReadinessStatus(targetStage),
-      };
-      onUpdateNurse(updated);
+      });
     }
     setDraggedNurse(null);
   };
 
-  return (
-    <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: '60vh' }}>
-      {PIPELINE_STAGES.map((stage) => {
-        const stageNurses = nursesByStage[stage] || [];
-        const isDragOver = dragOverStage === stage;
+  const decisions = Object.entries(pipeline).filter(([, progress]) => progress?.decision);
 
-        return (
-          <div
-            key={stage}
-            className={`shrink-0 w-56 flex flex-col rounded-lg border ${
-              isDragOver ? 'border-propela-purple bg-propela-purple-light/50' : 'border-gray-200 bg-gray-50'
-            }`}
-            onDragOver={(e) => handleDragOver(e, stage)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, stage)}
-          >
-            {/* Column Header */}
-            <div className="px-3 py-2 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-semibold text-gray-700 truncate" title={stage}>
-                  {stage}
-                </h4>
-                <span className="text-xs bg-white border border-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full font-medium">
-                  {stageNurses.length}
-                </span>
+  return (
+    <>
+      {decisions.map(([id, progress]) => (
+        <PipelineDecision
+          key={id}
+          nurse={nurses.find((nurse) => nurse.id === id) || progress.decision.latest}
+          progress={progress}
+          onRetryPipeline={onRetryPipeline}
+          onReloadPipeline={onReloadPipeline}
+          onRebasePipeline={onRebasePipeline}
+          canChangePipeline={canChangePipeline}
+        />
+      ))}
+
+      <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: '60vh' }}>
+        {PIPELINE_STAGES.map((stage) => {
+          const stageNurses = nursesByStage[stage] || [];
+          const isDragOver = dragOverStage === stage;
+
+          return (
+            <div
+              key={stage}
+              data-testid={`pipeline-stage-${stage}`}
+              className={`flex w-56 shrink-0 flex-col rounded-lg border ${
+                isDragOver
+                  ? 'border-propela-purple bg-propela-purple-light/50'
+                  : 'border-gray-200 bg-gray-50'
+              }`}
+              onDragOver={(event) => handleDragOver(event, stage)}
+              onDragLeave={handleDragLeave}
+              onDrop={(event) => handleDrop(event, stage)}
+            >
+              <div className="border-b border-gray-200 px-3 py-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="truncate text-xs font-semibold text-gray-700" title={stage}>
+                    {stage}
+                  </h4>
+                  <span className="rounded-full border border-gray-200 bg-white px-1.5 py-0.5 text-xs font-medium text-gray-500">
+                    {stageNurses.length}
+                  </span>
+                </div>
+              </div>
+
+              <div className="max-h-[calc(60vh-3rem)] flex-1 space-y-2 overflow-y-auto p-2">
+                {stageNurses.map((nurse) => (
+                  <KanbanCard
+                    key={nurse.id}
+                    nurse={nurse}
+                    onNurseClick={onNurseClick}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    moveBlocked={isMoveBlocked(nurse.id)}
+                    movePending={pipeline[nurse.id]?.state === 'loading'}
+                  />
+                ))}
+                {stageNurses.length === 0 && (
+                  <p className="py-4 text-center text-xs text-gray-400">Empty</p>
+                )}
               </div>
             </div>
-
-            {/* Cards */}
-            <div className="flex-1 p-2 space-y-2 overflow-y-auto max-h-[calc(60vh-3rem)]">
-              {stageNurses.map((nurse) => (
-                <KanbanCard
-                  key={nurse.id}
-                  nurse={nurse}
-                  onNurseClick={onNurseClick}
-                  onDragStart={handleDragStart}
-                />
-              ))}
-              {stageNurses.length === 0 && (
-                <p className="text-xs text-gray-400 text-center py-4">Empty</p>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+    </>
   );
 }

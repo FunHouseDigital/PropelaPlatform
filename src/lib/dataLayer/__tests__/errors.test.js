@@ -32,6 +32,16 @@ describe('dataLayer/errors', () => {
       expect(err.code).toBe(DataErrorCode.UNKNOWN);
       expect(err.message).toBeTruthy();
     });
+
+    it('provides a normalized, user-safe storage failure', () => {
+      const cause = new DOMException('Quota exceeded', 'QuotaExceededError');
+      const err = new DataError(DataErrorCode.STORAGE, undefined, cause);
+
+      expect(err.code).toBe('STORAGE');
+      expect(err.message).toMatch(/storage.*unavailable/i);
+      expect(err.message).not.toContain('Quota exceeded');
+      expect(err.cause).toBe(cause);
+    });
   });
 
   describe('mapError network / transport failures', () => {

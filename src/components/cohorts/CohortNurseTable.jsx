@@ -1,13 +1,24 @@
-import { useState } from 'react';
-import { Flag, ChevronUp, ChevronDown } from 'lucide-react';
-import { getNurses, saveNurses } from '../../lib/storage';
-import { PIPELINE_STAGES, OET_STATUSES, COMMITMENT_FEE_STATUSES, NEXT_ACTION_VALUES } from '../../lib/constants';
+import { ChevronDown, ChevronUp, Flag } from 'lucide-react';
+import { useMemo, useState } from 'react';
+
+import { useAppContext } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import { calculateReadinessStatus } from '../../lib/calculations';
+import {
+  COMMITMENT_FEE_STATUSES,
+  NEXT_ACTION_VALUES,
+  OET_STATUSES,
+  PIPELINE_STAGES,
+} from '../../lib/constants';
+import { isSupabaseBackend } from '../../lib/dataLayer';
+import { getNurseUiPermissions } from '../../lib/nurses/nursePermissions';
 
 function getPipelineColor(stage) {
-  if (['OET Passed', 'Placement Ready', 'Placed'].includes(stage)) return 'bg-green-100 text-green-700';
+  if (['OET Passed', 'Placement Ready', 'Placed'].includes(stage))
+    return 'bg-green-100 text-green-700';
   if (['Training Active', 'OET Registered'].includes(stage)) return 'bg-blue-100 text-blue-700';
-  if (['Cohort Confirmed', 'Selected for Cohort'].includes(stage)) return 'bg-propela-purple-light text-propela-purple';
+  if (['Cohort Confirmed', 'Selected for Cohort'].includes(stage))
+    return 'bg-propela-purple-light text-propela-purple';
   if (['Dropped Out'].includes(stage)) return 'bg-red-100 text-red-700';
   if (['Deferred'].includes(stage)) return 'bg-yellow-100 text-yellow-700';
   return 'bg-gray-100 text-gray-600';
@@ -15,21 +26,30 @@ function getPipelineColor(stage) {
 
 function getOetStatusColor(status) {
   switch (status) {
-    case 'Passed': return 'bg-green-100 text-green-700';
-    case 'Failed': return 'bg-red-100 text-red-700';
+    case 'Passed':
+      return 'bg-green-100 text-green-700';
+    case 'Failed':
+      return 'bg-red-100 text-red-700';
     case 'Registered':
-    case 'Sat': return 'bg-blue-100 text-blue-700';
-    case 'Studying': return 'bg-amber-100 text-amber-700';
-    default: return 'bg-gray-100 text-gray-500';
+    case 'Sat':
+      return 'bg-blue-100 text-blue-700';
+    case 'Studying':
+      return 'bg-amber-100 text-amber-700';
+    default:
+      return 'bg-gray-100 text-gray-500';
   }
 }
 
 function getCommitmentColor(status) {
   switch (status) {
-    case 'Paid': return 'bg-green-100 text-green-700';
-    case 'Overdue': return 'bg-red-100 text-red-700';
-    case 'Invoiced': return 'bg-amber-100 text-amber-700';
-    default: return 'bg-gray-100 text-gray-500';
+    case 'Paid':
+      return 'bg-green-100 text-green-700';
+    case 'Overdue':
+      return 'bg-red-100 text-red-700';
+    case 'Invoiced':
+      return 'bg-amber-100 text-amber-700';
+    default:
+      return 'bg-gray-100 text-gray-500';
   }
 }
 
@@ -56,13 +76,23 @@ function getNextActionColor(nurse) {
 }
 
 export default function CohortNurseTable({ cohortName, onNurseUpdate }) {
-  const [nurses, setNurses] = useState(() => {
-    const all = getNurses();
-    return all.filter((n) => n.cohortAssigned === cohortName);
-  });
+  const { nurses: sharedNurses, nurseSlice, updateNurses, changeNursePipeline } = useAppContext();
+  const permissions = getNurseUiPermissions(useAuth());
+  const acceptedNurses = Array.isArray(nurseSlice?.items) ? nurseSlice.items : sharedNurses;
+  const nurses = useMemo(
+    () => acceptedNurses.filter((nurse) => nurse.cohortAssigned === cohortName),
+    [acceptedNurses, cohortName]
+  );
   const [editingCell, setEditingCell] = useState(null);
   const [sortField, setSortField] = useState('fullName');
   const [sortDir, setSortDir] = useState('asc');
+  const canInlineEditBusinessFields = !isSupabaseBackend;
+  const canEditPipeline = (nurse) =>
+    permissions.canChangePipeline &&
+    Number.isInteger(nurse.version) &&
+    nurse.version > 0 &&
+    nurseSlice?.pipeline?.[nurse.id]?.state !== 'loading' &&
+    !nurseSlice?.pipeline?.[nurse.id]?.decision;
 
   const sortedNurses = [...nurses].sort((a, b) => {
     const dir = sortDir === 'asc' ? 1 : -1;
@@ -80,23 +110,29 @@ export default function CohortNurseTable({ cohortName, onNurseUpdate }) {
     }
   }
 
-  function updateNurseField(nurseId, field, value) {
-    const allNurses = getNurses();
-    const idx = allNurses.findIndex((n) => n.id === nurseId);
-    if (idx === -1) return;
+  async function updateNurseField(nurseId, field, value) {
+    const nurse = acceptedNurses.find((candidate) => candidate.id === nurseId);
+    if (!nurse) return;
 
-    const updates = { [field]: value };
     if (field === 'pipelineStage') {
-      updates.readinessStatus = calculateReadinessStatus(value);
+      if (!permissions.canChangePipeline) return;
+      await changeNursePipeline({
+        id: nurse.id,
+        baseVersion: nurse.version,
+        pipelineStage: value,
+        readinessStatus: calculateReadinessStatus(value),
+      });
+    } else {
+      // Inline whole-collection edits are a legacy-only compatibility behavior.
+      // Supabase users make these edits in the authoritative nurse detail flow.
+      if (isSupabaseBackend) return;
+      updateNurses(
+        acceptedNurses.map((candidate) =>
+          candidate.id === nurseId ? { ...candidate, [field]: value } : candidate
+        )
+      );
     }
 
-    allNurses[idx] = { ...allNurses[idx], ...updates };
-    saveNurses(allNurses);
-
-    // Update local state
-    setNurses((prev) =>
-      prev.map((n) => (n.id === nurseId ? { ...n, ...updates } : n))
-    );
     setEditingCell(null);
     if (onNurseUpdate) onNurseUpdate();
   }
@@ -119,11 +155,19 @@ export default function CohortNurseTable({ cohortName, onNurseUpdate }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50">
-            <th onClick={() => handleSort('fullName')} className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700">
+            <th
+              onClick={() => handleSort('fullName')}
+              className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700"
+            >
               <span className="flex items-center gap-1">Nurse {renderSortIcon('fullName')}</span>
             </th>
-            <th onClick={() => handleSort('pipelineStage')} className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700">
-              <span className="flex items-center gap-1">Stage {renderSortIcon('pipelineStage')}</span>
+            <th
+              onClick={() => handleSort('pipelineStage')}
+              className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700"
+            >
+              <span className="flex items-center gap-1">
+                Stage {renderSortIcon('pipelineStage')}
+              </span>
             </th>
             <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
               Next Action
@@ -131,10 +175,18 @@ export default function CohortNurseTable({ cohortName, onNurseUpdate }) {
             <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
               OET Status
             </th>
-            <th className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">W</th>
-            <th className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">S</th>
-            <th className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">L</th>
-            <th className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">R</th>
+            <th className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              W
+            </th>
+            <th className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              S
+            </th>
+            <th className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              L
+            </th>
+            <th className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              R
+            </th>
             <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
               Fee
             </th>
@@ -159,12 +211,19 @@ export default function CohortNurseTable({ cohortName, onNurseUpdate }) {
             const oetScores = nurse.oetScores || {};
 
             return (
-              <tr key={nurse.id} className={`border-b border-gray-50 hover:bg-gray-50 ${nurse.pipelineStage === 'Dropped Out' ? 'bg-red-50/50' : ''}`}>
+              <tr
+                key={nurse.id}
+                className={`border-b border-gray-50 hover:bg-gray-50 ${nurse.pipelineStage === 'Dropped Out' ? 'bg-red-50/50' : ''}`}
+              >
                 {/* Name */}
                 <td className="px-3 py-2.5">
                   <div className="flex items-center gap-2">
                     {nurse.photoURL ? (
-                      <img src={nurse.photoURL} alt="" className="w-7 h-7 rounded-full object-cover" />
+                      <img
+                        src={nurse.photoURL}
+                        alt=""
+                        className="w-7 h-7 rounded-full object-cover"
+                      />
                     ) : (
                       <div className="w-7 h-7 rounded-full bg-propela-purple flex items-center justify-center text-white text-xs font-medium shrink-0">
                         {initials}
@@ -187,13 +246,20 @@ export default function CohortNurseTable({ cohortName, onNurseUpdate }) {
                       className="text-xs border border-gray-200 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-propela-purple"
                     >
                       {PIPELINE_STAGES.map((s) => (
-                        <option key={s} value={s}>{s}</option>
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
                       ))}
                     </select>
                   ) : (
                     <span
-                      onClick={() => setEditingCell(`${nurse.id}-stage`)}
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium cursor-pointer ${getPipelineColor(nurse.pipelineStage)}`}
+                      onClick={() => {
+                        if (canEditPipeline(nurse)) setEditingCell(`${nurse.id}-stage`);
+                      }}
+                      aria-disabled={!canEditPipeline(nurse) || undefined}
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        canEditPipeline(nurse) ? 'cursor-pointer' : 'cursor-default opacity-70'
+                      } ${getPipelineColor(nurse.pipelineStage)}`}
                     >
                       {nurse.pipelineStage}
                     </span>
@@ -211,13 +277,20 @@ export default function CohortNurseTable({ cohortName, onNurseUpdate }) {
                       className="text-xs border border-gray-200 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-propela-purple max-w-[180px]"
                     >
                       {NEXT_ACTION_VALUES.map((a) => (
-                        <option key={a} value={a}>{a}</option>
+                        <option key={a} value={a}>
+                          {a}
+                        </option>
                       ))}
                     </select>
                   ) : (
                     <span
-                      onClick={() => setEditingCell(`${nurse.id}-action`)}
-                      className={`text-xs px-2 py-0.5 rounded font-medium cursor-pointer ${getNextActionColor(nurse)}`}
+                      onClick={() => {
+                        if (canInlineEditBusinessFields) setEditingCell(`${nurse.id}-action`);
+                      }}
+                      aria-disabled={!canInlineEditBusinessFields || undefined}
+                      className={`rounded px-2 py-0.5 text-xs font-medium ${
+                        canInlineEditBusinessFields ? 'cursor-pointer' : 'cursor-default opacity-70'
+                      } ${getNextActionColor(nurse)}`}
                     >
                       {(nurse.nextAction || '-').replace('Needs: ', '')}
                     </span>
@@ -235,13 +308,20 @@ export default function CohortNurseTable({ cohortName, onNurseUpdate }) {
                       className="text-xs border border-gray-200 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-propela-purple"
                     >
                       {OET_STATUSES.map((s) => (
-                        <option key={s} value={s}>{s}</option>
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
                       ))}
                     </select>
                   ) : (
                     <span
-                      onClick={() => setEditingCell(`${nurse.id}-oet`)}
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium cursor-pointer ${getOetStatusColor(nurse.oetStatus)}`}
+                      onClick={() => {
+                        if (canInlineEditBusinessFields) setEditingCell(`${nurse.id}-oet`);
+                      }}
+                      aria-disabled={!canInlineEditBusinessFields || undefined}
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        canInlineEditBusinessFields ? 'cursor-pointer' : 'cursor-default opacity-70'
+                      } ${getOetStatusColor(nurse.oetStatus)}`}
                     >
                       {nurse.oetStatus || '-'}
                     </span>
@@ -249,16 +329,24 @@ export default function CohortNurseTable({ cohortName, onNurseUpdate }) {
                 </td>
 
                 {/* OET Scores */}
-                <td className={`px-3 py-2.5 text-center text-xs ${getOetSubScoreClass(oetScores.writing)}`}>
+                <td
+                  className={`px-3 py-2.5 text-center text-xs ${getOetSubScoreClass(oetScores.writing)}`}
+                >
                   {oetScores.writing || '-'}
                 </td>
-                <td className={`px-3 py-2.5 text-center text-xs ${getOetSubScoreClass(oetScores.speaking)}`}>
+                <td
+                  className={`px-3 py-2.5 text-center text-xs ${getOetSubScoreClass(oetScores.speaking)}`}
+                >
                   {oetScores.speaking || '-'}
                 </td>
-                <td className={`px-3 py-2.5 text-center text-xs ${getOetSubScoreClass(oetScores.listening)}`}>
+                <td
+                  className={`px-3 py-2.5 text-center text-xs ${getOetSubScoreClass(oetScores.listening)}`}
+                >
                   {oetScores.listening || '-'}
                 </td>
-                <td className={`px-3 py-2.5 text-center text-xs ${getOetSubScoreClass(oetScores.reading)}`}>
+                <td
+                  className={`px-3 py-2.5 text-center text-xs ${getOetSubScoreClass(oetScores.reading)}`}
+                >
                   {oetScores.reading || '-'}
                 </td>
 
@@ -267,19 +355,28 @@ export default function CohortNurseTable({ cohortName, onNurseUpdate }) {
                   {editingCell === `${nurse.id}-fee` ? (
                     <select
                       value={nurse.commitmentFeeStatus || ''}
-                      onChange={(e) => updateNurseField(nurse.id, 'commitmentFeeStatus', e.target.value)}
+                      onChange={(e) =>
+                        updateNurseField(nurse.id, 'commitmentFeeStatus', e.target.value)
+                      }
                       onBlur={() => setEditingCell(null)}
                       autoFocus
                       className="text-xs border border-gray-200 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-propela-purple"
                     >
                       {COMMITMENT_FEE_STATUSES.map((s) => (
-                        <option key={s} value={s}>{s}</option>
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
                       ))}
                     </select>
                   ) : (
                     <span
-                      onClick={() => setEditingCell(`${nurse.id}-fee`)}
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium cursor-pointer ${getCommitmentColor(nurse.commitmentFeeStatus)}`}
+                      onClick={() => {
+                        if (canInlineEditBusinessFields) setEditingCell(`${nurse.id}-fee`);
+                      }}
+                      aria-disabled={!canInlineEditBusinessFields || undefined}
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        canInlineEditBusinessFields ? 'cursor-pointer' : 'cursor-default opacity-70'
+                      } ${getCommitmentColor(nurse.commitmentFeeStatus)}`}
                     >
                       {nurse.commitmentFeeStatus || '-'}
                     </span>
@@ -291,8 +388,11 @@ export default function CohortNurseTable({ cohortName, onNurseUpdate }) {
                   <input
                     type="checkbox"
                     checked={nurse.agreementSigned || false}
-                    onChange={(e) => updateNurseField(nurse.id, 'agreementSigned', e.target.checked)}
-                    className="w-3.5 h-3.5 rounded border-gray-300 text-propela-purple focus:ring-propela-purple cursor-pointer"
+                    disabled={!canInlineEditBusinessFields}
+                    onChange={(e) =>
+                      updateNurseField(nurse.id, 'agreementSigned', e.target.checked)
+                    }
+                    className="h-3.5 w-3.5 cursor-pointer rounded border-gray-300 text-propela-purple focus:ring-propela-purple disabled:cursor-default disabled:opacity-70"
                   />
                 </td>
 
@@ -309,9 +409,7 @@ export default function CohortNurseTable({ cohortName, onNurseUpdate }) {
                 </td>
 
                 {/* Last Contacted */}
-                <td className="px-3 py-2.5 text-xs text-gray-500">
-                  {nurse.lastContacted || '-'}
-                </td>
+                <td className="px-3 py-2.5 text-xs text-gray-500">{nurse.lastContacted || '-'}</td>
               </tr>
             );
           })}

@@ -35,6 +35,7 @@ export const DataErrorCode = Object.freeze({
   FORBIDDEN: 'FORBIDDEN',
   VALIDATION: 'VALIDATION',
   CONFLICT: 'CONFLICT',
+  STORAGE: 'STORAGE',
   UNKNOWN: 'UNKNOWN',
 });
 
@@ -51,6 +52,8 @@ const DEFAULT_MESSAGES = Object.freeze({
   [DataErrorCode.VALIDATION]: 'The submitted data is invalid.',
   [DataErrorCode.CONFLICT]:
     'This record was changed since you last loaded it. Reload and try again.',
+  [DataErrorCode.STORAGE]:
+    'Browser storage is unavailable. Your changes were not saved.',
   [DataErrorCode.UNKNOWN]: 'Something went wrong. Please try again.',
 });
 

@@ -1,20 +1,24 @@
-import { useState, useMemo, useCallback } from 'react';
+import { ChevronDown, Plus, Send, UserPlus } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ChevronDown, UserPlus, Send } from 'lucide-react';
-import { getNurses, getFacilities } from '../lib/storage';
-import SplashScreen from '../components/dashboard/SplashScreen';
+
 import ActionMetrics from '../components/dashboard/ActionMetrics';
 import ActionsPanel from '../components/dashboard/ActionsPanel';
 import CohortPulse from '../components/dashboard/CohortPulse';
-import RedFlags from '../components/dashboard/RedFlags';
 import RecentActivity from '../components/dashboard/RecentActivity';
+import RedFlags from '../components/dashboard/RedFlags';
+import SplashScreen from '../components/dashboard/SplashScreen';
+import { useAppContext } from '../context/AppContext';
+import { getFacilities } from '../lib/storage';
 
-const EXIT_STATES = ['Placed', 'Deferred', 'Dropped Out', 'Recommended Pathway', 'Not Selected', "Didn't Qualify"];
-const COHORT_STAGES = [
-  'Selected for Cohort', 'Reserve', 'Cohort Confirmed', 'Training Active',
-  'OET Registered', 'OET Passed', 'OET Failed', 'Placement Ready', 'Placed',
+const EXIT_STATES = [
+  'Placed',
+  'Deferred',
+  'Dropped Out',
+  'Recommended Pathway',
+  'Not Selected',
+  "Didn't Qualify",
 ];
-
 function getGreeting() {
   const hour = new Date().getHours();
   if (hour < 12) return 'Good morning';
@@ -42,6 +46,7 @@ function formatTodayDisplay() {
 }
 
 export default function Dashboard() {
+  const { nurses } = useAppContext();
   const [showSplash, setShowSplash] = useState(() => {
     return !sessionStorage.getItem('propela_splash_shown');
   });
@@ -53,7 +58,6 @@ export default function Dashboard() {
     setShowSplash(false);
   }, []);
 
-  const nurses = useMemo(() => getNurses(), []);
   const facilities = useMemo(() => getFacilities(), []);
 
   const today = getTodayStr();
@@ -106,9 +110,7 @@ export default function Dashboard() {
 
   // Red Flags: nurses with [FLAG] in notesFlags
   const flaggedNurses = useMemo(() => {
-    return nurses.filter(
-      (n) => n.notesFlags && n.notesFlags.includes('[FLAG]')
-    );
+    return nurses.filter((n) => n.notesFlags && n.notesFlags.includes('[FLAG]'));
   }, [nurses]);
 
   // Recent Activity: gather communication logs from all nurses
@@ -143,9 +145,7 @@ export default function Dashboard() {
       {/* Top bar */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">
-            {getGreeting()}, Aya
-          </h1>
+          <h1 className="text-xl font-semibold text-gray-900">{getGreeting()}, Aya</h1>
           <p className="text-sm text-gray-500">{formatTodayDisplay()}</p>
         </div>
 
@@ -156,7 +156,10 @@ export default function Dashboard() {
           >
             <Plus size={16} />
             Quick Add
-            <ChevronDown size={14} className={`transition-transform ${quickAddOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              size={14}
+              className={`transition-transform ${quickAddOpen ? 'rotate-180' : ''}`}
+            />
           </button>
           {quickAddOpen && (
             <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 w-48">
@@ -167,8 +170,7 @@ export default function Dashboard() {
                 }}
                 className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"
               >
-                <UserPlus size={14} />
-                + New Nurse
+                <UserPlus size={14} />+ New Nurse
               </button>
               <button
                 onClick={() => {
@@ -177,8 +179,7 @@ export default function Dashboard() {
                 }}
                 className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"
               >
-                <Send size={14} />
-                + Log Outreach
+                <Send size={14} />+ Log Outreach
               </button>
             </div>
           )}

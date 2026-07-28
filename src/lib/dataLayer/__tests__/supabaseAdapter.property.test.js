@@ -54,10 +54,10 @@ describe('Property 10: Pagination clamping', () => {
       fc.asyncProperty(
         fc.integer({ min: -20, max: 40 }), // page (incl. non-positive)
         fc.option(fc.integer({ min: -50, max: 500 }), { nil: undefined }), // pageSize
-        fc.array(
-          fc.record({ id: fc.uuid(), tier: fc.constantFrom('A', 'B', 'C') }),
-          { minLength: 0, maxLength: 60 },
-        ),
+        fc.array(fc.record({ id: fc.uuid(), tier: fc.constantFrom('A', 'B', 'C') }), {
+          minLength: 0,
+          maxLength: 60,
+        }),
         async (page, pageSize, rows) => {
           const seeded = rows.map((r, i) => ({ ...r, id: `row-${i}`, version: 1 }));
           currentClient = new FakeSupabaseClient({ nurses: seeded });
@@ -73,9 +73,9 @@ describe('Property 10: Pagination clamping', () => {
           // Never return more than the effective page size.
           expect(res.data.length).toBeLessThanOrEqual(res.pageSize);
           expect(res.error).toBeNull();
-        },
+        }
       ),
-      { numRuns: NUM_RUNS },
+      { numRuns: NUM_RUNS }
     );
   });
 });
@@ -100,9 +100,9 @@ describe('Property 7: Empty-result contract', () => {
           expect(res.error).toBeNull();
           expect(res.data).toEqual([]);
           expect(Array.isArray(res.data)).toBe(true);
-        },
+        }
       ),
-      { numRuns: NUM_RUNS },
+      { numRuns: NUM_RUNS }
     );
   });
 });
@@ -118,7 +118,7 @@ describe('Property 11: Server-side filter soundness and completeness', () => {
       fc.asyncProperty(
         fc.array(
           fc.record({ stage: fc.constantFrom(...STAGES), tier: fc.constantFrom('A', 'B') }),
-          { minLength: 0, maxLength: 80 },
+          { minLength: 0, maxLength: 80 }
         ),
         fc.constantFrom(...STAGES),
         async (rows, filterStage) => {
@@ -150,9 +150,9 @@ describe('Property 11: Server-side filter soundness and completeness', () => {
           expect(selectCall).toBeDefined();
           expect(selectCall.filters).toContainEqual(['pipeline_stage', filterStage]);
           expect(selectCall.range).toEqual([0, 99]);
-        },
+        }
       ),
-      { numRuns: NUM_RUNS },
+      { numRuns: NUM_RUNS }
     );
   });
 });
@@ -196,9 +196,9 @@ describe('Property 2: Concurrency conflict detection / no lost updates', () => {
           const read = await adapter.getById('nurses', 'nurse-1');
           expect(read.data.tier).toBe(valA);
           expect(read.data.version).toBe(2);
-        },
+        }
       ),
-      { numRuns: NUM_RUNS },
+      { numRuns: NUM_RUNS }
     );
   });
 });
@@ -217,7 +217,7 @@ describe('Property 8: Validation rejection leaves the database unchanged', () =>
       fc.array(fc.anything()),
       fc.record({ tier: fc.string() }), // object missing the required string id
       fc.record({ id: fc.integer(), tier: fc.string() }), // non-string id
-      fc.record({ id: fc.constant(''), tier: fc.string() }), // empty id
+      fc.record({ id: fc.constant(''), tier: fc.string() }) // empty id
     );
 
     await fc.assert(
@@ -244,9 +244,9 @@ describe('Property 8: Validation rejection leaves the database unchanged', () =>
 
           const after = currentClient.snapshot('nurses');
           expect(after).toEqual(before);
-        },
+        }
       ),
-      { numRuns: NUM_RUNS },
+      { numRuns: NUM_RUNS }
     );
   });
 });
@@ -267,7 +267,7 @@ describe('Property 9: Async loading/error state discipline', () => {
         const states = [];
         const res = await adapter.withLoading(
           () => adapter.list('nurses', {}),
-          (s) => states.push(s),
+          (s) => states.push(s)
         );
 
         // Loading was signalled true first, then settled false.
@@ -281,7 +281,7 @@ describe('Property 9: Async loading/error state discipline', () => {
           expect(res.error).toBeNull();
         }
       }),
-      { numRuns: NUM_RUNS },
+      { numRuns: NUM_RUNS }
     );
   });
 
@@ -294,7 +294,7 @@ describe('Property 9: Async loading/error state discipline', () => {
         states.push('start');
         await adapter.withTimeout(hanging, 5);
         return { error: null };
-      }, undefined),
+      }, undefined)
     ).rejects.toMatchObject({ code: DataErrorCode.NETWORK });
     expect(states).toContain('start');
   });
@@ -306,20 +306,32 @@ describe('Property 9: Async loading/error state discipline', () => {
 // NOTE: also run against a local Supabase/Postgres instance in CI (Task 13).
 // ---------------------------------------------------------------------------
 describe('Property 1: Write-then-read consistency (fake-backed; also run vs. local Postgres in CI)', () => {
-  it('read(write(r)) deep-equals r across nested JSONB fields', async () => {
-    const nurseArb = fc.record({
-      id: fc.uuid().map((u) => `nurse-${u}`),
-      version: fc.constant(1),
-      full_name: fc.string(),
-      pipeline_stage: fc.constantFrom('screening', 'offer', 'placed'),
-      final_score: fc.double({ min: 0, max: 100, noNaN: true }),
-      scorecard_fields: fc.dictionary(fc.string(), fc.oneof(fc.string(), fc.integer(), fc.boolean())),
-      additional_certifications: fc.array(fc.string(), { maxLength: 5 }),
-      communication_log: fc.array(
-        fc.record({ at: fc.string(), note: fc.string() }),
-        { maxLength: 5 },
-      ),
-    });
+  it('preserves supplied fields and returns database-owned timestamp defaults', async () => {
+    const optionalIsoTimestamp = fc.option(
+      fc.date({ noInvalidDate: true }).map((date) => date.toISOString()),
+      { nil: undefined }
+    );
+    const nurseArb = fc
+      .record({
+        id: fc.uuid().map((u) => `nurse-${u}`),
+        version: fc.constant(1),
+        created_at: optionalIsoTimestamp,
+        updated_at: optionalIsoTimestamp,
+        full_name: fc.string(),
+        pipeline_stage: fc.constantFrom('screening', 'offer', 'placed'),
+        final_score: fc.double({ min: 0, max: 100, noNaN: true }),
+        scorecard_fields: fc.dictionary(
+          fc.string(),
+          fc.oneof(fc.string(), fc.integer(), fc.boolean())
+        ),
+        additional_certifications: fc.array(fc.string(), { maxLength: 5 }),
+        communication_log: fc.array(fc.record({ at: fc.string(), note: fc.string() }), {
+          maxLength: 5,
+        }),
+      })
+      .map((record) =>
+        Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined))
+      );
 
     await fc.assert(
       fc.asyncProperty(nurseArb, async (record) => {
@@ -331,9 +343,14 @@ describe('Property 1: Write-then-read consistency (fake-backed; also run vs. loc
 
         const read = await adapter.getById('nurses', record.id);
         expect(read.error).toBeNull();
-        expect(read.data).toEqual(record);
+        expect(businessFields(read.data)).toEqual(businessFields(record));
+        expect(read.data.version).toBe(record.version);
+        expect(read.data.created_at).toBe(record.created_at ?? created.data.created_at);
+        expect(read.data.updated_at).toBe(record.updated_at ?? created.data.updated_at);
+        expect(Number.isNaN(Date.parse(read.data.created_at))).toBe(false);
+        expect(Number.isNaN(Date.parse(read.data.updated_at))).toBe(false);
       }),
-      { numRuns: NUM_RUNS },
+      { numRuns: NUM_RUNS }
     );
   });
 });
@@ -375,13 +392,12 @@ describe('Property 3: Update idempotence (fake-backed; also run vs. local Postgr
 
           // Business fields converge regardless of how many times applied.
           expect(businessFields(readA.data)).toEqual(businessFields(readB.data));
-        },
+        }
       ),
-      { numRuns: NUM_RUNS },
+      { numRuns: NUM_RUNS }
     );
   });
 });
-
 
 // ---------------------------------------------------------------------------
 // Feature: supabase-online-platform, Property 4: Mass-update atomic visibility and rollback
@@ -395,8 +411,11 @@ describe('Property 4: Mass-update atomic visibility and rollback (fake-backed; a
       fc.asyncProperty(
         // A random set of records, each with a fresh post-update value.
         fc.array(
-          fc.record({ tier: fc.constantFrom('A', 'B', 'C'), next: fc.string({ minLength: 1, maxLength: 8 }) }),
-          { minLength: 1, maxLength: 30 },
+          fc.record({
+            tier: fc.constantFrom('A', 'B', 'C'),
+            next: fc.string({ minLength: 1, maxLength: 8 }),
+          }),
+          { minLength: 1, maxLength: 30 }
         ),
         async (specs) => {
           const seeded = specs.map((s, i) => ({
@@ -426,9 +445,9 @@ describe('Property 4: Mass-update atomic visibility and rollback (fake-backed; a
             expect(read.data.tier).toBe(specs[i].next);
             expect(read.data.version).toBe(2);
           }
-        },
+        }
       ),
-      { numRuns: NUM_RUNS },
+      { numRuns: NUM_RUNS }
     );
   });
 
@@ -436,8 +455,11 @@ describe('Property 4: Mass-update atomic visibility and rollback (fake-backed; a
     await fc.assert(
       fc.asyncProperty(
         fc.array(
-          fc.record({ tier: fc.constantFrom('A', 'B', 'C'), next: fc.string({ minLength: 1, maxLength: 8 }) }),
-          { minLength: 2, maxLength: 30 },
+          fc.record({
+            tier: fc.constantFrom('A', 'B', 'C'),
+            next: fc.string({ minLength: 1, maxLength: 8 }),
+          }),
+          { minLength: 2, maxLength: 30 }
         ),
         // Which element (by fraction) gets a stale version injected.
         fc.double({ min: 0, max: 0.999, noNaN: true }),
@@ -477,9 +499,9 @@ describe('Property 4: Mass-update atomic visibility and rollback (fake-backed; a
             expect(read.data.tier).toBe(specs[i].tier);
             expect(read.data.version).toBe(1);
           }
-        },
+        }
       ),
-      { numRuns: NUM_RUNS },
+      { numRuns: NUM_RUNS }
     );
   });
 });

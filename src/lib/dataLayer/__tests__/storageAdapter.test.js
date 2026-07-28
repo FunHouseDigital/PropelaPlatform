@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as storage from '../../storage';
+import { STORAGE_PREFIX } from '../../storageKeys';
 import * as adapter from '../storageAdapter';
 
 /**
@@ -128,6 +129,49 @@ describe('storageAdapter persistence', () => {
   it('saveCollection persists the whole array', async () => {
     await adapter.saveCollection('nurses', []);
     expect(storage.getNurses()).toEqual([]);
+  });
+
+  it('reports write failures without changing persisted nurses or the submitted draft', async () => {
+    const persistedBefore = structuredClone(storage.getNurses());
+    const draft = persistedBefore.map((nurse) => ({ ...nurse, tier: 'unsaved' }));
+    const draftBefore = structuredClone(draft);
+    const originalSetItem = localStorage.setItem.bind(localStorage);
+    const setItemFailure = vi
+      .spyOn(localStorage, 'setItem')
+      .mockImplementation((key, value) => {
+        if (key === `${STORAGE_PREFIX}nurses`) {
+          throw new DOMException('Quota exceeded', 'QuotaExceededError');
+        }
+        return originalSetItem(key, value);
+      });
+
+    const result = await adapter.saveCollection('nurses', draft);
+    setItemFailure.mockRestore();
+
+    expect(result.data).toBeNull();
+    expect(result.error?.code).toBe('STORAGE');
+    expect(draft).toEqual(draftBefore);
+    expect(storage.getNurses()).toEqual(persistedBefore);
+  });
+
+  it('reports read failures without replacing the last accepted nurse collection', async () => {
+    const acceptedBefore = structuredClone(storage.getNurses());
+    const originalGetItem = localStorage.getItem.bind(localStorage);
+    const getItemFailure = vi
+      .spyOn(localStorage, 'getItem')
+      .mockImplementation((key) => {
+        if (key === `${STORAGE_PREFIX}nurses`) {
+          throw new DOMException('Storage access denied', 'SecurityError');
+        }
+        return originalGetItem(key);
+      });
+
+    const result = await adapter.getCollection('nurses');
+    getItemFailure.mockRestore();
+
+    expect(result.data).toBeNull();
+    expect(result.error?.code).toBe('STORAGE');
+    expect(storage.getNurses()).toEqual(acceptedBefore);
   });
 });
 

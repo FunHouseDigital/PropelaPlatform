@@ -179,6 +179,11 @@ class FakeQueryBuilder {
     for (const rec of records) {
       const row = clone(rec);
       if (row.version == null) row.version = 1; // default only; no bump on insert
+      if (this.table === 'nurses') {
+        const now = new Date().toISOString();
+        if (row.created_at == null) row.created_at = now;
+        if (row.updated_at == null) row.updated_at = now;
+      }
       rows.push(row);
       inserted.push(row);
     }
@@ -278,14 +283,16 @@ export class FakeSupabaseClient {
       }
       return this._bulkUpdate(args.table_name, args.payload);
     };
-    return { then: (resolve, reject) => {
-      try {
-        resolve(run());
-      } catch (err) {
-        if (reject) reject(err);
-        else throw err;
-      }
-    } };
+    return {
+      then: (resolve, reject) => {
+        try {
+          resolve(run());
+        } catch (err) {
+          if (reject) reject(err);
+          else throw err;
+        }
+      },
+    };
   }
 
   /** Internal: atomic all-or-none bulk update against the in-memory store. */
@@ -306,10 +313,16 @@ export class FakeSupabaseClient {
     for (const elem of payload) {
       const id = elem == null ? undefined : elem.id;
       if (id == null) {
-        return { data: null, error: { message: 'every element must carry an "id"', code: '22023' } };
+        return {
+          data: null,
+          error: { message: 'every element must carry an "id"', code: '22023' },
+        };
       }
       if (elem.version == null) {
-        return { data: null, error: { message: `element id=${id} must carry a "version"`, code: '22023' } };
+        return {
+          data: null,
+          error: { message: `element id=${id} must carry a "version"`, code: '22023' },
+        };
       }
       const existing = byId.get(id);
       if (!existing || existing.version !== elem.version) {

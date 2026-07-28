@@ -1,38 +1,35 @@
 import {
+  AlertTriangle,
   Calendar,
   ChevronDown,
   ChevronRight,
   Flag,
+  LoaderCircle,
   MessageSquare,
   Plus,
   Star,
   StarHalf,
+  Trash2,
   X,
 } from 'lucide-react';
 import { useState } from 'react';
 
-import { useDebounce } from '../../hooks/useDebounce';
 import {
   calculateCVScore,
   calculateFinalScore,
   calculateReadinessStatus,
   calculateTier,
 } from '../../lib/calculations';
-import { sanitizeText, validateRequired, MAX_LENGTHS } from '../../lib/validation';
 import {
   AGE_GROUPS,
   COMMITMENT_FEE_STATUSES,
-  DESTINATION_COUNTRIES,
   EFSET_LEVELS,
   EMPLOYMENT_STATUSES,
   GENDERS,
   NEXT_ACTION_VALUES,
-  OET_RESULTS,
   OET_STATUSES,
   PIPELINE_STAGES,
-  PLACEMENT_STATUSES,
   QUALIFICATION_TYPES,
-  RECOMMENDED_PATHWAYS,
   SANC_APC_STATUSES,
   SHORTLIST_DECISIONS,
   SOURCE_OPTIONS,
@@ -40,6 +37,20 @@ import {
   YEARS_EXPERIENCE,
   YES_NO,
 } from '../../lib/constants';
+import { diffNurseFields } from '../../lib/nurses/nurseWorkflow';
+import { MAX_LENGTHS, sanitizeText, validateRequired } from '../../lib/validation';
+import ConfirmationDialog from '../ui/ConfirmationDialog';
+import DeleteNurseDialog from './DeleteNurseDialog';
+
+const RECOVERABLE_CODES = new Set(['NETWORK', 'UNKNOWN', 'STORAGE']);
+const ERROR_TITLES = {
+  AUTH: 'Authentication required',
+  FORBIDDEN: 'Permission denied',
+  NETWORK: 'Network error',
+  STORAGE: 'Storage error',
+  VALIDATION: 'Validation failed',
+  UNKNOWN: 'Could not save nurse',
+};
 
 function getNextActionColor(nurse) {
   if (!nurse.nextAction || nurse.nextAction === 'No action required') {
@@ -51,27 +62,28 @@ function getNextActionColor(nurse) {
     today.setHours(0, 0, 0, 0);
     due.setHours(0, 0, 0, 0);
     if (due < today) return { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' };
-    if (due.getTime() === today.getTime())
+    if (due.getTime() === today.getTime()) {
       return { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' };
+    }
   }
   return { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200' };
 }
 
-function renderStars(score) {
+function renderStars(score = 0) {
   const stars = [];
-  const fullStars = Math.floor(score);
-  const hasHalf = score - fullStars >= 0.3 && score - fullStars < 0.8;
-  const fullExtra = score - fullStars >= 0.8 ? 1 : 0;
-
-  for (let i = 0; i < fullStars + fullExtra; i++) {
-    stars.push(<Star key={`full-${i}`} size={14} className="fill-amber-400 text-amber-400" />);
+  const fullStars = Math.floor(Number(score) || 0);
+  const fraction = (Number(score) || 0) - fullStars;
+  const hasHalf = fraction >= 0.3 && fraction < 0.8;
+  const fullExtra = fraction >= 0.8 ? 1 : 0;
+  for (let index = 0; index < fullStars + fullExtra; index += 1) {
+    stars.push(<Star key={`full-${index}`} size={14} className="fill-amber-400 text-amber-400" />);
   }
   if (hasHalf) {
     stars.push(<StarHalf key="half" size={14} className="fill-amber-400 text-amber-400" />);
   }
-  const remaining = 5 - (fullStars + fullExtra + (hasHalf ? 1 : 0));
-  for (let i = 0; i < remaining; i++) {
-    stars.push(<Star key={`empty-${i}`} size={14} className="text-gray-300" />);
+  const remaining = Math.max(0, 5 - (fullStars + fullExtra + (hasHalf ? 1 : 0)));
+  for (let index = 0; index < remaining; index += 1) {
+    stars.push(<Star key={`empty-${index}`} size={14} className="text-gray-300" />);
   }
   return stars;
 }
@@ -81,8 +93,10 @@ function Section({ title, defaultOpen = false, children }) {
   return (
     <div className="border-b border-gray-100 last:border-b-0">
       <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 py-3 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
       >
         {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         {title}
@@ -92,143 +106,111 @@ function Section({ title, defaultOpen = false, children }) {
   );
 }
 
-function FieldRow({ label, value, children }) {
+function FieldRow({ label, error, children }) {
   return (
     <div className="flex items-start py-1.5">
-      <span className="text-xs text-gray-500 w-40 shrink-0">{label}</span>
-      <span className="text-sm text-gray-900 flex-1">{children || value || '-'}</span>
+      <span className="w-40 shrink-0 text-xs text-gray-500">{label}</span>
+      <div className="min-w-0 flex-1 text-sm text-gray-900">
+        {children}
+        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      </div>
     </div>
   );
 }
 
-function EditableSelect({ value, options, onChange, className = '' }) {
+const INPUT_CLASS =
+  'w-full rounded border border-transparent bg-transparent px-2 py-1 text-sm text-gray-900 hover:border-gray-200 focus:border-gray-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-propela-purple disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500';
+
+function EditableSelect({ value, options, onChange, disabled = false, className = '', ariaLabel }) {
   return (
     <select
       value={value || ''}
-      onChange={(e) => onChange(e.target.value)}
-      className={`text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-propela-purple ${className}`}
+      onChange={(event) => onChange(event.target.value)}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className={`rounded border border-gray-200 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-propela-purple disabled:cursor-not-allowed disabled:bg-gray-100 ${className}`}
     >
       <option value="">-- Select --</option>
-      {options.map((opt) => (
-        <option key={opt} value={opt}>
-          {opt}
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
         </option>
       ))}
     </select>
   );
 }
 
-// Shared input styling: subtle by default, clearly editable on focus.
-const INPUT_CLASS =
-  'w-full text-sm text-gray-900 bg-transparent border border-transparent hover:border-gray-200 rounded px-2 py-1 focus:outline-none focus:bg-white focus:border-gray-300 focus:ring-1 focus:ring-propela-purple';
-
-function EditableText({ value, onChange, placeholder = '', className = '' }) {
+function EditableText({
+  value,
+  onChange,
+  disabled = false,
+  placeholder = '',
+  type = 'text',
+  ariaLabel,
+}) {
   return (
     <input
-      type="text"
+      type={type}
       value={value ?? ''}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(event) => onChange(event.target.value)}
+      disabled={disabled}
       placeholder={placeholder}
-      className={`${INPUT_CLASS} ${className}`}
-    />
-  );
-}
-
-function EditableNumber({ value, onChange, placeholder = '', min, max, step, className = '' }) {
-  return (
-    <input
-      type="number"
-      value={value ?? ''}
-      onChange={(e) => {
-        const raw = e.target.value;
-        onChange(raw === '' ? '' : Number(raw));
-      }}
-      placeholder={placeholder}
-      min={min}
-      max={max}
-      step={step}
-      className={`${INPUT_CLASS} ${className}`}
-    />
-  );
-}
-
-function EditableDate({ value, onChange, className = '' }) {
-  return (
-    <input
-      type="date"
-      value={value || ''}
-      onChange={(e) => onChange(e.target.value)}
-      className={`${INPUT_CLASS} ${className}`}
-    />
-  );
-}
-
-function EditableTextarea({ value, onChange, placeholder = '', rows = 3, className = '' }) {
-  return (
-    <textarea
-      value={value ?? ''}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      rows={rows}
-      className={`${INPUT_CLASS} resize-y leading-snug ${className}`}
-    />
-  );
-}
-
-// Maps a stored boolean (e.g. agreementSigned) to a Yes / No dropdown
-// without changing the underlying data type used elsewhere in the app.
-function EditableYesNoBoolean({ value, onChange, className = '' }) {
-  return (
-    <EditableSelect
-      value={value ? 'Yes' : 'No'}
-      options={YES_NO}
-      onChange={(v) => onChange(v === 'Yes')}
-      className={className}
-    />
-  );
-}
-
-// Comma-separated text input backed by an array field. Keeps its own raw
-// text state so typing stays smooth, while persisting a cleaned array.
-function EditableCertifications({ value, onChange, placeholder = '' }) {
-  const [text, setText] = useState((value || []).join(', '));
-  return (
-    <input
-      type="text"
-      value={text}
-      onChange={(e) => {
-        setText(e.target.value);
-        onChange(
-          e.target.value
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean)
-        );
-      }}
-      placeholder={placeholder}
+      aria-label={ariaLabel}
       className={INPUT_CLASS}
     />
   );
 }
 
-function ScorecardField({ label, weight, value, onChange }) {
+function EditableNumber({ value, onChange, disabled = false, min, max, ariaLabel }) {
+  return (
+    <input
+      type="number"
+      value={value ?? ''}
+      onChange={(event) => onChange(event.target.value === '' ? '' : Number(event.target.value))}
+      disabled={disabled}
+      min={min}
+      max={max}
+      aria-label={ariaLabel}
+      className={INPUT_CLASS}
+    />
+  );
+}
+
+function EditableTextarea({ value, onChange, disabled = false, placeholder = '', ariaLabel }) {
+  return (
+    <textarea
+      value={value ?? ''}
+      onChange={(event) => onChange(event.target.value)}
+      disabled={disabled}
+      placeholder={placeholder}
+      aria-label={ariaLabel}
+      rows={3}
+      className={`${INPUT_CLASS} resize-y leading-snug`}
+    />
+  );
+}
+
+function ScorecardField({ label, weight, value, onChange, disabled }) {
   return (
     <div className="flex items-center gap-2 py-1">
-      <span className="text-xs text-gray-600 w-36 shrink-0">
+      <span className="w-36 shrink-0 text-xs text-gray-600">
         {label} <span className="text-gray-400">(x{weight})</span>
       </span>
       <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((n) => (
+        {[1, 2, 3, 4, 5].map((number) => (
           <button
-            key={n}
-            onClick={() => onChange(n)}
-            className={`w-7 h-7 rounded text-xs font-medium border ${
-              value === n
-                ? 'bg-propela-purple text-white border-propela-purple'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-propela-purple-mid'
+            key={number}
+            type="button"
+            disabled={disabled}
+            aria-label={`${label} ${number}`}
+            onClick={() => onChange(number)}
+            className={`h-7 w-7 rounded border text-xs font-medium disabled:cursor-not-allowed disabled:opacity-60 ${
+              value === number
+                ? 'border-propela-purple bg-propela-purple text-white'
+                : 'border-gray-200 bg-white text-gray-600 hover:border-propela-purple-mid'
             }`}
           >
-            {n}
+            {number}
           </button>
         ))}
       </div>
@@ -236,748 +218,963 @@ function ScorecardField({ label, weight, value, onChange }) {
   );
 }
 
-export default function NurseCard({ nurse, onClose, onUpdate }) {
-  const [localNurse, setLocalNurse] = useState({ ...nurse });
-  const [showAddComm, setShowAddComm] = useState(false);
-  const [commForm, setCommForm] = useState({ channel: 'Email', summary: '', nextAction: '' });
+function formatDifference(value) {
+  if (value === undefined || value === null || value === '') return '—';
+  if (Array.isArray(value))
+    return (
+      value.map((item) => (typeof item === 'object' ? JSON.stringify(item) : item)).join(', ') ||
+      '—'
+    );
+  if (typeof value === 'object') return JSON.stringify(value);
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  return String(value);
+}
 
-  // Debounced version of onUpdate for text field changes (500ms delay)
-  const debouncedUpdate = useDebounce((updatedNurse) => {
-    onUpdate(updatedNurse);
-  }, 500);
+function DetailStatePanel({ state, error, onRetry, onClose }) {
+  if (state === 'loading' || state === 'idle') {
+    return (
+      <div
+        role="status"
+        className="flex items-center gap-2 rounded-xl bg-white p-5 text-sm text-gray-700 shadow-xl"
+      >
+        <LoaderCircle size={18} className="animate-spin text-propela-purple" />
+        Loading nurse details...
+      </div>
+    );
+  }
+  if (state === 'notFound') {
+    return (
+      <div
+        role="dialog"
+        aria-labelledby="nurse-not-found-title"
+        className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl"
+      >
+        <h2 id="nurse-not-found-title" className="font-semibold text-gray-900">
+          This nurse no longer exists
+        </h2>
+        <p className="mt-2 text-sm text-gray-600">
+          The stale list entry was removed. No changes were saved.
+        </p>
+        <div className="mt-4 flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg bg-propela-purple px-3 py-2 text-sm font-medium text-white"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+  const code = error?.code || 'UNKNOWN';
+  return (
+    <div
+      role="dialog"
+      aria-labelledby="nurse-detail-error-title"
+      className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl"
+    >
+      <h2 id="nurse-detail-error-title" className="font-semibold text-gray-900">
+        {ERROR_TITLES[code] || 'Could not load nurse details'}
+      </h2>
+      <p role="alert" className="mt-2 text-sm text-gray-600">
+        {error?.message || 'The authoritative nurse record could not be loaded.'}
+      </p>
+      <div className="mt-4 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600"
+        >
+          Close
+        </button>
+        {RECOVERABLE_CODES.has(code) && (
+          <button
+            type="button"
+            onClick={() => onRetry?.()}
+            className="rounded-lg bg-propela-purple px-3 py-2 text-sm font-medium text-white"
+          >
+            Retry
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
-  // Flush any pending debounced save before closing the card
-  const handleClose = () => {
-    debouncedUpdate.flush();
-    onClose();
+function ConflictPanel({
+  originalBase,
+  draft,
+  decision,
+  onReview,
+  reviewOpen,
+  onRebase,
+  onRequestDiscard,
+  onKeepEditing,
+}) {
+  const latest = decision?.latest;
+  const changedFields = latest ? diffNurseFields(originalBase, draft) : [];
+  return (
+    <div
+      role="alert"
+      className="m-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"
+    >
+      <div className="flex gap-2">
+        <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+        <div>
+          <p className="font-semibold">This nurse changed after you opened it</p>
+          <p className="mt-1">
+            Your draft is still intact. Review the differences before deciding what to do.
+          </p>
+        </div>
+      </div>
+      {reviewOpen && (
+        <div className="mt-3 overflow-x-auto rounded border border-amber-200 bg-white">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-amber-100">
+                <th className="p-2">Field</th>
+                <th className="p-2">Your draft</th>
+                <th className="p-2">Latest saved</th>
+              </tr>
+            </thead>
+            <tbody>
+              {changedFields.length === 0 ? (
+                <tr>
+                  <td colSpan="3" className="p-2 text-gray-500">
+                    No local field differences remain.
+                  </td>
+                </tr>
+              ) : (
+                changedFields.map((field) => (
+                  <tr key={field} className="border-b border-gray-100 last:border-0">
+                    <th className="p-2 font-medium">{field}</th>
+                    <td className="max-w-48 break-words p-2">{formatDifference(draft[field])}</td>
+                    <td className="max-w-48 break-words p-2">
+                      {formatDifference(latest?.[field])}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onReview}
+          className="rounded border border-amber-300 bg-white px-3 py-1.5"
+        >
+          {reviewOpen ? 'Hide differences' : 'Review differences'}
+        </button>
+        <button
+          type="button"
+          onClick={onRebase}
+          disabled={!latest}
+          className="rounded bg-propela-purple px-3 py-1.5 text-white disabled:opacity-50"
+        >
+          Apply my edits to latest
+        </button>
+        <button
+          type="button"
+          onClick={onRequestDiscard}
+          disabled={!latest}
+          className="rounded border border-red-300 bg-white px-3 py-1.5 text-red-700 disabled:opacity-50"
+        >
+          Discard my edits
+        </button>
+        <button
+          type="button"
+          onClick={onKeepEditing}
+          className="rounded border border-amber-300 bg-white px-3 py-1.5"
+        >
+          Keep editing
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function NurseCard({
+  nurseSlice,
+  onUpdateDraft,
+  onSave,
+  onRetrySave,
+  onRequestCancel,
+  onResolveDiscard,
+  onRetryDetail,
+  onClose,
+  onApplyConflictToLatest,
+  onRequestDiscardConflict,
+  onKeepEditingAfterConflict,
+  permissions = { canEdit: true },
+  canDelete = false,
+  onRequestDelete,
+  onCancelDelete,
+  onConfirmDelete,
+  onRetryDelete,
+  onReloadAfterDeleteConflict,
+  onDeleteResolved,
+}) {
+  const [showAddCommunication, setShowAddCommunication] = useState(false);
+  const [showConflictReview, setShowConflictReview] = useState(false);
+  const [communication, setCommunication] = useState({
+    channel: 'Email',
+    summary: '',
+    nextAction: '',
+  });
+
+  const detailState = nurseSlice?.detailState || 'idle';
+  const draft = nurseSlice?.draft;
+  const isSaving = nurseSlice?.saveState === 'loading';
+  const isDeleting = nurseSlice?.deleteState === 'loading';
+  const canEditNurse = permissions.canEdit !== false;
+  const canDeleteNurse = permissions.canDelete ?? canDelete;
+  const editingDisabled = isSaving || !canEditNurse;
+
+  const closeImmediately = () => onClose?.();
+  const requestClose = () => {
+    if (isSaving) return;
+    const result = onRequestCancel?.();
+    if (!result || result.status === 'closed') closeImmediately();
   };
 
-  const updateField = (field, value, { debounce = false } = {}) => {
-    // Sanitize free-text edits (control-char strip + length cap) before they
-    // propagate to state/storage. trim:false keeps inline/debounced typing
-    // usable; non-string values (objects, arrays, numbers) pass through.
-    const cleanValue = typeof value === 'string'
-      ? sanitizeText(value, { maxLength: MAX_LENGTHS.LONG_TEXT, trim: false })
-      : value;
-    const updated = { ...localNurse, [field]: cleanValue };
-    // Recalculate derived fields
-    if (field === 'pipelineStage') {
-      updated.readinessStatus = calculateReadinessStatus(cleanValue);
+  const resolveDiscard = (confirm) => {
+    const decisionType = nurseSlice?.discardDecision?.type;
+    const result = onResolveDiscard?.(confirm);
+    if (confirm && decisionType === 'discardEdit' && result?.status === 'discarded')
+      closeImmediately();
+  };
+
+  const runDeleteAction = async (action) => {
+    const result = await action?.();
+    if (
+      result?.status === 'deleted' ||
+      result?.status === 'alreadyDeleted' ||
+      result?.status === 'notFound'
+    ) {
+      onDeleteResolved?.(result);
     }
-    if (field === 'scorecardFields') {
+    return result;
+  };
+
+  if (detailState !== 'success' || !draft) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+        <DetailStatePanel
+          state={detailState}
+          error={nurseSlice?.detailError}
+          onRetry={onRetryDetail}
+          onClose={closeImmediately}
+        />
+      </div>
+    );
+  }
+
+  const updateField = (field, value) => {
+    if (!canEditNurse) return;
+    const cleanValue =
+      typeof value === 'string'
+        ? sanitizeText(value, {
+            maxLength: MAX_LENGTHS.LONG_TEXT,
+            trim: false,
+            allowNewlines: true,
+          })
+        : value;
+    const changes = { [field]: cleanValue };
+    if (field === 'pipelineStage') changes.readinessStatus = calculateReadinessStatus(cleanValue);
+    onUpdateDraft(changes);
+  };
+
+  const updateScorecard = (field, value) => {
+    if (!canEditNurse) return;
+    onUpdateDraft((current) => {
+      const updated = {
+        ...current,
+        scorecardFields: { ...current.scorecardFields, [field]: value },
+      };
       updated.cvScore = calculateCVScore(updated);
       updated.finalScore = calculateFinalScore(updated);
       updated.tier = calculateTier(updated.finalScore);
-    }
-    setLocalNurse(updated);
-    if (debounce) {
-      debouncedUpdate(updated);
-    } else {
-      onUpdate(updated);
-    }
-  };
-
-  const updateFieldDebounced = (field, value) => {
-    updateField(field, value, { debounce: true });
-  };
-
-  const updateOetScore = (key, value) => {
-    const newScores = { ...(localNurse.oetScores || {}), [key]: value };
-    updateField('oetScores', newScores);
-  };
-
-  const updateScorecard = (key, value) => {
-    const newScorecard = { ...localNurse.scorecardFields, [key]: value };
-    const updated = { ...localNurse, scorecardFields: newScorecard };
-    updated.cvScore = calculateCVScore(updated);
-    updated.finalScore = calculateFinalScore(updated);
-    updated.tier = calculateTier(updated.finalScore);
-    setLocalNurse(updated);
-    onUpdate(updated);
+      return updated;
+    });
   };
 
   const addCommunication = () => {
-    if (!validateRequired(commForm.summary)) return;
+    if (!canEditNurse || !validateRequired(communication.summary)) return;
     const entry = {
       date: new Date().toISOString().split('T')[0],
-      channel: commForm.channel,
-      summary: sanitizeText(commForm.summary, { maxLength: MAX_LENGTHS.LONG_TEXT, allowNewlines: true }),
-      nextAction: sanitizeText(commForm.nextAction, { maxLength: MAX_LENGTHS.SHORT_TEXT }),
+      channel: communication.channel,
+      summary: sanitizeText(communication.summary, {
+        maxLength: MAX_LENGTHS.LONG_TEXT,
+        allowNewlines: true,
+      }),
+      nextAction: sanitizeText(communication.nextAction, { maxLength: MAX_LENGTHS.SHORT_TEXT }),
     };
-    const log = [...(localNurse.communicationLog || []), entry];
-    updateField('communicationLog', log);
-    setCommForm({ channel: 'Email', summary: '', nextAction: '' });
-    setShowAddComm(false);
+    updateField('communicationLog', [...(draft.communicationLog || []), entry]);
+    setCommunication({ channel: 'Email', summary: '', nextAction: '' });
+    setShowAddCommunication(false);
   };
 
-  const naColor = getNextActionColor(localNurse);
-  const initials = localNurse.fullName
+  const saveErrors = nurseSlice?.saveValidation?.errors || {};
+  const saveDecision = nurseSlice?.saveDecision;
+  const conflictVisible = saveDecision?.type === 'saveConflict';
+  const naColor = getNextActionColor(draft);
+  const initials = (draft.fullName || '?')
     .split(' ')
-    .map((n) => n[0])
+    .map((part) => part[0])
     .join('')
     .slice(0, 2);
-
-  const isExitState = ['Dropped Out', 'Deferred', 'Recommended Pathway'].includes(
-    localNurse.pipelineStage
-  );
+  const dirty = diffNurseFields(nurseSlice.originalBase, draft).length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 pb-6">
-      <div className="absolute inset-0 bg-black/30" onClick={handleClose} />
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[calc(100vh-3rem)] flex flex-col">
-        {/* Header - Always visible */}
-        <div
-          className={`p-5 border-b border-gray-100 shrink-0 rounded-t-xl ${
-            localNurse.pipelineStage === 'Dropped Out'
-              ? 'bg-red-50'
-              : localNurse.pipelineStage === 'Deferred'
-                ? 'bg-yellow-50'
-                : 'bg-white'
-          }`}
-        >
-          <div className="flex items-start justify-between mb-3">
+    <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pb-6 pt-6">
+      <button
+        type="button"
+        aria-label="Close nurse details"
+        className="absolute inset-0 bg-black/30"
+        onClick={requestClose}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="nurse-detail-title"
+        className="relative flex max-h-[calc(100vh-3rem)] w-full max-w-2xl flex-col rounded-xl bg-white shadow-2xl"
+      >
+        <div className="shrink-0 rounded-t-xl border-b border-gray-100 bg-white p-5">
+          <div className="mb-3 flex items-start justify-between">
             <div className="flex items-center gap-3">
-              {localNurse.photoURL ? (
-                <img
-                  src={localNurse.photoURL}
-                  alt={localNurse.fullName}
-                  className="w-14 h-14 rounded-full object-cover"
-                />
+              {draft.photoURL ? (
+                <img src={draft.photoURL} alt="" className="h-14 w-14 rounded-full object-cover" />
               ) : (
-                <div className="w-14 h-14 rounded-full bg-propela-purple flex items-center justify-center text-white font-semibold text-lg">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-propela-purple text-lg font-semibold text-white">
                   {initials}
                 </div>
               )}
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {localNurse.fullName}
-                  {localNurse.preferredName &&
-                    localNurse.preferredName !== localNurse.fullName.split(' ')[0] && (
-                      <span className="text-gray-400 font-normal text-sm ml-1">
-                        ({localNurse.preferredName})
-                      </span>
-                    )}
+                <h2 id="nurse-detail-title" className="text-lg font-semibold text-gray-900">
+                  {draft.fullName || 'Nurse details'}
                 </h2>
-                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                <div className="mt-1 flex flex-wrap items-center gap-2">
                   <EditableSelect
-                    value={localNurse.pipelineStage}
+                    ariaLabel="Pipeline stage"
+                    value={draft.pipelineStage}
                     options={PIPELINE_STAGES}
-                    onChange={(v) => updateField('pipelineStage', v)}
+                    onChange={(value) => updateField('pipelineStage', value)}
+                    disabled={editingDisabled}
                     className="text-xs"
                   />
-                  {localNurse.cohortAssigned && (
-                    <span className="text-xs bg-propela-purple-light text-propela-purple px-2 py-0.5 rounded-full">
-                      {localNurse.cohortAssigned}
+                  {draft.flags > 0 && (
+                    <span className="flex items-center gap-0.5 text-xs text-red-600">
+                      <Flag size={12} className="fill-red-600" /> {draft.flags}
                     </span>
                   )}
-                  {localNurse.flags > 0 && (
-                    <span className="flex items-center gap-0.5 text-xs text-red-600">
-                      <Flag size={12} className="fill-red-600" /> {localNurse.flags}
+                  {dirty && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                      Unsaved changes
                     </span>
                   )}
                 </div>
               </div>
             </div>
-            <button onClick={handleClose} className="p-1 hover:bg-gray-100 rounded">
+            <button
+              type="button"
+              aria-label="Close"
+              disabled={isSaving || isDeleting}
+              onClick={requestClose}
+              className="rounded p-1 hover:bg-gray-100 disabled:opacity-50"
+            >
               <X size={20} className="text-gray-500" />
             </button>
           </div>
-
-          {/* Next Action - Most Prominent */}
           <div className={`rounded-lg border p-3 ${naColor.bg} ${naColor.border}`}>
-            <label className="text-xs font-medium text-gray-500 block mb-1">Next Action</label>
-            <select
-              value={localNurse.nextAction || ''}
-              onChange={(e) => updateField('nextAction', e.target.value)}
-              className={`w-full text-base font-semibold bg-transparent border-none focus:outline-none ${naColor.text}`}
+            <label
+              htmlFor="nurse-next-action"
+              className="mb-1 block text-xs font-medium text-gray-500"
             >
-              <option value="">-- Select --</option>
-              {NEXT_ACTION_VALUES.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
+              <span className="mb-1 block">Next Action</span>
+              <select
+                id="nurse-next-action"
+                value={draft.nextAction || ''}
+                disabled={editingDisabled}
+                onChange={(event) => updateField('nextAction', event.target.value)}
+                className={`w-full border-none bg-transparent text-base font-semibold focus:outline-none disabled:opacity-60 ${naColor.text}`}
+              >
+                <option value="">-- Select --</option>
+                {NEXT_ACTION_VALUES.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
-
-          {/* Quick Info Row */}
-          <div className="flex items-center gap-4 mt-3 text-xs text-gray-500 flex-wrap">
+          <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-gray-500">
             <span className="flex items-center gap-1">
               <Calendar size={12} />
-              Submitted: {localNurse.submittedAt || '-'}
+              Submitted: {draft.submittedAt || '—'}
             </span>
-            {localNurse.lastContacted && (
+            {draft.lastContacted && (
               <span className="flex items-center gap-1">
                 <MessageSquare size={12} />
-                Last contacted: {localNurse.lastContacted}
+                Last contacted: {draft.lastContacted}
               </span>
             )}
-            {!isExitState && (
-              <span
-                className={`px-2 py-0.5 rounded-full font-medium ${
-                  localNurse.readinessStatus === 'Placement Ready'
-                    ? 'bg-green-100 text-green-700'
-                    : localNurse.readinessStatus === 'Placed'
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'bg-gray-100 text-gray-600'
-                }`}
-              >
-                {localNurse.readinessStatus}
-              </span>
-            )}
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-600">
+              {draft.readinessStatus || 'Not Ready'}
+            </span>
           </div>
         </div>
 
-        {/* Scrollable Sections */}
-        <div className="overflow-y-auto flex-1">
-          <Section title="Personal Information" defaultOpen={true}>
-            <div className="space-y-0.5">
-              <FieldRow label="Email">
-                <EditableText
-                  value={localNurse.email}
-                  onChange={(v) => updateFieldDebounced('email', v)}
-                  placeholder="email@example.com"
-                />
-              </FieldRow>
-              <FieldRow label="Phone">
-                <EditableText
-                  value={localNurse.contactNumber}
-                  onChange={(v) => updateFieldDebounced('contactNumber', v)}
-                  placeholder="+27..."
-                />
-              </FieldRow>
-              <FieldRow label="Gender">
-                <EditableSelect
-                  value={localNurse.gender}
-                  options={GENDERS}
-                  onChange={(v) => updateField('gender', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Age Group">
-                <EditableSelect
-                  value={localNurse.ageGroup}
-                  options={AGE_GROUPS}
-                  onChange={(v) => updateField('ageGroup', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Province">
-                <EditableText
-                  value={localNurse.province}
-                  onChange={(v) => updateFieldDebounced('province', v)}
-                  placeholder="Province"
-                />
-              </FieldRow>
-              <FieldRow label="City">
-                <EditableText
-                  value={localNurse.city}
-                  onChange={(v) => updateFieldDebounced('city', v)}
-                  placeholder="City"
-                />
-              </FieldRow>
-            </div>
+        {conflictVisible && (
+          <ConflictPanel
+            originalBase={nurseSlice.originalBase}
+            draft={draft}
+            decision={saveDecision}
+            reviewOpen={showConflictReview}
+            onReview={() => setShowConflictReview((visible) => !visible)}
+            onRebase={() => {
+              onApplyConflictToLatest();
+              setShowConflictReview(false);
+            }}
+            onRequestDiscard={onRequestDiscardConflict}
+            onKeepEditing={() => {
+              onKeepEditingAfterConflict();
+              setShowConflictReview(false);
+            }}
+          />
+        )}
+
+        {nurseSlice?.saveError && (
+          <div
+            role="alert"
+            className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+          >
+            <p className="font-semibold">
+              {ERROR_TITLES[nurseSlice.saveError.code] || ERROR_TITLES.UNKNOWN}
+            </p>
+            <p className="mt-1">{nurseSlice.saveError.message || 'Your changes were not saved.'}</p>
+            {canEditNurse && saveDecision?.retryAvailable && (
+              <button
+                type="button"
+                onClick={onRetrySave}
+                className="mt-2 rounded border border-red-200 bg-white px-3 py-1.5 font-medium"
+              >
+                Retry save
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto">
+          <Section title="Personal Information" defaultOpen>
+            <FieldRow label="Full name" error={saveErrors.fullName}>
+              <EditableText
+                ariaLabel="Full name"
+                value={draft.fullName}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('fullName', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Preferred name" error={saveErrors.preferredName}>
+              <EditableText
+                ariaLabel="Preferred name"
+                value={draft.preferredName}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('preferredName', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Email" error={saveErrors.email}>
+              <EditableText
+                ariaLabel="Email"
+                type="email"
+                value={draft.email}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('email', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Phone" error={saveErrors.contactNumber}>
+              <EditableText
+                ariaLabel="Phone"
+                value={draft.contactNumber}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('contactNumber', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Gender" error={saveErrors.gender}>
+              <EditableSelect
+                ariaLabel="Gender"
+                value={draft.gender}
+                options={GENDERS}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('gender', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Age group" error={saveErrors.ageGroup}>
+              <EditableSelect
+                ariaLabel="Age group"
+                value={draft.ageGroup}
+                options={AGE_GROUPS}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('ageGroup', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Province" error={saveErrors.province}>
+              <EditableText
+                ariaLabel="Province"
+                value={draft.province}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('province', value)}
+              />
+            </FieldRow>
+            <FieldRow label="City" error={saveErrors.city}>
+              <EditableText
+                ariaLabel="City"
+                value={draft.city}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('city', value)}
+              />
+            </FieldRow>
           </Section>
 
           <Section title="Professional Profile">
-            <div className="space-y-0.5">
-              <FieldRow label="Registered with SANC">
-                <EditableSelect
-                  value={localNurse.registeredWithSANC}
-                  options={YES_NO}
-                  onChange={(v) => updateField('registeredWithSANC', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Registered Nurse in SA">
-                <EditableSelect
-                  value={localNurse.registeredNurseInSA}
-                  options={YES_NO}
-                  onChange={(v) => updateField('registeredNurseInSA', v)}
-                />
-              </FieldRow>
-              <FieldRow label="SANC Number">
-                <EditableText
-                  value={localNurse.sancNumber}
-                  onChange={(v) => updateFieldDebounced('sancNumber', v)}
-                  placeholder="SANC registration number"
-                />
-              </FieldRow>
-              <FieldRow label="SANC APC Expiry">
-                <EditableDate
-                  value={localNurse.sancAPCExpiry}
-                  onChange={(v) => updateField('sancAPCExpiry', v)}
-                />
-              </FieldRow>
-              <FieldRow label="SANC APC Status">
-                <EditableSelect
-                  value={localNurse.sancAPCStatus}
-                  options={SANC_APC_STATUSES}
-                  onChange={(v) => updateField('sancAPCStatus', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Highest Qualification">
-                <EditableSelect
-                  value={localNurse.highestQualification}
-                  options={QUALIFICATION_TYPES}
-                  onChange={(v) => updateField('highestQualification', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Institution">
-                <EditableText
-                  value={localNurse.qualificationInstitution}
-                  onChange={(v) => updateFieldDebounced('qualificationInstitution', v)}
-                  placeholder="Institution"
-                />
-              </FieldRow>
-              <FieldRow label="Years Experience">
-                <EditableSelect
-                  value={localNurse.yearsOfClinicalExperience}
-                  options={YEARS_EXPERIENCE}
-                  onChange={(v) => updateField('yearsOfClinicalExperience', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Primary Specialty">
-                <EditableSelect
-                  value={localNurse.primaryClinicalSpecialty}
-                  options={SPECIALTIES}
-                  onChange={(v) => updateField('primaryClinicalSpecialty', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Additional Certs">
-                <EditableCertifications
-                  value={localNurse.additionalCertifications}
-                  onChange={(v) => updateFieldDebounced('additionalCertifications', v)}
-                  placeholder="Comma-separated, e.g. ACLS, BLS"
-                />
-              </FieldRow>
-              <FieldRow label="Employment Status">
-                <EditableSelect
-                  value={localNurse.employmentStatus}
-                  options={EMPLOYMENT_STATUSES}
-                  onChange={(v) => updateField('employmentStatus', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Current Employer">
-                <EditableText
-                  value={localNurse.currentEmployer}
-                  onChange={(v) => updateFieldDebounced('currentEmployer', v)}
-                  placeholder="Current employer"
-                />
-              </FieldRow>
-              <FieldRow label="Valid Passport">
-                <EditableSelect
-                  value={localNurse.validPassport}
-                  options={YES_NO}
-                  onChange={(v) => updateField('validPassport', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Passport Expiry">
-                <EditableDate
-                  value={localNurse.passportExpiryDate}
-                  onChange={(v) => updateField('passportExpiryDate', v)}
-                />
-              </FieldRow>
-            </div>
+            <FieldRow label="Registered with SANC" error={saveErrors.registeredWithSANC}>
+              <EditableSelect
+                value={draft.registeredWithSANC}
+                options={YES_NO}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('registeredWithSANC', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Registered nurse in SA" error={saveErrors.registeredNurseInSA}>
+              <EditableSelect
+                value={draft.registeredNurseInSA}
+                options={YES_NO}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('registeredNurseInSA', value)}
+              />
+            </FieldRow>
+            <FieldRow label="SANC number" error={saveErrors.sancNumber}>
+              <EditableText
+                value={draft.sancNumber}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('sancNumber', value)}
+              />
+            </FieldRow>
+            <FieldRow label="SANC APC expiry" error={saveErrors.sancAPCExpiry}>
+              <EditableText
+                type="date"
+                value={draft.sancAPCExpiry}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('sancAPCExpiry', value)}
+              />
+            </FieldRow>
+            <FieldRow label="SANC APC status" error={saveErrors.sancAPCStatus}>
+              <EditableSelect
+                value={draft.sancAPCStatus}
+                options={SANC_APC_STATUSES}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('sancAPCStatus', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Highest qualification" error={saveErrors.highestQualification}>
+              <EditableSelect
+                value={draft.highestQualification}
+                options={QUALIFICATION_TYPES}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('highestQualification', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Institution" error={saveErrors.qualificationInstitution}>
+              <EditableText
+                value={draft.qualificationInstitution}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('qualificationInstitution', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Years experience" error={saveErrors.yearsOfClinicalExperience}>
+              <EditableSelect
+                value={draft.yearsOfClinicalExperience}
+                options={YEARS_EXPERIENCE}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('yearsOfClinicalExperience', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Primary specialty" error={saveErrors.primaryClinicalSpecialty}>
+              <EditableSelect
+                value={draft.primaryClinicalSpecialty}
+                options={SPECIALTIES}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('primaryClinicalSpecialty', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Additional certifications" error={saveErrors.additionalCertifications}>
+              <EditableText
+                value={(draft.additionalCertifications || []).join(', ')}
+                disabled={editingDisabled}
+                onChange={(value) =>
+                  updateField(
+                    'additionalCertifications',
+                    value
+                      .split(',')
+                      .map((item) => item.trim())
+                      .filter(Boolean)
+                  )
+                }
+              />
+            </FieldRow>
+            <FieldRow label="Employment status" error={saveErrors.employmentStatus}>
+              <EditableSelect
+                value={draft.employmentStatus}
+                options={EMPLOYMENT_STATUSES}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('employmentStatus', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Current employer" error={saveErrors.currentEmployer}>
+              <EditableText
+                value={draft.currentEmployer}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('currentEmployer', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Valid passport" error={saveErrors.validPassport}>
+              <EditableSelect
+                value={draft.validPassport}
+                options={YES_NO}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('validPassport', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Passport expiry" error={saveErrors.passportExpiryDate}>
+              <EditableText
+                type="date"
+                value={draft.passportExpiryDate}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('passportExpiryDate', value)}
+              />
+            </FieldRow>
           </Section>
 
-          <Section title="English Proficiency - Screening (EF SET)">
-            <div className="space-y-0.5">
-              <FieldRow label="EF SET Score">
-                <EditableNumber
-                  value={localNurse.efSetScore}
-                  onChange={(v) => updateField('efSetScore', v)}
-                  placeholder="Score"
-                  min={0}
-                />
-              </FieldRow>
-              <FieldRow label="EF SET Level">
-                <EditableSelect
-                  value={localNurse.efSetLevel}
-                  options={EFSET_LEVELS}
-                  onChange={(v) => updateField('efSetLevel', v)}
-                />
-              </FieldRow>
-              <FieldRow label="English Pts">
-                <EditableNumber
-                  value={localNurse.englishPts}
-                  onChange={(v) => updateField('englishPts', v)}
-                  placeholder="0-3"
-                  min={0}
-                  max={3}
-                />
-              </FieldRow>
-            </div>
+          <Section title="English Proficiency">
+            <FieldRow label="EF SET score" error={saveErrors.efSetScore}>
+              <EditableNumber
+                value={draft.efSetScore}
+                min={0}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('efSetScore', value)}
+              />
+            </FieldRow>
+            <FieldRow label="EF SET level" error={saveErrors.efSetLevel}>
+              <EditableSelect
+                value={draft.efSetLevel}
+                options={EFSET_LEVELS}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('efSetLevel', value)}
+              />
+            </FieldRow>
+            <FieldRow label="English points" error={saveErrors.englishPts}>
+              <EditableNumber
+                value={draft.englishPts}
+                min={0}
+                max={3}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('englishPts', value)}
+              />
+            </FieldRow>
+            <FieldRow label="OET status" error={saveErrors.oetStatus}>
+              <EditableSelect
+                value={draft.oetStatus}
+                options={OET_STATUSES}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('oetStatus', value)}
+              />
+            </FieldRow>
           </Section>
 
-          <Section title="English Proficiency - Qualification (OET)">
-            <div className="space-y-0.5">
-              <FieldRow label="OET Status">
-                <EditableSelect
-                  value={localNurse.oetStatus}
-                  options={OET_STATUSES}
-                  onChange={(v) => updateField('oetStatus', v)}
+          <Section title="Scorecard" defaultOpen>
+            {[
+              ['hospitalExp', 'Hospital Exp', 3],
+              ['sancStatus', 'SANC Status', 3],
+              ['qualifications', 'Qualifications', 2],
+              ['specialisation', 'Specialisation', 1],
+              ['financialReadiness', 'Financial Readiness', 1],
+              ['motivation', 'Motivation', 2],
+              ['passport', 'Passport', 1],
+            ].map(([field, label, weight]) => (
+              <div key={field}>
+                <ScorecardField
+                  label={label}
+                  weight={weight}
+                  value={draft.scorecardFields?.[field]}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateScorecard(field, value)}
                 />
-              </FieldRow>
-              <FieldRow label="OET Exam Date">
-                <EditableDate
-                  value={localNurse.oetExamDate}
-                  onChange={(v) => updateField('oetExamDate', v)}
-                />
-              </FieldRow>
-              <FieldRow label="OET Exam Centre">
-                <EditableText
-                  value={localNurse.oetExamCentre}
-                  onChange={(v) => updateFieldDebounced('oetExamCentre', v)}
-                  placeholder="Exam centre"
-                />
-              </FieldRow>
-              <FieldRow label="Writing">
-                <EditableNumber
-                  value={localNurse.oetScores?.writing}
-                  onChange={(v) => updateOetScore('writing', v)}
-                  placeholder="Writing score"
-                />
-              </FieldRow>
-              <FieldRow label="Speaking">
-                <EditableNumber
-                  value={localNurse.oetScores?.speaking}
-                  onChange={(v) => updateOetScore('speaking', v)}
-                  placeholder="Speaking score"
-                />
-              </FieldRow>
-              <FieldRow label="Listening">
-                <EditableNumber
-                  value={localNurse.oetScores?.listening}
-                  onChange={(v) => updateOetScore('listening', v)}
-                  placeholder="Listening score"
-                />
-              </FieldRow>
-              <FieldRow label="Reading">
-                <EditableNumber
-                  value={localNurse.oetScores?.reading}
-                  onChange={(v) => updateOetScore('reading', v)}
-                  placeholder="Reading score"
-                />
-              </FieldRow>
-              <FieldRow label="OET Overall Result">
-                <EditableSelect
-                  value={localNurse.oetOverallResult}
-                  options={OET_RESULTS}
-                  onChange={(v) => updateField('oetOverallResult', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Retake Required">
-                <EditableSelect
-                  value={localNurse.retakeRequired}
-                  options={YES_NO}
-                  onChange={(v) => updateField('retakeRequired', v)}
-                />
-              </FieldRow>
-            </div>
-          </Section>
-
-          <Section title="Scorecard" defaultOpen={true}>
-            <div className="space-y-1 mb-3">
-              <ScorecardField
-                label="Hospital Exp"
-                weight={3}
-                value={localNurse.scorecardFields?.hospitalExp}
-                onChange={(v) => updateScorecard('hospitalExp', v)}
-              />
-              <ScorecardField
-                label="SANC Status"
-                weight={3}
-                value={localNurse.scorecardFields?.sancStatus}
-                onChange={(v) => updateScorecard('sancStatus', v)}
-              />
-              <ScorecardField
-                label="Qualifications"
-                weight={2}
-                value={localNurse.scorecardFields?.qualifications}
-                onChange={(v) => updateScorecard('qualifications', v)}
-              />
-              <ScorecardField
-                label="Specialisation"
-                weight={1}
-                value={localNurse.scorecardFields?.specialisation}
-                onChange={(v) => updateScorecard('specialisation', v)}
-              />
-              <ScorecardField
-                label="Financial Readiness"
-                weight={1}
-                value={localNurse.scorecardFields?.financialReadiness}
-                onChange={(v) => updateScorecard('financialReadiness', v)}
-              />
-              <ScorecardField
-                label="Motivation"
-                weight={2}
-                value={localNurse.scorecardFields?.motivation}
-                onChange={(v) => updateScorecard('motivation', v)}
-              />
-              <ScorecardField
-                label="Passport"
-                weight={1}
-                value={localNurse.scorecardFields?.passport}
-                onChange={(v) => updateScorecard('passport', v)}
-              />
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">CV Score</span>
-                <div className="flex items-center gap-1">
-                  {renderStars(localNurse.cvScore)}
-                  <span className="text-sm font-medium text-gray-700 ml-1">
-                    {localNurse.cvScore}/5
-                  </span>
-                </div>
+                {saveErrors[`scorecardFields.${field}`] && (
+                  <p className="text-xs text-red-600">{saveErrors[`scorecardFields.${field}`]}</p>
+                )}
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Final Score</span>
-                <span className="text-sm font-semibold text-gray-900">
-                  {localNurse.finalScore}/5
+            ))}
+            <div className="mt-3 rounded-lg bg-gray-50 p-3 text-sm">
+              <div className="flex justify-between">
+                <span>CV Score</span>
+                <span className="flex items-center gap-1">
+                  {renderStars(draft.cvScore)} {draft.cvScore}/5
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Tier</span>
-                <span
-                  className={`text-sm font-semibold px-2 py-0.5 rounded ${
-                    localNurse.tier === 'Tier 1 Priority'
-                      ? 'bg-green-100 text-green-700'
-                      : localNurse.tier === 'Tier 1 Standard'
-                        ? 'bg-blue-100 text-blue-700'
-                        : localNurse.tier === 'Tier 2 Development'
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  {localNurse.tier}
-                </span>
+              <div className="mt-1 flex justify-between">
+                <span>Final Score</span>
+                <strong>{draft.finalScore}/5</strong>
+              </div>
+              <div className="mt-1 flex justify-between">
+                <span>Tier</span>
+                <strong>{draft.tier || '—'}</strong>
               </div>
             </div>
           </Section>
 
-          <Section title="Selection and Pathway">
-            <div className="space-y-0.5">
-              <FieldRow label="Shortlist Decision">
-                <EditableSelect
-                  value={localNurse.shortlistDecision}
-                  options={SHORTLIST_DECISIONS}
-                  onChange={(v) => updateField('shortlistDecision', v)}
-                />
-              </FieldRow>
-              <FieldRow label="First Interview Date">
-                <EditableDate
-                  value={localNurse.firstInterviewDate}
-                  onChange={(v) => updateField('firstInterviewDate', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Non-Selection Reason">
-                <EditableText
-                  value={localNurse.nonSelectionReason}
-                  onChange={(v) => updateFieldDebounced('nonSelectionReason', v)}
-                  placeholder="Reason"
-                />
-              </FieldRow>
-              <FieldRow label="Recommended Pathway">
-                <EditableSelect
-                  value={localNurse.recommendedPathway}
-                  options={RECOMMENDED_PATHWAYS}
-                  onChange={(v) => updateField('recommendedPathway', v)}
-                />
-              </FieldRow>
-            </div>
-          </Section>
-
-          <Section title="Cohort and Commitment">
-            <div className="space-y-0.5">
-              <FieldRow label="Cohort Assigned">
-                <EditableText
-                  value={localNurse.cohortAssigned}
-                  onChange={(v) => updateFieldDebounced('cohortAssigned', v)}
-                  placeholder="Unassigned"
-                />
-              </FieldRow>
-              <FieldRow label="Agreement Sent">
-                <EditableSelect
-                  value={localNurse.agreementSent}
-                  options={YES_NO}
-                  onChange={(v) => updateField('agreementSent', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Agreement Sent Date">
-                <EditableDate
-                  value={localNurse.agreementSentDate}
-                  onChange={(v) => updateField('agreementSentDate', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Agreement Signed">
-                <EditableYesNoBoolean
-                  value={localNurse.agreementSigned}
-                  onChange={(v) => updateField('agreementSigned', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Agreement Signed Date">
-                <EditableDate
-                  value={localNurse.agreementSignedDate}
-                  onChange={(v) => updateField('agreementSignedDate', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Commitment Fee Status">
-                <EditableSelect
-                  value={localNurse.commitmentFeeStatus}
-                  options={COMMITMENT_FEE_STATUSES}
-                  onChange={(v) => updateField('commitmentFeeStatus', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Commitment Fee Date Paid">
-                <EditableDate
-                  value={localNurse.commitmentFeeDatePaid}
-                  onChange={(v) => updateField('commitmentFeeDatePaid', v)}
-                />
-              </FieldRow>
-            </div>
-          </Section>
-
-          <Section title="Placement">
-            <div className="space-y-0.5">
-              <FieldRow label="Placement Status">
-                <EditableSelect
-                  value={localNurse.placementStatus}
-                  options={PLACEMENT_STATUSES}
-                  onChange={(v) => updateField('placementStatus', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Destination Country">
-                <EditableSelect
-                  value={localNurse.destinationCountry}
-                  options={DESTINATION_COUNTRIES}
-                  onChange={(v) => updateField('destinationCountry', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Employer">
-                <EditableText
-                  value={localNurse.placementEmployer}
-                  onChange={(v) => updateFieldDebounced('placementEmployer', v)}
-                  placeholder="Employer"
-                />
-              </FieldRow>
-              <FieldRow label="Placement Date">
-                <EditableDate
-                  value={localNurse.placementDate}
-                  onChange={(v) => updateField('placementDate', v)}
-                />
-              </FieldRow>
-            </div>
+          <Section title="Selection and Cohort">
+            <FieldRow label="Shortlist decision" error={saveErrors.shortlistDecision}>
+              <EditableSelect
+                value={draft.shortlistDecision}
+                options={SHORTLIST_DECISIONS}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('shortlistDecision', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Cohort assigned" error={saveErrors.cohortAssigned}>
+              <EditableText
+                value={draft.cohortAssigned}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('cohortAssigned', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Agreement signed" error={saveErrors.agreementSigned}>
+              <EditableSelect
+                value={draft.agreementSigned ? 'Yes' : 'No'}
+                options={YES_NO}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('agreementSigned', value === 'Yes')}
+              />
+            </FieldRow>
+            <FieldRow label="Commitment fee" error={saveErrors.commitmentFeeStatus}>
+              <EditableSelect
+                value={draft.commitmentFeeStatus}
+                options={COMMITMENT_FEE_STATUSES}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('commitmentFeeStatus', value)}
+              />
+            </FieldRow>
           </Section>
 
           <Section title="Notes / Flags / Source">
-            <div className="space-y-0.5">
-              <FieldRow label="Source">
-                <EditableSelect
-                  value={localNurse.source}
-                  options={SOURCE_OPTIONS}
-                  onChange={(v) => updateField('source', v)}
-                />
-              </FieldRow>
-              <FieldRow label="Motivations">
-                <EditableTextarea
-                  value={localNurse.motivations}
-                  onChange={(v) => updateFieldDebounced('motivations', v)}
-                  placeholder="Motivations"
-                />
-              </FieldRow>
-              <FieldRow label="Questions">
-                <EditableTextarea
-                  value={localNurse.questions}
-                  onChange={(v) => updateFieldDebounced('questions', v)}
-                  placeholder="Questions"
-                />
-              </FieldRow>
-              <FieldRow label="Notes/Flags">
-                <EditableTextarea
-                  value={localNurse.notesFlags}
-                  onChange={(v) => updateFieldDebounced('notesFlags', v)}
-                  placeholder="Notes / flags"
-                />
-              </FieldRow>
-            </div>
+            <FieldRow label="Source" error={saveErrors.source}>
+              <EditableSelect
+                value={draft.source}
+                options={SOURCE_OPTIONS}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('source', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Flags" error={saveErrors.flags}>
+              <EditableNumber
+                value={draft.flags}
+                min={0}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('flags', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Motivations" error={saveErrors.motivations}>
+              <EditableTextarea
+                value={draft.motivations}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('motivations', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Questions" error={saveErrors.questions}>
+              <EditableTextarea
+                value={draft.questions}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('questions', value)}
+              />
+            </FieldRow>
+            <FieldRow label="Notes / flags" error={saveErrors.notesFlags}>
+              <EditableTextarea
+                value={draft.notesFlags}
+                disabled={editingDisabled}
+                onChange={(value) => updateField('notesFlags', value)}
+              />
+            </FieldRow>
           </Section>
 
-          <Section title="Communication Log" defaultOpen={true}>
+          <Section title="Communication Log" defaultOpen>
             <div className="space-y-2">
-              {(localNurse.communicationLog || []).length === 0 ? (
-                <p className="text-sm text-gray-400 italic">No communications logged yet.</p>
+              {(draft.communicationLog || []).length === 0 ? (
+                <p className="text-sm italic text-gray-400">No communications logged yet.</p>
               ) : (
-                [...(localNurse.communicationLog || [])]
-                  .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-                  .map((entry, idx) => (
-                    <div key={idx} className="bg-gray-50 rounded-lg p-2.5 text-sm">
-                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                [...draft.communicationLog]
+                  .sort((left, right) => (right.date || '').localeCompare(left.date || ''))
+                  .map((entry, index) => (
+                    <div
+                      key={`${entry.date}-${index}`}
+                      className="rounded-lg bg-gray-50 p-2.5 text-sm"
+                    >
+                      <div className="mb-1 flex items-center gap-2 text-xs text-gray-500">
                         <span>{entry.date}</span>
-                        <span className="bg-gray-200 px-1.5 py-0.5 rounded text-xs">
-                          {entry.channel}
-                        </span>
+                        <span className="rounded bg-gray-200 px-1.5 py-0.5">{entry.channel}</span>
                       </div>
                       <p className="text-gray-700">{entry.summary}</p>
                       {entry.nextAction && (
-                        <p className="text-xs text-teal-600 mt-1">Next: {entry.nextAction}</p>
+                        <p className="mt-1 text-xs text-teal-600">Next: {entry.nextAction}</p>
                       )}
                     </div>
                   ))
               )}
-
-              {!showAddComm ? (
+              {!showAddCommunication ? (
                 <button
-                  onClick={() => setShowAddComm(true)}
-                  className="flex items-center gap-1 text-sm text-propela-purple hover:text-propela-purple-dark font-medium mt-2"
+                  type="button"
+                  disabled={editingDisabled}
+                  onClick={() => setShowAddCommunication(true)}
+                  className="mt-2 flex items-center gap-1 text-sm font-medium text-propela-purple disabled:opacity-50"
                 >
-                  <Plus size={14} /> Add Communication
+                  <Plus size={14} />
+                  Add Communication
                 </button>
               ) : (
-                <div className="bg-propela-purple-light rounded-lg p-3 space-y-2 mt-2">
-                  <div className="flex gap-2">
-                    <select
-                      value={commForm.channel}
-                      onChange={(e) => setCommForm({ ...commForm, channel: e.target.value })}
-                      className="text-sm border border-gray-200 rounded px-2 py-1"
-                    >
-                      {['Email', 'WhatsApp', 'Phone', 'LinkedIn', 'In-person'].map((ch) => (
-                        <option key={ch} value={ch}>
-                          {ch}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <textarea
-                    value={commForm.summary}
-                    onChange={(e) => setCommForm({ ...commForm, summary: e.target.value })}
-                    placeholder="Summary of communication..."
-                    className="w-full text-sm border border-gray-200 rounded px-2 py-1.5 h-16 resize-none"
+                <div className="mt-2 space-y-2 rounded-lg bg-propela-purple-light p-3">
+                  <EditableSelect
+                    value={communication.channel}
+                    options={['Email', 'WhatsApp', 'Phone', 'LinkedIn', 'In-person']}
+                    disabled={editingDisabled}
+                    onChange={(channel) => setCommunication((current) => ({ ...current, channel }))}
                   />
-                  <input
-                    value={commForm.nextAction}
-                    onChange={(e) => setCommForm({ ...commForm, nextAction: e.target.value })}
+                  <EditableTextarea
+                    value={communication.summary}
+                    placeholder="Summary of communication..."
+                    disabled={editingDisabled}
+                    onChange={(summary) => setCommunication((current) => ({ ...current, summary }))}
+                  />
+                  <EditableText
+                    value={communication.nextAction}
                     placeholder="Next action set (optional)"
-                    className="w-full text-sm border border-gray-200 rounded px-2 py-1.5"
+                    disabled={editingDisabled}
+                    onChange={(nextAction) =>
+                      setCommunication((current) => ({ ...current, nextAction }))
+                    }
                   />
                   <div className="flex gap-2">
                     <button
+                      type="button"
+                      disabled={editingDisabled}
                       onClick={addCommunication}
-                      className="px-3 py-1.5 text-sm bg-propela-purple text-white rounded hover:bg-propela-purple-dark"
+                      className="rounded bg-propela-purple px-3 py-1.5 text-sm text-white disabled:opacity-50"
                     >
-                      Save
+                      Add entry
                     </button>
                     <button
-                      onClick={() => setShowAddComm(false)}
-                      className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded"
+                      type="button"
+                      onClick={() => setShowAddCommunication(false)}
+                      className="rounded px-3 py-1.5 text-sm text-gray-600"
                     >
-                      Cancel
+                      Cancel entry
                     </button>
                   </div>
                 </div>
               )}
             </div>
           </Section>
+
+          <Section title="Record Metadata">
+            <dl className="space-y-2 text-sm">
+              {[
+                ['Record ID', draft.id],
+                ['Owner ID', draft.ownerId],
+                ['Version', draft.version],
+                ['Created', draft.createdAt],
+                ['Last updated', draft.updatedAt],
+              ].map(([label, value]) => (
+                <div key={label} className="flex gap-3">
+                  <dt className="w-28 shrink-0 text-xs text-gray-500">{label}</dt>
+                  <dd className="break-all text-gray-800">{formatDifference(value)}</dd>
+                </div>
+              ))}
+            </dl>
+          </Section>
+        </div>
+
+        <div className="flex shrink-0 items-center justify-between gap-3 rounded-b-xl border-t border-gray-100 bg-white p-4">
+          <div className="flex items-center gap-3">
+            {canDeleteNurse && (
+              <button
+                type="button"
+                disabled={isSaving || isDeleting || Boolean(nurseSlice?.deleteDecision)}
+                onClick={() => onRequestDelete?.()}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Trash2 size={15} />
+                Delete nurse
+              </button>
+            )}
+            <p className="text-xs text-gray-500">
+              Base version {nurseSlice.baseVersion ?? '—'}
+              {nurseSlice.saveState === 'success' ? ' · Saved' : ''}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={isSaving || isDeleting}
+              onClick={requestClose}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={isSaving || isDeleting || !canEditNurse || conflictVisible || !dirty}
+              onClick={onSave}
+              className="inline-flex items-center gap-2 rounded-lg bg-propela-purple px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSaving && <LoaderCircle size={15} className="animate-spin" />}
+              {isSaving ? 'Saving...' : 'Save changes'}
+            </button>
+          </div>
         </div>
       </div>
+
+      <ConfirmationDialog
+        isOpen={nurseSlice?.discardDecision?.type === 'discardEdit'}
+        title={`Discard changes to ${draft.fullName || 'this nurse'}?`}
+        description="Your unsaved local edits will be lost. No update will be sent to the database."
+        confirmLabel="Discard and close"
+        cancelLabel="Keep editing"
+        onConfirm={() => resolveDiscard(true)}
+        onCancel={() => resolveDiscard(false)}
+        destructive
+      />
+
+      <ConfirmationDialog
+        isOpen={nurseSlice?.discardDecision?.type === 'discardConflict'}
+        title={`Discard local changes to ${draft.fullName || 'this nurse'}?`}
+        description="Your local edits will be discarded and replaced with the latest saved nurse. No update will be sent until you make changes and save again."
+        confirmLabel="Confirm discard"
+        cancelLabel="Keep my edits"
+        onConfirm={() => resolveDiscard(true)}
+        onCancel={() => resolveDiscard(false)}
+        destructive
+      />
+
+      <DeleteNurseDialog
+        decision={nurseSlice?.deleteDecision}
+        deleteState={nurseSlice?.deleteState}
+        error={nurseSlice?.deleteError}
+        fallbackNurseName={draft.fullName}
+        onCancel={onCancelDelete}
+        onConfirm={() => runDeleteAction(onConfirmDelete)}
+        onRetry={() => runDeleteAction(onRetryDelete)}
+        onReload={() => runDeleteAction(onReloadAfterDeleteConflict)}
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { seedCommunityChannels, seedEvents,seedReferrers } from '../data/seedAcquisition';
+import { seedCommunityChannels, seedEvents, seedReferrers } from '../data/seedAcquisition';
 import { seedAuditTrail } from '../data/seedAuditTrail';
 import { seedAutomations } from '../data/seedAutomations';
 import { seedCohorts } from '../data/seedCohorts';
@@ -20,7 +20,7 @@ import {
   rotateSessionStoreMirror,
   setSession,
 } from './sessionStore';
-import { rotateStorageKeys,STORAGE_PREFIX } from './storageKeys';
+import { rotateStorageKeys, STORAGE_PREFIX } from './storageKeys';
 
 /**
  * App-wide localStorage key prefix. Fix #10: the versioned prefix
@@ -32,13 +32,24 @@ import { rotateStorageKeys,STORAGE_PREFIX } from './storageKeys';
  */
 
 /**
+ * Read and parse a localStorage value, allowing access and serialization errors
+ * to reach callers that expose explicit result envelopes.
+ */
+export function getDataStrict(key) {
+  const raw = localStorage.getItem(STORAGE_PREFIX + key);
+  if (raw === null) return null;
+  return JSON.parse(raw);
+}
+
+/**
  * Get data from localStorage by key.
+ *
+ * This compatibility API intentionally preserves its historical null-on-error
+ * behavior. New result-returning boundaries should use getDataStrict instead.
  */
 export function getData(key) {
   try {
-    const raw = localStorage.getItem(STORAGE_PREFIX + key);
-    if (raw === null) return null;
-    return JSON.parse(raw);
+    return getDataStrict(key);
   } catch (e) {
     console.error(`Error reading localStorage key "${key}":`, e);
     return null;
@@ -46,11 +57,22 @@ export function getData(key) {
 }
 
 /**
+ * Serialize and persist a localStorage value, allowing failures to reach
+ * result-returning callers.
+ */
+export function setDataStrict(key, value) {
+  localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
+}
+
+/**
  * Set data in localStorage by key.
+ *
+ * This compatibility API intentionally preserves its historical swallowed-error
+ * behavior. New result-returning boundaries should use setDataStrict instead.
  */
 export function setData(key, value) {
   try {
-    localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
+    setDataStrict(key, value);
   } catch (e) {
     console.error(`Error writing localStorage key "${key}":`, e);
   }
@@ -68,10 +90,13 @@ export function removeData(key) {
 }
 
 /**
- * Initialize data on first load.
- * Seeds nurse and facility data if no data exists.
+ * Run required application storage migrations.
+ *
+ * This is intentionally separate from domain seeding so it is safe to run in
+ * both persistence modes. It must not read a domain through getData() or invoke
+ * any bundled seed factory.
  */
-export function initializeData() {
+export function migrateApplicationStorage() {
   // Fix #9: one-time migration of any legacy auth session out of the higher-risk
   // localStorage and into the in-memory + sessionStorage session store. Runs
   // FIRST so any auth token in localStorage (under the current OR a legacy
@@ -97,7 +122,13 @@ export function initializeData() {
   //     the same tab). The auth-session path keeps flowing through sessionStore.
   rotateStorageKeys(typeof localStorage !== 'undefined' ? localStorage : null);
   rotateSessionStoreMirror();
+}
 
+/**
+ * Seed the bundled legacy-mode domain data using the established conditions.
+ * Supabase-mode startup must never call this function.
+ */
+export function initializeLegacyDomainData() {
   const nurses = getData('nurses');
   if (!nurses || nurses.length === 0) {
     const seededNurses = seedNurses();
@@ -274,6 +305,27 @@ export function initializeData() {
   if (!getData('articleVotes')) {
     setData('articleVotes', {});
   }
+}
+
+/**
+ * Initialize application storage for the selected persistence mode.
+ *
+ * Migrations always run. Bundled domain data is initialized only for the
+ * legacy localStorage backend, keeping remote and local nurse stores isolated.
+ */
+export function initializeApplicationStorage(useSupabaseBackend) {
+  migrateApplicationStorage();
+  if (!useSupabaseBackend) {
+    initializeLegacyDomainData();
+  }
+}
+
+/**
+ * Backward-compatible legacy initializer used by existing localStorage tests
+ * and consumers. Its migration and seeding behavior is unchanged.
+ */
+export function initializeData() {
+  initializeApplicationStorage(false);
 }
 
 /**
