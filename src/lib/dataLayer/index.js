@@ -31,6 +31,47 @@ import * as supabaseAdapter from './supabaseAdapter';
 export const isSupabaseBackend = isFeatureEnabled('SUPABASE_BACKEND');
 const adapter = isSupabaseBackend ? supabaseAdapter : storageAdapter;
 
+// ---- Stable nurse record operations ---------------------------------------
+
+const NURSE_DOMAIN = 'nurses';
+
+/**
+ * Nurse management uses this explicit record-level surface rather than the
+ * whole-collection compatibility API below. Each function closes over the
+ * adapter selected above, so neither a feature-flag change nor a failed request
+ * can switch persistence backends during the current module lifetime.
+ */
+export const listNurses = (...args) => adapter.listNurses(...args);
+export const getNurse = (...args) => adapter.getNurse(...args);
+export const createNurse = (...args) => adapter.createNurse(...args);
+export const updateNurse = (...args) => adapter.updateNurse(...args);
+export const deleteNurse = (...args) => adapter.deleteNurse(...args);
+
+/**
+ * Persist a pipeline stage/readiness pair through the same version-gated update
+ * operation used by ordinary nurse edits.
+ *
+ * @param {string} id Nurse identifier.
+ * @param {{ pipelineStage: string, readinessStatus: string }} changes
+ * @param {number} baseVersion Last server-confirmed nurse version.
+ */
+export const changeNursePipeline = (id, changes, baseVersion) =>
+  updateNurse(id, changes, baseVersion);
+
+/**
+ * Deliberately record-only workflow API. Whole-collection `getNurses` and
+ * `saveNurses` remain available through `legacy`/`perDomain` for compatibility,
+ * but are not exposed here and must not be used by the Supabase nurse workflow.
+ */
+export const nurseOps = Object.freeze({
+  list: listNurses,
+  get: getNurse,
+  create: createNurse,
+  update: updateNurse,
+  changePipeline: changeNursePipeline,
+  remove: deleteNurse,
+});
+
 // ---- Generic, domain-parameterized operations -----------------------------
 
 /** List records for a collection domain (paginated, filterable, sortable). */
@@ -47,8 +88,7 @@ export const update = (name, id, changes, baseVersion) =>
   adapter.update(name, id, changes, baseVersion);
 
 /** Conditionally delete a record, carrying the last-read `baseVersion`. */
-export const remove = (name, id, baseVersion) =>
-  adapter.remove(name, id, baseVersion);
+export const remove = (name, id, baseVersion) => adapter.remove(name, id, baseVersion);
 
 /** Non-atomic bulk create-or-update by primary key. */
 export const bulkUpsert = (name, records) => adapter.bulkUpsert(name, records);
@@ -64,8 +104,7 @@ export const bulkUpdate = (name, records) => adapter.bulkUpdate(name, records);
 export const getCollection = (name) => adapter.getCollection(name);
 
 /** Whole-collection persistence mirroring `storage.js` saveX(value). */
-export const saveCollection = (name, value) =>
-  adapter.saveCollection(name, value);
+export const saveCollection = (name, value) => adapter.saveCollection(name, value);
 
 // ---- Per-domain bindings generated from the registry ----------------------
 
@@ -90,13 +129,15 @@ export const legacy = {};
 for (const domain of listDomains()) {
   const { name, legacyGetter, legacySaver } = domain;
 
+  const nurseDomain = name === NURSE_DOMAIN;
   domainOps[name] = {
-    list: (opts) => adapter.list(name, opts),
-    get: (id) => adapter.getById(name, id),
-    create: (record) => adapter.create(name, record),
-    update: (id, changes, baseVersion) =>
-      adapter.update(name, id, changes, baseVersion),
-    remove: (id, baseVersion) => adapter.remove(name, id, baseVersion),
+    list: nurseDomain ? listNurses : (opts) => adapter.list(name, opts),
+    get: nurseDomain ? getNurse : (id) => adapter.getById(name, id),
+    create: nurseDomain ? createNurse : (record) => adapter.create(name, record),
+    update: nurseDomain
+      ? updateNurse
+      : (id, changes, baseVersion) => adapter.update(name, id, changes, baseVersion),
+    remove: nurseDomain ? deleteNurse : (id, baseVersion) => adapter.remove(name, id, baseVersion),
     bulkUpsert: (records) => adapter.bulkUpsert(name, records),
     bulkUpdate: (records) => adapter.bulkUpdate(name, records),
     getAll: () => adapter.getCollection(name),
@@ -141,13 +182,18 @@ for (const domain of listDomains()) {
   const plural = capitalize(name);
   const singular = capitalize(singularize(name));
 
-  perDomain[`list${plural}`] = (opts) => adapter.list(name, opts);
-  perDomain[`get${singular}`] = (id) => adapter.getById(name, id);
-  perDomain[`create${singular}`] = (record) => adapter.create(name, record);
-  perDomain[`update${singular}`] = (id, changes, baseVersion) =>
-    adapter.update(name, id, changes, baseVersion);
-  perDomain[`delete${singular}`] = (id, baseVersion) =>
-    adapter.remove(name, id, baseVersion);
+  const nurseDomain = name === NURSE_DOMAIN;
+  perDomain[`list${plural}`] = nurseDomain ? listNurses : (opts) => adapter.list(name, opts);
+  perDomain[`get${singular}`] = nurseDomain ? getNurse : (id) => adapter.getById(name, id);
+  perDomain[`create${singular}`] = nurseDomain
+    ? createNurse
+    : (record) => adapter.create(name, record);
+  perDomain[`update${singular}`] = nurseDomain
+    ? updateNurse
+    : (id, changes, baseVersion) => adapter.update(name, id, changes, baseVersion);
+  perDomain[`delete${singular}`] = nurseDomain
+    ? deleteNurse
+    : (id, baseVersion) => adapter.remove(name, id, baseVersion);
   perDomain[`bulkUpsert${plural}`] = (records) => adapter.bulkUpsert(name, records);
   perDomain[`bulkUpdate${plural}`] = (records) => adapter.bulkUpdate(name, records);
 
@@ -165,6 +211,13 @@ for (const domain of listDomains()) {
  */
 const dataLayer = {
   isSupabaseBackend,
+  listNurses,
+  getNurse,
+  createNurse,
+  updateNurse,
+  changeNursePipeline,
+  deleteNurse,
+  nurseOps,
   list,
   getById,
   create,

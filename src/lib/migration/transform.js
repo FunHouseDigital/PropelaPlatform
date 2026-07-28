@@ -1,3 +1,5 @@
+import { NURSE_ATTRIBUTE_FIELDS } from '../dataLayer/nurseCodec';
+
 /**
  * Seed → row transform (Task 11.1).
  *
@@ -122,8 +124,18 @@ export function transformCollectionRecord(domain, obj) {
   // 4) Remaining fields → catch-all JSONB column (when the schema defines one).
   if (catchAll) {
     const remainder = {};
+    // Nurse runtime rows use a deliberately closed attributes contract. Apply
+    // the same allowlist during migration so legacy seed data cannot create
+    // attributes that the runtime codec would later reject.
+    const allowedRemainder =
+      domain.name === 'nurses' ? new Set(NURSE_ATTRIBUTE_FIELDS) : null;
     for (const [key, value] of Object.entries(obj)) {
-      if (!consumed.has(key)) remainder[key] = value;
+      if (
+        !consumed.has(key) &&
+        (!allowedRemainder || allowedRemainder.has(key))
+      ) {
+        remainder[key] = value;
+      }
     }
     row[catchAll] = remainder;
   }

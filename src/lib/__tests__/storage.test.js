@@ -1,5 +1,14 @@
-import { getData, initializeData,removeData, setData } from '../storage';
-import { STORAGE_PREFIX } from '../storageKeys';
+import {
+  getData,
+  getDataStrict,
+  initializeApplicationStorage,
+  initializeData,
+  migrateApplicationStorage,
+  removeData,
+  setData,
+  setDataStrict,
+} from '../storage';
+import { LEGACY_STORAGE_PREFIXES, STORAGE_PREFIX } from '../storageKeys';
 
 describe('storage utility functions', () => {
   beforeEach(() => {
@@ -32,6 +41,13 @@ describe('storage utility functions', () => {
       localStorage.setItem(`${STORAGE_PREFIX}bad`, 'not valid json{');
       expect(getData('bad')).toBeNull();
     });
+
+    it('keeps legacy null-on-error behavior while strict reads expose parse failures', () => {
+      localStorage.setItem(`${STORAGE_PREFIX}bad`, 'not valid json{');
+
+      expect(() => getDataStrict('bad')).toThrow(SyntaxError);
+      expect(getData('bad')).toBeNull();
+    });
   });
 
   describe('setData', () => {
@@ -51,6 +67,16 @@ describe('storage utility functions', () => {
       setData('key', 'second');
       expect(getData('key')).toBe('second');
     });
+
+    it('keeps legacy swallowed-error behavior while strict writes expose serialization failures', () => {
+      setData('key', 'persisted');
+      const circular = {};
+      circular.self = circular;
+
+      expect(() => setDataStrict('key', circular)).toThrow(TypeError);
+      expect(() => setData('key', circular)).not.toThrow();
+      expect(getData('key')).toBe('persisted');
+    });
   });
 
   describe('removeData', () => {
@@ -67,13 +93,20 @@ describe('storage utility functions', () => {
   });
 
   describe('initializeData', () => {
-    it('seeds data when localStorage is empty', () => {
+    it('preserves the exact seven-nurse legacy initialization when storage is empty', () => {
       initializeData();
-      // Nurses should be seeded
+
       const nurses = getData('nurses');
-      expect(nurses).not.toBeNull();
-      expect(Array.isArray(nurses)).toBe(true);
-      expect(nurses.length).toBeGreaterThan(0);
+      expect(nurses).toHaveLength(7);
+      expect(nurses.map(({ id }) => id)).toEqual([
+        'nurse-001',
+        'nurse-002',
+        'nurse-003',
+        'nurse-004',
+        'nurse-005',
+        'nurse-006',
+        'nurse-007',
+      ]);
     });
 
     it('does not overwrite existing data', () => {
@@ -82,6 +115,38 @@ describe('storage utility functions', () => {
       initializeData();
       const nurses = getData('nurses');
       expect(nurses).toEqual(existingNurses);
+    });
+  });
+
+  describe('feature-mode application storage initialization', () => {
+    it('runs key migration without seeding domain data', () => {
+      const legacyPrefix = LEGACY_STORAGE_PREFIXES[0];
+      const throttle = { user: { failures: 2 } };
+      localStorage.setItem(`${legacyPrefix}loginThrottle`, JSON.stringify(throttle));
+
+      migrateApplicationStorage();
+
+      expect(localStorage.getItem(`${legacyPrefix}loginThrottle`)).toBeNull();
+      expect(getData('loginThrottle')).toEqual(throttle);
+      expect(getData('nurses')).toBeNull();
+      expect(getData('facilities')).toBeNull();
+    });
+
+    it('does not seed or replace local nurses during Supabase-mode startup', () => {
+      initializeApplicationStorage(true);
+      expect(getData('nurses')).toBeNull();
+
+      const legacyNurses = [{ id: 'local-only', fullName: 'Local Nurse' }];
+      setData('nurses', legacyNurses);
+      initializeApplicationStorage(true);
+
+      expect(getData('nurses')).toEqual(legacyNurses);
+    });
+
+    it('initializes the seven bundled nurses during legacy-mode startup', () => {
+      initializeApplicationStorage(false);
+
+      expect(getData('nurses')).toHaveLength(7);
     });
   });
 });

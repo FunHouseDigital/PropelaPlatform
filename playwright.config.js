@@ -21,5 +21,10 @@ export default defineConfig({
     command: 'npm run dev',
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
+    env: {
+      ...process.env,
+      VITE_SUPABASE_URL: 'https://e2e.supabase.invalid',
+      VITE_SUPABASE_ANON_KEY: 'e2e-public-anon-key',
+    },
   },
 });

@@ -1,6 +1,22 @@
 /**
  * @typedef {Object} AppContextValue
- * @property {Array} nurses - List of nurse records
+ * @property {Array} nurses - List of server-confirmed nurse records
+ * @property {Object} nurseSlice - Nurse controller state for list, detail, drafts, and mutations
+ * @property {Function} refreshNurses - Refreshes nurses through the selected record repository
+ * @property {Function} retryNurses - Retries a recoverable nurse list failure
+ * @property {Function} openNurse - Loads authoritative nurse detail by identifier
+ * @property {Function} openCreate - Opens a seed-independent nurse create draft
+ * @property {Function} updateCreateDraft - Updates business values in the open create draft
+ * @property {Function} closeCreate - Closes the create draft when no request is pending
+ * @property {Function} createNurse - Submits the controller's open create draft
+ * @property {Function} retryCreate - Manually retries an allowed create failure
+ * @property {Function} retryCreateAfterCollision - Retries a verified collision with a new ID
+ * @property {Function} saveNurse - Saves the controller's active edit draft
+ * @property {Function} changeNursePipeline - Applies a version-gated pipeline change
+ * @property {Function} retryNursePipeline - Explicitly retries a recoverable pipeline change
+ * @property {Function} reloadNursePipeline - Reloads authoritative state after a pipeline decision
+ * @property {Function} rebaseNursePipeline - Adopts conflict-latest state before a new move
+ * @property {Function} deleteNurse - Confirms the controller's pending nurse deletion
  * @property {Array} facilities - List of facility records
  * @property {Array} cohorts - List of cohort records
  * @property {Array} referrers - List of referrer records
@@ -126,6 +142,7 @@ import {
 } from '../lib/dataLayer';
 import { getDomain } from '../lib/dataLayer/domains';
 import { mapError } from '../lib/dataLayer/errors';
+import { createNurseController, NurseAsyncState } from '../lib/nurses/nurseController';
 import {
   getActiveDashboardLayout,
   getActivityFeed,
@@ -307,52 +324,132 @@ export function AppProvider({ children }) {
   // slices start empty (collections `[]`, singletons `null`) and are hydrated by
   // an async effect through the Data_Layer facade (Req 6.2, 2.1, 12.1).
   const [nurses, setNurses] = useState(() => (isSupabaseBackend ? [] : getNurses()));
+  const [nurseController] = useState(() =>
+    createNurseController({
+      initialState: isSupabaseBackend
+        ? null
+        : {
+            items: nurses.map((nurse) => ({
+              ...nurse,
+              version: Number.isInteger(nurse.version) && nurse.version > 0 ? nurse.version : 1,
+            })),
+            total: nurses.length,
+            hasAcceptedList: true,
+            listState: NurseAsyncState.SUCCESS,
+          },
+    })
+  );
+  const [nurseSlice, setNurseSlice] = useState(() => nurseController.getState());
   const [facilities, setFacilities] = useState(() => (isSupabaseBackend ? [] : getFacilities()));
   const [cohorts, setCohorts] = useState(() => (isSupabaseBackend ? [] : getCohorts()));
   const [referrers, setReferrers] = useState(() => (isSupabaseBackend ? [] : getReferrers()));
-  const [communityChannels, setCommunityChannels] = useState(() => (isSupabaseBackend ? [] : getCommunityChannels()));
+  const [communityChannels, setCommunityChannels] = useState(() =>
+    isSupabaseBackend ? [] : getCommunityChannels()
+  );
   const [events, setEvents] = useState(() => (isSupabaseBackend ? [] : getEvents()));
-  const [outreachTemplates, setOutreachTemplates] = useState(() => (isSupabaseBackend ? [] : getOutreachTemplates()));
+  const [outreachTemplates, setOutreachTemplates] = useState(() =>
+    isSupabaseBackend ? [] : getOutreachTemplates()
+  );
   const [placements, setPlacements] = useState(() => (isSupabaseBackend ? [] : getPlacements()));
   const [settings, setSettings] = useState(() => (isSupabaseBackend ? null : getSettings()));
   const [documents, setDocuments] = useState(() => (isSupabaseBackend ? [] : getDocuments()));
-  const [documentTemplates, setDocumentTemplates] = useState(() => (isSupabaseBackend ? [] : getDocumentTemplates()));
-  const [verificationQueue, setVerificationQueue] = useState(() => (isSupabaseBackend ? [] : getVerificationQueue()));
-  const [communications, setCommunications] = useState(() => (isSupabaseBackend ? [] : getCommunications()));
-  const [notifications, setNotifications] = useState(() => (isSupabaseBackend ? [] : getNotifications()));
-  const [commEmailTemplates, setCommEmailTemplates] = useState(() => (isSupabaseBackend ? [] : getCommEmailTemplates()));
+  const [documentTemplates, setDocumentTemplates] = useState(() =>
+    isSupabaseBackend ? [] : getDocumentTemplates()
+  );
+  const [verificationQueue, setVerificationQueue] = useState(() =>
+    isSupabaseBackend ? [] : getVerificationQueue()
+  );
+  const [communications, setCommunications] = useState(() =>
+    isSupabaseBackend ? [] : getCommunications()
+  );
+  const [notifications, setNotifications] = useState(() =>
+    isSupabaseBackend ? [] : getNotifications()
+  );
+  const [commEmailTemplates, setCommEmailTemplates] = useState(() =>
+    isSupabaseBackend ? [] : getCommEmailTemplates()
+  );
   const [alertRules, setAlertRules] = useState(() => (isSupabaseBackend ? [] : getAlertRules()));
-  const [alertHistory, setAlertHistory] = useState(() => (isSupabaseBackend ? [] : getAlertHistory()));
-  const [notificationPreferences, setNotificationPreferences] = useState(() => (isSupabaseBackend ? null : getNotificationPreferences()));
-  const [scheduledReports, setScheduledReports] = useState(() => (isSupabaseBackend ? [] : getScheduledReports()));
-  const [exportHistory, setExportHistory] = useState(() => (isSupabaseBackend ? [] : getExportHistory()));
-  const [dashboardLayouts, setDashboardLayouts] = useState(() => (isSupabaseBackend ? [] : getDashboardLayouts()));
-  const [activeDashboardLayout, setActiveDashboardLayout] = useState(() => (isSupabaseBackend ? null : getActiveDashboardLayout()));
-  const [integrations, setIntegrations] = useState(() => (isSupabaseBackend ? [] : getIntegrations()));
-  const [apiEndpoints, setApiEndpoints] = useState(() => (isSupabaseBackend ? [] : getApiEndpoints()));
+  const [alertHistory, setAlertHistory] = useState(() =>
+    isSupabaseBackend ? [] : getAlertHistory()
+  );
+  const [notificationPreferences, setNotificationPreferences] = useState(() =>
+    isSupabaseBackend ? null : getNotificationPreferences()
+  );
+  const [scheduledReports, setScheduledReports] = useState(() =>
+    isSupabaseBackend ? [] : getScheduledReports()
+  );
+  const [exportHistory, setExportHistory] = useState(() =>
+    isSupabaseBackend ? [] : getExportHistory()
+  );
+  const [dashboardLayouts, setDashboardLayouts] = useState(() =>
+    isSupabaseBackend ? [] : getDashboardLayouts()
+  );
+  const [activeDashboardLayout, setActiveDashboardLayout] = useState(() =>
+    isSupabaseBackend ? null : getActiveDashboardLayout()
+  );
+  const [integrations, setIntegrations] = useState(() =>
+    isSupabaseBackend ? [] : getIntegrations()
+  );
+  const [apiEndpoints, setApiEndpoints] = useState(() =>
+    isSupabaseBackend ? [] : getApiEndpoints()
+  );
   const [apiKeys, setApiKeys] = useState(() => (isSupabaseBackend ? [] : getApiKeys()));
   const [webhooks, setWebhooks] = useState(() => (isSupabaseBackend ? [] : getWebhooks()));
-  const [webhookDeliveryLog, setWebhookDeliveryLog] = useState(() => (isSupabaseBackend ? [] : getWebhookDeliveryLog()));
+  const [webhookDeliveryLog, setWebhookDeliveryLog] = useState(() =>
+    isSupabaseBackend ? [] : getWebhookDeliveryLog()
+  );
   const [syncStatus, setSyncStatus] = useState(() => (isSupabaseBackend ? null : getSyncStatus()));
-  const [activityFeed, setActivityFeed] = useState(() => (isSupabaseBackend ? [] : getActivityFeed()));
+  const [activityFeed, setActivityFeed] = useState(() =>
+    isSupabaseBackend ? [] : getActivityFeed()
+  );
   const [auditLog, setAuditLog] = useState(() => (isSupabaseBackend ? [] : getAuditLog()));
-  const [userSessions, setUserSessions] = useState(() => (isSupabaseBackend ? [] : getUserSessions()));
-  const [changeHistory, setChangeHistory] = useState(() => (isSupabaseBackend ? [] : getChangeHistory()));
-  const [recentSearches, setRecentSearches] = useState(() => (isSupabaseBackend ? [] : getRecentSearches()));
+  const [userSessions, setUserSessions] = useState(() =>
+    isSupabaseBackend ? [] : getUserSessions()
+  );
+  const [changeHistory, setChangeHistory] = useState(() =>
+    isSupabaseBackend ? [] : getChangeHistory()
+  );
+  const [recentSearches, setRecentSearches] = useState(() =>
+    isSupabaseBackend ? [] : getRecentSearches()
+  );
   const [savedViews, setSavedViews] = useState(() => (isSupabaseBackend ? [] : getSavedViews()));
-  const [recentlyViewed, setRecentlyViewed] = useState(() => (isSupabaseBackend ? [] : getRecentlyViewed()));
-  const [automationRules, setAutomationRules] = useState(() => (isSupabaseBackend ? [] : getAutomationRules()));
-  const [automationTemplates, setAutomationTemplates] = useState(() => (isSupabaseBackend ? [] : getAutomationTemplates()));
-  const [executionLog, setExecutionLog] = useState(() => (isSupabaseBackend ? [] : getExecutionLog()));
-  const [scheduledActions, setScheduledActions] = useState(() => (isSupabaseBackend ? [] : getScheduledActions()));
-  const [notificationAlerts, setNotificationAlerts] = useState(() => (isSupabaseBackend ? [] : getNotificationAlerts()));
-  const [notifAlertConfig, setNotifAlertConfig] = useState(() => (isSupabaseBackend ? null : getNotifAlertConfig()));
-  const [notificationLog, setNotificationLog] = useState(() => (isSupabaseBackend ? [] : getNotificationLog()));
-  const [toastPreferences, setToastPreferences] = useState(() => (isSupabaseBackend ? null : getToastPreferences()));
-  const [helpArticles, setHelpArticles] = useState(() => (isSupabaseBackend ? [] : getHelpArticles()));
-  const [onboardingState, setOnboardingState] = useState(() => (isSupabaseBackend ? null : getOnboardingState()));
+  const [recentlyViewed, setRecentlyViewed] = useState(() =>
+    isSupabaseBackend ? [] : getRecentlyViewed()
+  );
+  const [automationRules, setAutomationRules] = useState(() =>
+    isSupabaseBackend ? [] : getAutomationRules()
+  );
+  const [automationTemplates, setAutomationTemplates] = useState(() =>
+    isSupabaseBackend ? [] : getAutomationTemplates()
+  );
+  const [executionLog, setExecutionLog] = useState(() =>
+    isSupabaseBackend ? [] : getExecutionLog()
+  );
+  const [scheduledActions, setScheduledActions] = useState(() =>
+    isSupabaseBackend ? [] : getScheduledActions()
+  );
+  const [notificationAlerts, setNotificationAlerts] = useState(() =>
+    isSupabaseBackend ? [] : getNotificationAlerts()
+  );
+  const [notifAlertConfig, setNotifAlertConfig] = useState(() =>
+    isSupabaseBackend ? null : getNotifAlertConfig()
+  );
+  const [notificationLog, setNotificationLog] = useState(() =>
+    isSupabaseBackend ? [] : getNotificationLog()
+  );
+  const [toastPreferences, setToastPreferences] = useState(() =>
+    isSupabaseBackend ? null : getToastPreferences()
+  );
+  const [helpArticles, setHelpArticles] = useState(() =>
+    isSupabaseBackend ? [] : getHelpArticles()
+  );
+  const [onboardingState, setOnboardingState] = useState(() =>
+    isSupabaseBackend ? null : getOnboardingState()
+  );
   const [tourState, setTourState] = useState(() => (isSupabaseBackend ? null : getTourState()));
-  const [articleVotes, setArticleVotes] = useState(() => (isSupabaseBackend ? null : getArticleVotes()));
+  const [articleVotes, setArticleVotes] = useState(() =>
+    isSupabaseBackend ? null : getArticleVotes()
+  );
   const [toasts, setToasts] = useState([]);
 
   // Additive per-domain async slice metadata (Req 6.6, 9.3, 12.2).
@@ -426,13 +523,132 @@ export function AppProvider({ children }) {
       tourState: setTourState,
       articleVotes: setArticleVotes,
     }),
-    [],
+    []
   );
 
   /** Patch a single domain's slice metadata immutably. */
   const patchSlice = useCallback((name, patch) => {
     setSlices((prev) => ({ ...prev, [name]: { ...prev[name], ...patch } }));
   }, []);
+
+  // The controller is the only authority for nurse record workflows. Keep the
+  // legacy top-level `nurses` array synchronized for unrelated consumers while
+  // exposing the complete controller slice to nurse-management UI.
+  useEffect(
+    () =>
+      nurseController.subscribe((nextState) => {
+        setNurseSlice(nextState);
+        setNurses(nextState.items);
+      }),
+    [nurseController]
+  );
+
+  const refreshNurses = useCallback(
+    (...args) => nurseController.refreshNurses(...args),
+    [nurseController]
+  );
+  const retryNurses = useCallback(
+    (...args) => nurseController.retryNurses(...args),
+    [nurseController]
+  );
+  const openNurse = useCallback((...args) => nurseController.openNurse(...args), [nurseController]);
+  const openCreate = useCallback(
+    (...args) => nurseController.openCreate(...args),
+    [nurseController]
+  );
+  const updateCreateDraft = useCallback(
+    (...args) => nurseController.updateCreateDraft(...args),
+    [nurseController]
+  );
+  const closeCreate = useCallback(
+    (...args) => nurseController.closeCreate(...args),
+    [nurseController]
+  );
+  const createNurse = useCallback(
+    (...args) => nurseController.createNurse(...args),
+    [nurseController]
+  );
+  const retryCreate = useCallback(
+    (...args) => nurseController.retryCreate(...args),
+    [nurseController]
+  );
+  const retryCreateAfterCollision = useCallback(
+    (...args) => nurseController.retryCreateAfterCollision(...args),
+    [nurseController]
+  );
+  const retryDetail = useCallback(
+    (...args) => nurseController.retryDetail(...args),
+    [nurseController]
+  );
+  const closeNurseDetail = useCallback(
+    (...args) => nurseController.closeDetail(...args),
+    [nurseController]
+  );
+  const updateNurseDraft = useCallback(
+    (...args) => nurseController.updateDraft(...args),
+    [nurseController]
+  );
+  const requestCancelNurseEdit = useCallback(
+    (...args) => nurseController.requestCancelEdit(...args),
+    [nurseController]
+  );
+  const resolveNurseDiscard = useCallback(
+    (...args) => nurseController.resolveDiscard(...args),
+    [nurseController]
+  );
+  const saveNurse = useCallback((...args) => nurseController.saveNurse(...args), [nurseController]);
+  const retrySaveNurse = useCallback(
+    (...args) => nurseController.retrySave(...args),
+    [nurseController]
+  );
+  const applyNurseConflictToLatest = useCallback(
+    (...args) => nurseController.applyConflictToLatest(...args),
+    [nurseController]
+  );
+  const requestDiscardNurseConflict = useCallback(
+    (...args) => nurseController.requestDiscardConflict(...args),
+    [nurseController]
+  );
+  const keepEditingNurseConflict = useCallback(
+    (...args) => nurseController.keepEditingAfterConflict(...args),
+    [nurseController]
+  );
+  const changeNursePipeline = useCallback(
+    (...args) => nurseController.changeNursePipeline(...args),
+    [nurseController]
+  );
+  const retryNursePipeline = useCallback(
+    (...args) => nurseController.retryPipeline(...args),
+    [nurseController]
+  );
+  const reloadNursePipeline = useCallback(
+    (...args) => nurseController.reloadPipeline(...args),
+    [nurseController]
+  );
+  const rebaseNursePipeline = useCallback(
+    (...args) => nurseController.rebasePipeline(...args),
+    [nurseController]
+  );
+  const requestDeleteNurse = useCallback(
+    (...args) => nurseController.requestDelete(...args),
+    [nurseController]
+  );
+  const cancelDeleteNurse = useCallback(
+    (...args) => nurseController.cancelDelete(...args),
+    [nurseController]
+  );
+  const deleteNurse = useCallback(
+    (...args) => nurseController.confirmDelete(...args),
+    [nurseController]
+  );
+  const retryDeleteNurse = useCallback(
+    (...args) => nurseController.retryDelete(...args),
+    [nurseController]
+  );
+  const reloadNurseAfterDeleteConflict = useCallback(
+    (...args) => nurseController.reloadAfterDeleteConflict(...args),
+    [nurseController]
+  );
 
   /**
    * Async loader for a domain through the Data_Layer facade (flag ON only).
@@ -445,13 +661,18 @@ export function AppProvider({ children }) {
    */
   const loadDomain = useCallback(
     async (name, opts = {}) => {
+      // Nurse reads use the record repository/controller in both modes. This
+      // prevents Supabase nurse hydration from reaching whole-collection APIs
+      // and lets the facade-selected storage adapter preserve legacy routing.
+      if (name === 'nurses') return refreshNurses(opts);
       if (!isSupabaseBackend) return { data: null, error: null };
       const setter = setters[name];
       const domain = getDomain(name);
       patchSlice(name, { loading: true, error: null });
       try {
         const wantsPage =
-          domain && domain.kind === 'collection' &&
+          domain &&
+          domain.kind === 'collection' &&
           (opts.page != null || opts.filters != null || opts.sort != null);
         if (wantsPage) {
           const res = await dlList(name, opts);
@@ -487,7 +708,7 @@ export function AppProvider({ children }) {
         return { data: null, error: mapped };
       }
     },
-    [patchSlice, setters],
+    [patchSlice, refreshNurses, setters]
   );
 
   /** Retry a failed load; a successful load clears the failed/stale state. */
@@ -529,7 +750,7 @@ export function AppProvider({ children }) {
           patchSlice(name, { loading: false, error: mapped, staleWarning: true });
         });
     },
-    [patchSlice, addToast],
+    [patchSlice, addToast]
   );
 
   // ── Update functions ──────────────────────────────────────────────────────
@@ -538,314 +759,465 @@ export function AppProvider({ children }) {
   // is ON they still apply the optimistic setX (so the public field reflects the
   // change immediately) and route the write through the Data_Layer facade, which
   // diffs + issues versioned writes and reports conflicts (Req 6.1, 2.5, 2.6).
-  const updateNurses = useCallback((updatedNurses) => {
-    setNurses(updatedNurses);
-    if (isSupabaseBackend) writeThrough('nurses', updatedNurses);
-    else saveNurses(updatedNurses);
-  }, [writeThrough]);
+  // Compatibility updater retained for legacy consumers. In Supabase mode nurse
+  // writes must use the record commands above so unconfirmed whole-collection
+  // state can never enter context or invoke saveCollection('nurses', ...).
+  const updateNurses = useCallback(
+    (updatedNurses) => {
+      if (isSupabaseBackend) return false;
+      setNurses(updatedNurses);
+      saveNurses(updatedNurses);
+      nurseController.acceptLegacyCollection(updatedNurses);
+      return true;
+    },
+    [nurseController]
+  );
 
-  const updateFacilities = useCallback((updatedFacilities) => {
-    setFacilities(updatedFacilities);
-    if (isSupabaseBackend) writeThrough('facilities', updatedFacilities);
-    else saveFacilities(updatedFacilities);
-  }, [writeThrough]);
+  const updateFacilities = useCallback(
+    (updatedFacilities) => {
+      setFacilities(updatedFacilities);
+      if (isSupabaseBackend) writeThrough('facilities', updatedFacilities);
+      else saveFacilities(updatedFacilities);
+    },
+    [writeThrough]
+  );
 
-  const updateCohorts = useCallback((updatedCohorts) => {
-    setCohorts(updatedCohorts);
-    if (isSupabaseBackend) writeThrough('cohorts', updatedCohorts);
-    else saveCohorts(updatedCohorts);
-  }, [writeThrough]);
+  const updateCohorts = useCallback(
+    (updatedCohorts) => {
+      setCohorts(updatedCohorts);
+      if (isSupabaseBackend) writeThrough('cohorts', updatedCohorts);
+      else saveCohorts(updatedCohorts);
+    },
+    [writeThrough]
+  );
 
-  const updateReferrers = useCallback((updatedReferrers) => {
-    setReferrers(updatedReferrers);
-    if (isSupabaseBackend) writeThrough('referrers', updatedReferrers);
-    else saveReferrers(updatedReferrers);
-  }, [writeThrough]);
+  const updateReferrers = useCallback(
+    (updatedReferrers) => {
+      setReferrers(updatedReferrers);
+      if (isSupabaseBackend) writeThrough('referrers', updatedReferrers);
+      else saveReferrers(updatedReferrers);
+    },
+    [writeThrough]
+  );
 
-  const updateCommunityChannels = useCallback((updatedChannels) => {
-    setCommunityChannels(updatedChannels);
-    if (isSupabaseBackend) writeThrough('communityChannels', updatedChannels);
-    else saveCommunityChannels(updatedChannels);
-  }, [writeThrough]);
+  const updateCommunityChannels = useCallback(
+    (updatedChannels) => {
+      setCommunityChannels(updatedChannels);
+      if (isSupabaseBackend) writeThrough('communityChannels', updatedChannels);
+      else saveCommunityChannels(updatedChannels);
+    },
+    [writeThrough]
+  );
 
-  const updateEvents = useCallback((updatedEvents) => {
-    setEvents(updatedEvents);
-    if (isSupabaseBackend) writeThrough('events', updatedEvents);
-    else saveEvents(updatedEvents);
-  }, [writeThrough]);
+  const updateEvents = useCallback(
+    (updatedEvents) => {
+      setEvents(updatedEvents);
+      if (isSupabaseBackend) writeThrough('events', updatedEvents);
+      else saveEvents(updatedEvents);
+    },
+    [writeThrough]
+  );
 
-  const updateOutreachTemplates = useCallback((updatedTemplates) => {
-    setOutreachTemplates(updatedTemplates);
-    if (isSupabaseBackend) writeThrough('outreachTemplates', updatedTemplates);
-    else saveOutreachTemplates(updatedTemplates);
-  }, [writeThrough]);
+  const updateOutreachTemplates = useCallback(
+    (updatedTemplates) => {
+      setOutreachTemplates(updatedTemplates);
+      if (isSupabaseBackend) writeThrough('outreachTemplates', updatedTemplates);
+      else saveOutreachTemplates(updatedTemplates);
+    },
+    [writeThrough]
+  );
 
-  const updatePlacements = useCallback((updatedPlacements) => {
-    setPlacements(updatedPlacements);
-    if (isSupabaseBackend) writeThrough('placements', updatedPlacements);
-    else savePlacements(updatedPlacements);
-  }, [writeThrough]);
+  const updatePlacements = useCallback(
+    (updatedPlacements) => {
+      setPlacements(updatedPlacements);
+      if (isSupabaseBackend) writeThrough('placements', updatedPlacements);
+      else savePlacements(updatedPlacements);
+    },
+    [writeThrough]
+  );
 
-  const updateSettings = useCallback((updatedSettings) => {
-    setSettings(updatedSettings);
-    if (isSupabaseBackend) writeThrough('settings', updatedSettings);
-    else saveSettings(updatedSettings);
-  }, [writeThrough]);
+  const updateSettings = useCallback(
+    (updatedSettings) => {
+      setSettings(updatedSettings);
+      if (isSupabaseBackend) writeThrough('settings', updatedSettings);
+      else saveSettings(updatedSettings);
+    },
+    [writeThrough]
+  );
 
-  const updateDocuments = useCallback((updatedDocuments) => {
-    setDocuments(updatedDocuments);
-    if (isSupabaseBackend) writeThrough('documents', updatedDocuments);
-    else saveDocuments(updatedDocuments);
-  }, [writeThrough]);
+  const updateDocuments = useCallback(
+    (updatedDocuments) => {
+      setDocuments(updatedDocuments);
+      if (isSupabaseBackend) writeThrough('documents', updatedDocuments);
+      else saveDocuments(updatedDocuments);
+    },
+    [writeThrough]
+  );
 
-  const updateDocumentTemplates = useCallback((updatedTemplates) => {
-    setDocumentTemplates(updatedTemplates);
-    if (isSupabaseBackend) writeThrough('documentTemplates', updatedTemplates);
-    else saveDocumentTemplates(updatedTemplates);
-  }, [writeThrough]);
+  const updateDocumentTemplates = useCallback(
+    (updatedTemplates) => {
+      setDocumentTemplates(updatedTemplates);
+      if (isSupabaseBackend) writeThrough('documentTemplates', updatedTemplates);
+      else saveDocumentTemplates(updatedTemplates);
+    },
+    [writeThrough]
+  );
 
-  const updateVerificationQueue = useCallback((updatedQueue) => {
-    setVerificationQueue(updatedQueue);
-    if (isSupabaseBackend) writeThrough('verificationQueue', updatedQueue);
-    else saveVerificationQueue(updatedQueue);
-  }, [writeThrough]);
+  const updateVerificationQueue = useCallback(
+    (updatedQueue) => {
+      setVerificationQueue(updatedQueue);
+      if (isSupabaseBackend) writeThrough('verificationQueue', updatedQueue);
+      else saveVerificationQueue(updatedQueue);
+    },
+    [writeThrough]
+  );
 
-  const updateCommunications = useCallback((updatedCommunications) => {
-    setCommunications(updatedCommunications);
-    if (isSupabaseBackend) writeThrough('communications', updatedCommunications);
-    else saveCommunications(updatedCommunications);
-  }, [writeThrough]);
+  const updateCommunications = useCallback(
+    (updatedCommunications) => {
+      setCommunications(updatedCommunications);
+      if (isSupabaseBackend) writeThrough('communications', updatedCommunications);
+      else saveCommunications(updatedCommunications);
+    },
+    [writeThrough]
+  );
 
-  const updateNotifications = useCallback((updatedNotifications) => {
-    setNotifications(updatedNotifications);
-    if (isSupabaseBackend) writeThrough('notifications', updatedNotifications);
-    else saveNotifications(updatedNotifications);
-  }, [writeThrough]);
+  const updateNotifications = useCallback(
+    (updatedNotifications) => {
+      setNotifications(updatedNotifications);
+      if (isSupabaseBackend) writeThrough('notifications', updatedNotifications);
+      else saveNotifications(updatedNotifications);
+    },
+    [writeThrough]
+  );
 
-  const updateCommEmailTemplates = useCallback((updatedTemplates) => {
-    setCommEmailTemplates(updatedTemplates);
-    if (isSupabaseBackend) writeThrough('commEmailTemplates', updatedTemplates);
-    else saveCommEmailTemplates(updatedTemplates);
-  }, [writeThrough]);
+  const updateCommEmailTemplates = useCallback(
+    (updatedTemplates) => {
+      setCommEmailTemplates(updatedTemplates);
+      if (isSupabaseBackend) writeThrough('commEmailTemplates', updatedTemplates);
+      else saveCommEmailTemplates(updatedTemplates);
+    },
+    [writeThrough]
+  );
 
-  const updateAlertRules = useCallback((updatedRules) => {
-    setAlertRules(updatedRules);
-    if (isSupabaseBackend) writeThrough('alertRules', updatedRules);
-    else saveAlertRules(updatedRules);
-  }, [writeThrough]);
+  const updateAlertRules = useCallback(
+    (updatedRules) => {
+      setAlertRules(updatedRules);
+      if (isSupabaseBackend) writeThrough('alertRules', updatedRules);
+      else saveAlertRules(updatedRules);
+    },
+    [writeThrough]
+  );
 
-  const updateAlertHistory = useCallback((updatedHistory) => {
-    setAlertHistory(updatedHistory);
-    if (isSupabaseBackend) writeThrough('alertHistory', updatedHistory);
-    else saveAlertHistory(updatedHistory);
-  }, [writeThrough]);
+  const updateAlertHistory = useCallback(
+    (updatedHistory) => {
+      setAlertHistory(updatedHistory);
+      if (isSupabaseBackend) writeThrough('alertHistory', updatedHistory);
+      else saveAlertHistory(updatedHistory);
+    },
+    [writeThrough]
+  );
 
-  const updateNotificationPreferences = useCallback((updatedPreferences) => {
-    setNotificationPreferences(updatedPreferences);
-    if (isSupabaseBackend) writeThrough('notificationPreferences', updatedPreferences);
-    else saveNotificationPreferences(updatedPreferences);
-  }, [writeThrough]);
+  const updateNotificationPreferences = useCallback(
+    (updatedPreferences) => {
+      setNotificationPreferences(updatedPreferences);
+      if (isSupabaseBackend) writeThrough('notificationPreferences', updatedPreferences);
+      else saveNotificationPreferences(updatedPreferences);
+    },
+    [writeThrough]
+  );
 
-  const updateScheduledReports = useCallback((updatedReports) => {
-    setScheduledReports(updatedReports);
-    if (isSupabaseBackend) writeThrough('scheduledReports', updatedReports);
-    else saveScheduledReports(updatedReports);
-  }, [writeThrough]);
+  const updateScheduledReports = useCallback(
+    (updatedReports) => {
+      setScheduledReports(updatedReports);
+      if (isSupabaseBackend) writeThrough('scheduledReports', updatedReports);
+      else saveScheduledReports(updatedReports);
+    },
+    [writeThrough]
+  );
 
-  const updateExportHistory = useCallback((updatedHistory) => {
-    setExportHistory(updatedHistory);
-    if (isSupabaseBackend) writeThrough('exportHistory', updatedHistory);
-    else saveExportHistory(updatedHistory);
-  }, [writeThrough]);
+  const updateExportHistory = useCallback(
+    (updatedHistory) => {
+      setExportHistory(updatedHistory);
+      if (isSupabaseBackend) writeThrough('exportHistory', updatedHistory);
+      else saveExportHistory(updatedHistory);
+    },
+    [writeThrough]
+  );
 
-  const updateDashboardLayouts = useCallback((updatedLayouts) => {
-    setDashboardLayouts(updatedLayouts);
-    if (isSupabaseBackend) writeThrough('dashboardLayouts', updatedLayouts);
-    else saveDashboardLayouts(updatedLayouts);
-  }, [writeThrough]);
+  const updateDashboardLayouts = useCallback(
+    (updatedLayouts) => {
+      setDashboardLayouts(updatedLayouts);
+      if (isSupabaseBackend) writeThrough('dashboardLayouts', updatedLayouts);
+      else saveDashboardLayouts(updatedLayouts);
+    },
+    [writeThrough]
+  );
 
-  const updateActiveDashboardLayout = useCallback((updatedLayout) => {
-    setActiveDashboardLayout(updatedLayout);
-    if (isSupabaseBackend) writeThrough('activeDashboardLayout', updatedLayout);
-    else saveActiveDashboardLayout(updatedLayout);
-  }, [writeThrough]);
+  const updateActiveDashboardLayout = useCallback(
+    (updatedLayout) => {
+      setActiveDashboardLayout(updatedLayout);
+      if (isSupabaseBackend) writeThrough('activeDashboardLayout', updatedLayout);
+      else saveActiveDashboardLayout(updatedLayout);
+    },
+    [writeThrough]
+  );
 
-  const updateIntegrations = useCallback((updatedIntegrations) => {
-    setIntegrations(updatedIntegrations);
-    if (isSupabaseBackend) writeThrough('integrations', updatedIntegrations);
-    else saveIntegrations(updatedIntegrations);
-  }, [writeThrough]);
+  const updateIntegrations = useCallback(
+    (updatedIntegrations) => {
+      setIntegrations(updatedIntegrations);
+      if (isSupabaseBackend) writeThrough('integrations', updatedIntegrations);
+      else saveIntegrations(updatedIntegrations);
+    },
+    [writeThrough]
+  );
 
-  const updateApiEndpoints = useCallback((updatedEndpoints) => {
-    setApiEndpoints(updatedEndpoints);
-    if (isSupabaseBackend) writeThrough('apiEndpoints', updatedEndpoints);
-    else saveApiEndpoints(updatedEndpoints);
-  }, [writeThrough]);
+  const updateApiEndpoints = useCallback(
+    (updatedEndpoints) => {
+      setApiEndpoints(updatedEndpoints);
+      if (isSupabaseBackend) writeThrough('apiEndpoints', updatedEndpoints);
+      else saveApiEndpoints(updatedEndpoints);
+    },
+    [writeThrough]
+  );
 
-  const updateApiKeys = useCallback((updatedKeys) => {
-    setApiKeys(updatedKeys);
-    if (isSupabaseBackend) writeThrough('apiKeys', updatedKeys);
-    else saveApiKeys(updatedKeys);
-  }, [writeThrough]);
+  const updateApiKeys = useCallback(
+    (updatedKeys) => {
+      setApiKeys(updatedKeys);
+      if (isSupabaseBackend) writeThrough('apiKeys', updatedKeys);
+      else saveApiKeys(updatedKeys);
+    },
+    [writeThrough]
+  );
 
-  const updateWebhooks = useCallback((updatedWebhooks) => {
-    setWebhooks(updatedWebhooks);
-    if (isSupabaseBackend) writeThrough('webhooks', updatedWebhooks);
-    else saveWebhooks(updatedWebhooks);
-  }, [writeThrough]);
+  const updateWebhooks = useCallback(
+    (updatedWebhooks) => {
+      setWebhooks(updatedWebhooks);
+      if (isSupabaseBackend) writeThrough('webhooks', updatedWebhooks);
+      else saveWebhooks(updatedWebhooks);
+    },
+    [writeThrough]
+  );
 
-  const updateWebhookDeliveryLog = useCallback((updatedLog) => {
-    setWebhookDeliveryLog(updatedLog);
-    if (isSupabaseBackend) writeThrough('webhookDeliveryLog', updatedLog);
-    else saveWebhookDeliveryLog(updatedLog);
-  }, [writeThrough]);
+  const updateWebhookDeliveryLog = useCallback(
+    (updatedLog) => {
+      setWebhookDeliveryLog(updatedLog);
+      if (isSupabaseBackend) writeThrough('webhookDeliveryLog', updatedLog);
+      else saveWebhookDeliveryLog(updatedLog);
+    },
+    [writeThrough]
+  );
 
-  const updateSyncStatus = useCallback((updatedStatus) => {
-    setSyncStatus(updatedStatus);
-    if (isSupabaseBackend) writeThrough('syncStatus', updatedStatus);
-    else saveSyncStatus(updatedStatus);
-  }, [writeThrough]);
+  const updateSyncStatus = useCallback(
+    (updatedStatus) => {
+      setSyncStatus(updatedStatus);
+      if (isSupabaseBackend) writeThrough('syncStatus', updatedStatus);
+      else saveSyncStatus(updatedStatus);
+    },
+    [writeThrough]
+  );
 
-  const updateActivityFeed = useCallback((updatedFeed) => {
-    setActivityFeed(updatedFeed);
-    if (isSupabaseBackend) writeThrough('activityFeed', updatedFeed);
-    else saveActivityFeed(updatedFeed);
-  }, [writeThrough]);
+  const updateActivityFeed = useCallback(
+    (updatedFeed) => {
+      setActivityFeed(updatedFeed);
+      if (isSupabaseBackend) writeThrough('activityFeed', updatedFeed);
+      else saveActivityFeed(updatedFeed);
+    },
+    [writeThrough]
+  );
 
-  const updateAuditLog = useCallback((updatedLog) => {
-    setAuditLog(updatedLog);
-    if (isSupabaseBackend) writeThrough('auditLog', updatedLog);
-    else saveAuditLog(updatedLog);
-  }, [writeThrough]);
+  const updateAuditLog = useCallback(
+    (updatedLog) => {
+      setAuditLog(updatedLog);
+      if (isSupabaseBackend) writeThrough('auditLog', updatedLog);
+      else saveAuditLog(updatedLog);
+    },
+    [writeThrough]
+  );
 
-  const updateUserSessions = useCallback((updatedSessions) => {
-    setUserSessions(updatedSessions);
-    if (isSupabaseBackend) writeThrough('userSessions', updatedSessions);
-    else saveUserSessions(updatedSessions);
-  }, [writeThrough]);
+  const updateUserSessions = useCallback(
+    (updatedSessions) => {
+      setUserSessions(updatedSessions);
+      if (isSupabaseBackend) writeThrough('userSessions', updatedSessions);
+      else saveUserSessions(updatedSessions);
+    },
+    [writeThrough]
+  );
 
   // Special: supports a functional updater form in addition to a plain value.
   // Both branches preserve the legacy synchronous save when the flag is OFF and
   // route through the facade when ON (Req 6.1).
-  const updateChangeHistory = useCallback((updatedHistoryOrFn) => {
-    if (typeof updatedHistoryOrFn === 'function') {
-      setChangeHistory((prev) => {
-        const next = updatedHistoryOrFn(prev);
-        if (isSupabaseBackend) writeThrough('changeHistory', next);
-        else saveChangeHistory(next);
-        return next;
-      });
-    } else {
-      setChangeHistory(updatedHistoryOrFn);
-      if (isSupabaseBackend) writeThrough('changeHistory', updatedHistoryOrFn);
-      else saveChangeHistory(updatedHistoryOrFn);
-    }
-  }, [writeThrough]);
+  const updateChangeHistory = useCallback(
+    (updatedHistoryOrFn) => {
+      if (typeof updatedHistoryOrFn === 'function') {
+        setChangeHistory((prev) => {
+          const next = updatedHistoryOrFn(prev);
+          if (isSupabaseBackend) writeThrough('changeHistory', next);
+          else saveChangeHistory(next);
+          return next;
+        });
+      } else {
+        setChangeHistory(updatedHistoryOrFn);
+        if (isSupabaseBackend) writeThrough('changeHistory', updatedHistoryOrFn);
+        else saveChangeHistory(updatedHistoryOrFn);
+      }
+    },
+    [writeThrough]
+  );
 
-  const updateRecentSearches = useCallback((updatedSearches) => {
-    setRecentSearches(updatedSearches);
-    if (isSupabaseBackend) writeThrough('recentSearches', updatedSearches);
-    else saveRecentSearches(updatedSearches);
-  }, [writeThrough]);
+  const updateRecentSearches = useCallback(
+    (updatedSearches) => {
+      setRecentSearches(updatedSearches);
+      if (isSupabaseBackend) writeThrough('recentSearches', updatedSearches);
+      else saveRecentSearches(updatedSearches);
+    },
+    [writeThrough]
+  );
 
-  const updateSavedViews = useCallback((updatedViews) => {
-    setSavedViews(updatedViews);
-    if (isSupabaseBackend) writeThrough('savedViews', updatedViews);
-    else saveSavedViews(updatedViews);
-  }, [writeThrough]);
+  const updateSavedViews = useCallback(
+    (updatedViews) => {
+      setSavedViews(updatedViews);
+      if (isSupabaseBackend) writeThrough('savedViews', updatedViews);
+      else saveSavedViews(updatedViews);
+    },
+    [writeThrough]
+  );
 
-  const updateRecentlyViewed = useCallback((updatedItems) => {
-    setRecentlyViewed(updatedItems);
-    if (isSupabaseBackend) writeThrough('recentlyViewed', updatedItems);
-    else saveRecentlyViewed(updatedItems);
-  }, [writeThrough]);
+  const updateRecentlyViewed = useCallback(
+    (updatedItems) => {
+      setRecentlyViewed(updatedItems);
+      if (isSupabaseBackend) writeThrough('recentlyViewed', updatedItems);
+      else saveRecentlyViewed(updatedItems);
+    },
+    [writeThrough]
+  );
 
-  const updateAutomationRules = useCallback((updatedRules) => {
-    setAutomationRules(updatedRules);
-    if (isSupabaseBackend) writeThrough('automationRules', updatedRules);
-    else saveAutomationRules(updatedRules);
-  }, [writeThrough]);
+  const updateAutomationRules = useCallback(
+    (updatedRules) => {
+      setAutomationRules(updatedRules);
+      if (isSupabaseBackend) writeThrough('automationRules', updatedRules);
+      else saveAutomationRules(updatedRules);
+    },
+    [writeThrough]
+  );
 
-  const updateAutomationTemplates = useCallback((updatedTemplates) => {
-    setAutomationTemplates(updatedTemplates);
-    if (isSupabaseBackend) writeThrough('automationTemplates', updatedTemplates);
-    else saveAutomationTemplates(updatedTemplates);
-  }, [writeThrough]);
+  const updateAutomationTemplates = useCallback(
+    (updatedTemplates) => {
+      setAutomationTemplates(updatedTemplates);
+      if (isSupabaseBackend) writeThrough('automationTemplates', updatedTemplates);
+      else saveAutomationTemplates(updatedTemplates);
+    },
+    [writeThrough]
+  );
 
-  const updateExecutionLog = useCallback((updatedLog) => {
-    setExecutionLog(updatedLog);
-    if (isSupabaseBackend) writeThrough('executionLog', updatedLog);
-    else saveExecutionLog(updatedLog);
-  }, [writeThrough]);
+  const updateExecutionLog = useCallback(
+    (updatedLog) => {
+      setExecutionLog(updatedLog);
+      if (isSupabaseBackend) writeThrough('executionLog', updatedLog);
+      else saveExecutionLog(updatedLog);
+    },
+    [writeThrough]
+  );
 
-  const updateScheduledActions = useCallback((updatedActions) => {
-    setScheduledActions(updatedActions);
-    if (isSupabaseBackend) writeThrough('scheduledActions', updatedActions);
-    else saveScheduledActions(updatedActions);
-  }, [writeThrough]);
+  const updateScheduledActions = useCallback(
+    (updatedActions) => {
+      setScheduledActions(updatedActions);
+      if (isSupabaseBackend) writeThrough('scheduledActions', updatedActions);
+      else saveScheduledActions(updatedActions);
+    },
+    [writeThrough]
+  );
 
-  const updateNotificationAlerts = useCallback((updatedAlerts) => {
-    setNotificationAlerts(updatedAlerts);
-    if (isSupabaseBackend) writeThrough('notificationAlerts', updatedAlerts);
-    else saveNotificationAlerts(updatedAlerts);
-  }, [writeThrough]);
+  const updateNotificationAlerts = useCallback(
+    (updatedAlerts) => {
+      setNotificationAlerts(updatedAlerts);
+      if (isSupabaseBackend) writeThrough('notificationAlerts', updatedAlerts);
+      else saveNotificationAlerts(updatedAlerts);
+    },
+    [writeThrough]
+  );
 
-  const updateNotifAlertConfig = useCallback((updatedConfig) => {
-    setNotifAlertConfig(updatedConfig);
-    if (isSupabaseBackend) writeThrough('notifAlertConfig', updatedConfig);
-    else saveNotifAlertConfig(updatedConfig);
-  }, [writeThrough]);
+  const updateNotifAlertConfig = useCallback(
+    (updatedConfig) => {
+      setNotifAlertConfig(updatedConfig);
+      if (isSupabaseBackend) writeThrough('notifAlertConfig', updatedConfig);
+      else saveNotifAlertConfig(updatedConfig);
+    },
+    [writeThrough]
+  );
 
-  const updateNotificationLog = useCallback((updatedLog) => {
-    setNotificationLog(updatedLog);
-    if (isSupabaseBackend) writeThrough('notificationLog', updatedLog);
-    else saveNotificationLog(updatedLog);
-  }, [writeThrough]);
+  const updateNotificationLog = useCallback(
+    (updatedLog) => {
+      setNotificationLog(updatedLog);
+      if (isSupabaseBackend) writeThrough('notificationLog', updatedLog);
+      else saveNotificationLog(updatedLog);
+    },
+    [writeThrough]
+  );
 
-  const updateToastPreferences = useCallback((updatedPrefs) => {
-    setToastPreferences(updatedPrefs);
-    if (isSupabaseBackend) writeThrough('toastPreferences', updatedPrefs);
-    else saveToastPreferences(updatedPrefs);
-  }, [writeThrough]);
+  const updateToastPreferences = useCallback(
+    (updatedPrefs) => {
+      setToastPreferences(updatedPrefs);
+      if (isSupabaseBackend) writeThrough('toastPreferences', updatedPrefs);
+      else saveToastPreferences(updatedPrefs);
+    },
+    [writeThrough]
+  );
 
-  const updateHelpArticles = useCallback((updatedArticles) => {
-    setHelpArticles(updatedArticles);
-    if (isSupabaseBackend) writeThrough('helpArticles', updatedArticles);
-    else saveHelpArticles(updatedArticles);
-  }, [writeThrough]);
+  const updateHelpArticles = useCallback(
+    (updatedArticles) => {
+      setHelpArticles(updatedArticles);
+      if (isSupabaseBackend) writeThrough('helpArticles', updatedArticles);
+      else saveHelpArticles(updatedArticles);
+    },
+    [writeThrough]
+  );
 
-  const updateOnboardingState = useCallback((updatedState) => {
-    setOnboardingState(updatedState);
-    if (isSupabaseBackend) writeThrough('onboardingState', updatedState);
-    else saveOnboardingState(updatedState);
-  }, [writeThrough]);
+  const updateOnboardingState = useCallback(
+    (updatedState) => {
+      setOnboardingState(updatedState);
+      if (isSupabaseBackend) writeThrough('onboardingState', updatedState);
+      else saveOnboardingState(updatedState);
+    },
+    [writeThrough]
+  );
 
-  const updateTourState = useCallback((updatedState) => {
-    setTourState(updatedState);
-    if (isSupabaseBackend) writeThrough('tourState', updatedState);
-    else saveTourState(updatedState);
-  }, [writeThrough]);
+  const updateTourState = useCallback(
+    (updatedState) => {
+      setTourState(updatedState);
+      if (isSupabaseBackend) writeThrough('tourState', updatedState);
+      else saveTourState(updatedState);
+    },
+    [writeThrough]
+  );
 
-  const updateArticleVotes = useCallback((updatedVotes) => {
-    setArticleVotes(updatedVotes);
-    if (isSupabaseBackend) writeThrough('articleVotes', updatedVotes);
-    else saveArticleVotes(updatedVotes);
-  }, [writeThrough]);
+  const updateArticleVotes = useCallback(
+    (updatedVotes) => {
+      setArticleVotes(updatedVotes);
+      if (isSupabaseBackend) writeThrough('articleVotes', updatedVotes);
+      else saveArticleVotes(updatedVotes);
+    },
+    [writeThrough]
+  );
 
   // Additive per-domain `load*`/`retry*` actions generated from the registry.
   const domainActions = useMemo(() => {
     const actions = {};
     for (const name of CONTEXT_DOMAINS) {
       const cap = name.charAt(0).toUpperCase() + name.slice(1);
-      actions[`load${cap}`] = (opts) => loadDomain(name, opts);
-      actions[`retry${cap}`] = (opts) => retryDomain(name, opts);
+      if (name === 'nurses') {
+        actions.loadNurses = (opts) => refreshNurses(opts);
+        actions.retryNurses = (opts) => retryNurses(opts);
+      } else {
+        actions[`load${cap}`] = (opts) => loadDomain(name, opts);
+        actions[`retry${cap}`] = (opts) => retryDomain(name, opts);
+      }
     }
     return actions;
-  }, [loadDomain, retryDomain]);
+  }, [loadDomain, refreshNurses, retryDomain, retryNurses]);
 
-  // Hydrate every domain from the Data_Layer once on mount when the flag is ON.
-  // When the flag is OFF this effect is a no-op and the synchronous state stands
-  // (legacy behavior unchanged, Req 9.1).
+  // Hydrate through the selected persistence mode. Nurse hydration always uses
+  // the record controller; all unrelated domains retain their existing facade
+  // hydration behavior in Supabase mode.
   useEffect(() => {
     if (!isSupabaseBackend) return;
     Promise.all(CONTEXT_DOMAINS.map((name) => loadDomain(name))).catch(() => {
@@ -853,217 +1225,292 @@ export function AppProvider({ children }) {
     });
   }, [loadDomain]);
 
+  const exposedSlices = useMemo(
+    () => ({
+      ...slices,
+      nurses: {
+        ...slices.nurses,
+        loading: nurseSlice.listState === NurseAsyncState.LOADING,
+        error: nurseSlice.listError,
+        total: nurseSlice.total,
+        staleWarning: nurseSlice.staleWarning,
+      },
+    }),
+    [nurseSlice, slices]
+  );
+
   // NOTE: This useMemo has 90+ dependencies covering every state slice and updater.
   // It effectively recomputes on every state change, providing minimal memoization benefit.
   // This is intentional scaffolding for a future context-splitting refactor where individual
   // domain slices will be moved into separate providers, at which point each useMemo will
   // have a smaller, meaningful dependency set.
-  const value = useMemo(() => ({
-    nurses,
-    facilities,
-    cohorts,
-    referrers,
-    communityChannels,
-    events,
-    outreachTemplates,
-    placements,
-    settings,
-    documents,
-    documentTemplates,
-    verificationQueue,
-    communications,
-    notifications,
-    commEmailTemplates,
-    alertRules,
-    alertHistory,
-    notificationPreferences,
-    scheduledReports,
-    exportHistory,
-    dashboardLayouts,
-    activeDashboardLayout,
-    integrations,
-    apiEndpoints,
-    apiKeys,
-    webhooks,
-    webhookDeliveryLog,
-    syncStatus,
-    activityFeed,
-    auditLog,
-    userSessions,
-    changeHistory,
-    recentSearches,
-    savedViews,
-    recentlyViewed,
-    automationRules,
-    automationTemplates,
-    executionLog,
-    scheduledActions,
-    notificationAlerts,
-    notifAlertConfig,
-    notificationLog,
-    toastPreferences,
-    helpArticles,
-    onboardingState,
-    tourState,
-    articleVotes,
-    updateNurses,
-    updateFacilities,
-    updateCohorts,
-    updateReferrers,
-    updateCommunityChannels,
-    updateEvents,
-    updateOutreachTemplates,
-    updatePlacements,
-    updateSettings,
-    updateDocuments,
-    updateDocumentTemplates,
-    updateVerificationQueue,
-    updateCommunications,
-    updateNotifications,
-    updateCommEmailTemplates,
-    updateAlertRules,
-    updateAlertHistory,
-    updateNotificationPreferences,
-    updateScheduledReports,
-    updateExportHistory,
-    updateDashboardLayouts,
-    updateActiveDashboardLayout,
-    updateIntegrations,
-    updateApiEndpoints,
-    updateApiKeys,
-    updateWebhooks,
-    updateWebhookDeliveryLog,
-    updateSyncStatus,
-    updateActivityFeed,
-    updateAuditLog,
-    updateUserSessions,
-    updateChangeHistory,
-    updateRecentSearches,
-    updateSavedViews,
-    updateRecentlyViewed,
-    updateAutomationRules,
-    updateAutomationTemplates,
-    updateExecutionLog,
-    updateScheduledActions,
-    updateNotificationAlerts,
-    updateNotifAlertConfig,
-    updateNotificationLog,
-    updateToastPreferences,
-    updateHelpArticles,
-    updateOnboardingState,
-    updateTourState,
-    updateArticleVotes,
-    toasts,
-    addToast,
-    dismissToast,
-    // Additive async data-layer surface (Task 9). Extra keys only.
-    slices,
-    loadDomain,
-    retryDomain,
-    ...domainActions,
-  }), [
-    nurses,
-    facilities,
-    cohorts,
-    referrers,
-    communityChannels,
-    events,
-    outreachTemplates,
-    placements,
-    settings,
-    documents,
-    documentTemplates,
-    verificationQueue,
-    communications,
-    notifications,
-    commEmailTemplates,
-    alertRules,
-    alertHistory,
-    notificationPreferences,
-    scheduledReports,
-    exportHistory,
-    dashboardLayouts,
-    activeDashboardLayout,
-    integrations,
-    apiEndpoints,
-    apiKeys,
-    webhooks,
-    webhookDeliveryLog,
-    syncStatus,
-    activityFeed,
-    auditLog,
-    userSessions,
-    changeHistory,
-    recentSearches,
-    savedViews,
-    recentlyViewed,
-    automationRules,
-    automationTemplates,
-    executionLog,
-    scheduledActions,
-    notificationAlerts,
-    notifAlertConfig,
-    notificationLog,
-    toastPreferences,
-    helpArticles,
-    onboardingState,
-    tourState,
-    articleVotes,
-    updateNurses,
-    updateFacilities,
-    updateCohorts,
-    updateReferrers,
-    updateCommunityChannels,
-    updateEvents,
-    updateOutreachTemplates,
-    updatePlacements,
-    updateSettings,
-    updateDocuments,
-    updateDocumentTemplates,
-    updateVerificationQueue,
-    updateCommunications,
-    updateNotifications,
-    updateCommEmailTemplates,
-    updateAlertRules,
-    updateAlertHistory,
-    updateNotificationPreferences,
-    updateScheduledReports,
-    updateExportHistory,
-    updateDashboardLayouts,
-    updateActiveDashboardLayout,
-    updateIntegrations,
-    updateApiEndpoints,
-    updateApiKeys,
-    updateWebhooks,
-    updateWebhookDeliveryLog,
-    updateSyncStatus,
-    updateActivityFeed,
-    updateAuditLog,
-    updateUserSessions,
-    updateChangeHistory,
-    updateRecentSearches,
-    updateSavedViews,
-    updateRecentlyViewed,
-    updateAutomationRules,
-    updateAutomationTemplates,
-    updateExecutionLog,
-    updateScheduledActions,
-    updateNotificationAlerts,
-    updateNotifAlertConfig,
-    updateNotificationLog,
-    updateToastPreferences,
-    updateHelpArticles,
-    updateOnboardingState,
-    updateTourState,
-    updateArticleVotes,
-    toasts,
-    addToast,
-    dismissToast,
-    slices,
-    loadDomain,
-    retryDomain,
-    domainActions,
-  ]);
+  const value = useMemo(
+    () => ({
+      nurses,
+      nurseSlice,
+      refreshNurses,
+      retryNurses,
+      openNurse,
+      openCreate,
+      updateCreateDraft,
+      closeCreate,
+      createNurse,
+      retryCreate,
+      retryCreateAfterCollision,
+      retryDetail,
+      closeNurseDetail,
+      updateNurseDraft,
+      requestCancelNurseEdit,
+      resolveNurseDiscard,
+      saveNurse,
+      retrySaveNurse,
+      applyNurseConflictToLatest,
+      requestDiscardNurseConflict,
+      keepEditingNurseConflict,
+      changeNursePipeline,
+      retryNursePipeline,
+      reloadNursePipeline,
+      rebaseNursePipeline,
+      requestDeleteNurse,
+      cancelDeleteNurse,
+      deleteNurse,
+      retryDeleteNurse,
+      reloadNurseAfterDeleteConflict,
+      facilities,
+      cohorts,
+      referrers,
+      communityChannels,
+      events,
+      outreachTemplates,
+      placements,
+      settings,
+      documents,
+      documentTemplates,
+      verificationQueue,
+      communications,
+      notifications,
+      commEmailTemplates,
+      alertRules,
+      alertHistory,
+      notificationPreferences,
+      scheduledReports,
+      exportHistory,
+      dashboardLayouts,
+      activeDashboardLayout,
+      integrations,
+      apiEndpoints,
+      apiKeys,
+      webhooks,
+      webhookDeliveryLog,
+      syncStatus,
+      activityFeed,
+      auditLog,
+      userSessions,
+      changeHistory,
+      recentSearches,
+      savedViews,
+      recentlyViewed,
+      automationRules,
+      automationTemplates,
+      executionLog,
+      scheduledActions,
+      notificationAlerts,
+      notifAlertConfig,
+      notificationLog,
+      toastPreferences,
+      helpArticles,
+      onboardingState,
+      tourState,
+      articleVotes,
+      updateNurses,
+      updateFacilities,
+      updateCohorts,
+      updateReferrers,
+      updateCommunityChannels,
+      updateEvents,
+      updateOutreachTemplates,
+      updatePlacements,
+      updateSettings,
+      updateDocuments,
+      updateDocumentTemplates,
+      updateVerificationQueue,
+      updateCommunications,
+      updateNotifications,
+      updateCommEmailTemplates,
+      updateAlertRules,
+      updateAlertHistory,
+      updateNotificationPreferences,
+      updateScheduledReports,
+      updateExportHistory,
+      updateDashboardLayouts,
+      updateActiveDashboardLayout,
+      updateIntegrations,
+      updateApiEndpoints,
+      updateApiKeys,
+      updateWebhooks,
+      updateWebhookDeliveryLog,
+      updateSyncStatus,
+      updateActivityFeed,
+      updateAuditLog,
+      updateUserSessions,
+      updateChangeHistory,
+      updateRecentSearches,
+      updateSavedViews,
+      updateRecentlyViewed,
+      updateAutomationRules,
+      updateAutomationTemplates,
+      updateExecutionLog,
+      updateScheduledActions,
+      updateNotificationAlerts,
+      updateNotifAlertConfig,
+      updateNotificationLog,
+      updateToastPreferences,
+      updateHelpArticles,
+      updateOnboardingState,
+      updateTourState,
+      updateArticleVotes,
+      toasts,
+      addToast,
+      dismissToast,
+      // Additive async data-layer surface (Task 9). Extra keys only.
+      slices: exposedSlices,
+      loadDomain,
+      retryDomain,
+      ...domainActions,
+    }),
+    [
+      nurses,
+      nurseSlice,
+      refreshNurses,
+      retryNurses,
+      openNurse,
+      openCreate,
+      updateCreateDraft,
+      closeCreate,
+      createNurse,
+      retryCreate,
+      retryCreateAfterCollision,
+      retryDetail,
+      closeNurseDetail,
+      updateNurseDraft,
+      requestCancelNurseEdit,
+      resolveNurseDiscard,
+      saveNurse,
+      retrySaveNurse,
+      applyNurseConflictToLatest,
+      requestDiscardNurseConflict,
+      keepEditingNurseConflict,
+      changeNursePipeline,
+      retryNursePipeline,
+      reloadNursePipeline,
+      rebaseNursePipeline,
+      requestDeleteNurse,
+      cancelDeleteNurse,
+      deleteNurse,
+      retryDeleteNurse,
+      reloadNurseAfterDeleteConflict,
+      facilities,
+      cohorts,
+      referrers,
+      communityChannels,
+      events,
+      outreachTemplates,
+      placements,
+      settings,
+      documents,
+      documentTemplates,
+      verificationQueue,
+      communications,
+      notifications,
+      commEmailTemplates,
+      alertRules,
+      alertHistory,
+      notificationPreferences,
+      scheduledReports,
+      exportHistory,
+      dashboardLayouts,
+      activeDashboardLayout,
+      integrations,
+      apiEndpoints,
+      apiKeys,
+      webhooks,
+      webhookDeliveryLog,
+      syncStatus,
+      activityFeed,
+      auditLog,
+      userSessions,
+      changeHistory,
+      recentSearches,
+      savedViews,
+      recentlyViewed,
+      automationRules,
+      automationTemplates,
+      executionLog,
+      scheduledActions,
+      notificationAlerts,
+      notifAlertConfig,
+      notificationLog,
+      toastPreferences,
+      helpArticles,
+      onboardingState,
+      tourState,
+      articleVotes,
+      updateNurses,
+      updateFacilities,
+      updateCohorts,
+      updateReferrers,
+      updateCommunityChannels,
+      updateEvents,
+      updateOutreachTemplates,
+      updatePlacements,
+      updateSettings,
+      updateDocuments,
+      updateDocumentTemplates,
+      updateVerificationQueue,
+      updateCommunications,
+      updateNotifications,
+      updateCommEmailTemplates,
+      updateAlertRules,
+      updateAlertHistory,
+      updateNotificationPreferences,
+      updateScheduledReports,
+      updateExportHistory,
+      updateDashboardLayouts,
+      updateActiveDashboardLayout,
+      updateIntegrations,
+      updateApiEndpoints,
+      updateApiKeys,
+      updateWebhooks,
+      updateWebhookDeliveryLog,
+      updateSyncStatus,
+      updateActivityFeed,
+      updateAuditLog,
+      updateUserSessions,
+      updateChangeHistory,
+      updateRecentSearches,
+      updateSavedViews,
+      updateRecentlyViewed,
+      updateAutomationRules,
+      updateAutomationTemplates,
+      updateExecutionLog,
+      updateScheduledActions,
+      updateNotificationAlerts,
+      updateNotifAlertConfig,
+      updateNotificationLog,
+      updateToastPreferences,
+      updateHelpArticles,
+      updateOnboardingState,
+      updateTourState,
+      updateArticleVotes,
+      toasts,
+      addToast,
+      dismissToast,
+      exposedSlices,
+      loadDomain,
+      retryDomain,
+      domainActions,
+    ]
+  );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

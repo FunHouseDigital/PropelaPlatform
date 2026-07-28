@@ -27,6 +27,7 @@
 import * as storage from '../storage';
 import { getDomain } from './domains';
 import { DataError, DataErrorCode, mapError } from './errors';
+import { toNurseCreateRow, toNurseUpdatePatch } from './nurseCodec';
 
 /** Pagination bounds shared with the Supabase adapter (Req 12.1). */
 const DEFAULT_PAGE_SIZE = 25;
@@ -36,34 +37,38 @@ const MAX_PAGE_SIZE = 100;
 function requireDomain(name) {
   const domain = getDomain(name);
   if (!domain) {
-    throw new DataError(
-      DataErrorCode.VALIDATION,
-      `Unknown data domain: ${String(name)}`,
-    );
+    throw new DataError(DataErrorCode.VALIDATION, `Unknown data domain: ${String(name)}`);
   }
   return domain;
 }
 
 /**
- * Read the whole backing value for a domain via its legacy getter (falling back
- * to the raw storage key), normalizing collections to an array.
+ * Read the whole backing value for a domain. Strict storage access happens
+ * before legacy default handling so access/parse failures cannot be mistaken
+ * for a missing value and cannot trigger fallback behavior.
  */
 function readBacking(domain) {
+  let raw;
+  try {
+    raw = storage.getDataStrict(domain.key);
+  } catch (error) {
+    throw new DataError(DataErrorCode.STORAGE, undefined, error);
+  }
+
+  if (raw != null) return raw;
   if (domain.legacyGetter && typeof storage[domain.legacyGetter] === 'function') {
     return storage[domain.legacyGetter]();
   }
-  const raw = storage.getData(domain.key);
-  if (raw != null) return raw;
   return domain.kind === 'collection' ? [] : null;
 }
 
-/** Persist the whole backing value for a domain via its legacy saver. */
+/** Persist the whole backing value through strict storage access. */
 function writeBacking(domain, value) {
-  if (domain.legacySaver && typeof storage[domain.legacySaver] === 'function') {
-    storage[domain.legacySaver](value);
-    return;
+  try {
+    storage.setDataStrict(domain.key, value);
+  } catch (error) {
+    throw new DataError(DataErrorCode.STORAGE, undefined, error);
   }
-  storage.setData(domain.key, value);
 }
 
 /** Ensure a collection read is always an array (Req 6.3). */
@@ -75,6 +80,40 @@ function asArray(value) {
 function clampPageSize(pageSize) {
   if (!Number.isFinite(pageSize)) return DEFAULT_PAGE_SIZE;
   return Math.min(Math.max(1, Math.floor(pageSize)), MAX_PAGE_SIZE);
+}
+
+function nurseValidationError(message) {
+  return new DataError(DataErrorCode.VALIDATION, message);
+}
+
+function validateNurseIdentifier(id) {
+  if (typeof id !== 'string' || id.trim().length === 0) {
+    return nurseValidationError('Nurse identifier must be a non-empty string.');
+  }
+  return null;
+}
+
+function validateNurseBaseVersion(baseVersion) {
+  if (!Number.isInteger(baseVersion) || baseVersion < 1) {
+    return nurseValidationError('Nurse base version must be a positive integer.');
+  }
+  return null;
+}
+
+function withLegacyNurseVersion(nurse) {
+  if (!nurse) return nurse;
+  return {
+    ...nurse,
+    version: Number.isInteger(nurse.version) && nurse.version > 0 ? nurse.version : 1,
+  };
+}
+
+function splitNurseCreateInput(input, identity = {}) {
+  if (input == null || typeof input !== 'object' || Array.isArray(input)) {
+    throw nurseValidationError('Nurse input must be an object.');
+  }
+  const { id: draftId, ...draft } = input;
+  return { draft, id: identity.id ?? draftId };
 }
 
 /** Apply simple equality filters (mirrors PostgREST `eq`). */
@@ -180,16 +219,18 @@ export async function update(name, id, changes, baseVersion) {
     const rows = asArray(readBacking(domain));
     const index = rows.findIndex((row) => row?.[domain.primaryKey] === id);
     if (index === -1) {
-      return { data: null, error: null, conflict: { current: null } };
+      return { data: null, error: null, notFound: true, outcome: 'notFound' };
     }
 
     const current = rows[index];
-    if (
-      baseVersion != null &&
-      current.version != null &&
-      current.version !== baseVersion
-    ) {
-      return { data: null, error: null, conflict: { current } };
+    const currentVersion = current.version ?? (domain.name === 'nurses' ? 1 : undefined);
+    if (baseVersion != null && currentVersion !== baseVersion) {
+      return {
+        data: null,
+        error: null,
+        conflict: { current },
+        outcome: 'conflict',
+      };
     }
 
     const updated = {
@@ -197,8 +238,8 @@ export async function update(name, id, changes, baseVersion) {
       ...changes,
       [domain.primaryKey]: id,
     };
-    if (current.version != null) {
-      updated.version = current.version + 1;
+    if (currentVersion != null) {
+      updated.version = currentVersion + 1;
     }
 
     const next = rows.slice();
@@ -222,21 +263,105 @@ export async function remove(name, id, baseVersion) {
     const rows = asArray(readBacking(domain));
     const target = rows.find((row) => row?.[domain.primaryKey] === id);
     if (!target) {
-      return { error: null };
+      return { error: null, alreadyDeleted: true, outcome: 'alreadyDeleted' };
     }
-    if (
-      baseVersion != null &&
-      target.version != null &&
-      target.version !== baseVersion
-    ) {
-      return { error: null, conflict: { current: target } };
+    const currentVersion = target.version ?? (domain.name === 'nurses' ? 1 : undefined);
+    if (baseVersion != null && currentVersion !== baseVersion) {
+      return {
+        error: null,
+        conflict: { current: target },
+        outcome: 'conflict',
+      };
     }
     const next = rows.filter((row) => row?.[domain.primaryKey] !== id);
     writeBacking(domain, next);
-    return { error: null };
+    return { error: null, deleted: true, outcome: 'deleted' };
   } catch (error) {
     return { error: mapError(error) };
   }
+}
+
+// ---- Nurse-specific record operations -------------------------------------
+
+/** List legacy camelCase nurses while supplying an in-memory base version. */
+export async function listNurses(opts = {}) {
+  const result = await list('nurses', opts);
+  if (result.error) return result;
+  return { ...result, data: result.data.map(withLegacyNurseVersion) };
+}
+
+/** Read one legacy camelCase nurse and identify absence explicitly. */
+export async function getNurse(id) {
+  const identifierError = validateNurseIdentifier(id);
+  if (identifierError) return { data: null, error: identifierError };
+
+  const result = await getById('nurses', id);
+  if (result.error) return result;
+  if (!result.data) {
+    return { data: null, error: null, notFound: true, outcome: 'notFound' };
+  }
+  return { data: withLegacyNurseVersion(result.data), error: null };
+}
+
+/** Create a nurse without converting the established camelCase representation. */
+export async function createNurse(input, identity = {}) {
+  try {
+    const { draft, id } = splitNurseCreateInput(input, identity);
+    // Reuse the codec's strict business-field validation, but intentionally
+    // discard its snake_case output in legacy mode.
+    toNurseCreateRow(draft, { id, ownerId: 'legacy-storage' });
+
+    const domain = requireDomain('nurses');
+    const rows = asArray(readBacking(domain));
+    const existing = rows.find((row) => row?.id === id);
+    if (existing) {
+      return {
+        data: null,
+        error: null,
+        conflict: { current: withLegacyNurseVersion(existing) },
+        outcome: 'conflict',
+      };
+    }
+
+    const committed = { id, ...draft, version: 1 };
+    writeBacking(domain, [...rows, committed]);
+    return { data: committed, error: null };
+  } catch (error) {
+    return { data: null, error: mapError(error) };
+  }
+}
+
+/** Require a valid version gate and preserve camelCase fields on local update. */
+export async function updateNurse(id, changes, baseVersion) {
+  const inputError = validateNurseIdentifier(id) || validateNurseBaseVersion(baseVersion);
+  if (inputError) return { data: null, error: inputError };
+
+  try {
+    toNurseUpdatePatch(changes);
+    const result = await update('nurses', id, changes, baseVersion);
+    if (result.conflict) {
+      return {
+        ...result,
+        conflict: { current: withLegacyNurseVersion(result.conflict.current) },
+      };
+    }
+    return result;
+  } catch (error) {
+    return { data: null, error: mapError(error) };
+  }
+}
+
+/** Return deleted, conflict, or alreadyDeleted from a version-gated local delete. */
+export async function deleteNurse(id, baseVersion) {
+  const inputError = validateNurseIdentifier(id) || validateNurseBaseVersion(baseVersion);
+  if (inputError) return { error: inputError };
+
+  const result = await remove('nurses', id, baseVersion);
+  if (!result.conflict) return result;
+  return {
+    ...result,
+    conflict: { current: withLegacyNurseVersion(result.conflict.current) },
+  };
 }
 
 /**
@@ -287,14 +412,15 @@ export async function bulkUpdate(name, records) {
 
     // Work on clones so a mid-batch conflict leaves the live store untouched.
     const working = rows.map((row) => ({ ...row }));
-    const workingById = new Map(
-      working.map((row) => [row?.[domain.primaryKey], row]),
-    );
+    const workingById = new Map(working.map((row) => [row?.[domain.primaryKey], row]));
 
     // Pass 1 — validate + version-check the entire batch before mutating.
     for (const record of batch) {
       if (record == null || typeof record !== 'object' || Array.isArray(record)) {
-        return { data: null, error: new DataError(DataErrorCode.VALIDATION, 'Record must be an object.') };
+        return {
+          data: null,
+          error: new DataError(DataErrorCode.VALIDATION, 'Record must be an object.'),
+        };
       }
       const id = record[domain.primaryKey];
       if (typeof id !== 'string' || id.length === 0) {
@@ -302,7 +428,7 @@ export async function bulkUpdate(name, records) {
           data: null,
           error: new DataError(
             DataErrorCode.VALIDATION,
-            `Record must have a non-empty string "${domain.primaryKey}".`,
+            `Record must have a non-empty string "${domain.primaryKey}".`
           ),
         };
       }
@@ -310,9 +436,7 @@ export async function bulkUpdate(name, records) {
       // Missing row, or a stale/mismatched version ⇒ conflict, commit none.
       if (
         !existing ||
-        (record.version != null &&
-          existing.version != null &&
-          existing.version !== record.version)
+        (record.version != null && existing.version != null && existing.version !== record.version)
       ) {
         return { data: null, error: null, conflict: { current: null, ids: [id] } };
       }

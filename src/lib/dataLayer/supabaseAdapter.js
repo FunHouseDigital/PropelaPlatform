@@ -32,6 +32,7 @@
 import { getSupabaseClient } from '../supabaseClient';
 import { getDomain, listDomains } from './domains';
 import { DataError, DataErrorCode, mapError } from './errors';
+import { fromNurseRow, fromNurseRows, toNurseCreateRow, toNurseUpdatePatch } from './nurseCodec';
 
 /** Pagination bounds (Req 12.1). Shared conceptually with the legacy adapter. */
 export const DEFAULT_PAGE_SIZE = 25;
@@ -68,10 +69,7 @@ function client() {
 function requireDomain(name) {
   const domain = getDomain(name);
   if (!domain) {
-    throw new DataError(
-      DataErrorCode.VALIDATION,
-      `Unknown data domain: ${String(name)}`,
-    );
+    throw new DataError(DataErrorCode.VALIDATION, `Unknown data domain: ${String(name)}`);
   }
   return domain;
 }
@@ -109,8 +107,8 @@ export function withTimeout(promise, ms = REQUEST_TIMEOUT_MS) {
       reject(
         new DataError(
           DataErrorCode.NETWORK,
-          'The request timed out. Check your connection and try again.',
-        ),
+          'The request timed out. Check your connection and try again.'
+        )
       );
     }, ms);
   });
@@ -227,6 +225,33 @@ function validationError(message) {
   return new DataError(DataErrorCode.VALIDATION, message);
 }
 
+function validateNurseIdentifier(id) {
+  if (typeof id !== 'string' || id.trim().length === 0) {
+    return validationError('Nurse identifier must be a non-empty string.');
+  }
+  return null;
+}
+
+function validateNurseBaseVersion(baseVersion) {
+  if (!Number.isInteger(baseVersion) || baseVersion < 1) {
+    return validationError('Nurse base version must be a positive integer.');
+  }
+  return null;
+}
+
+function splitNurseCreateInput(input, identity = {}) {
+  if (input == null || typeof input !== 'object' || Array.isArray(input)) {
+    throw validationError('Nurse input must be an object.');
+  }
+
+  const { id: draftId, ...draft } = input;
+  return {
+    draft,
+    id: identity.id ?? draftId,
+    ownerId: identity.ownerId,
+  };
+}
+
 // ---- Generic operations ----------------------------------------------------
 
 /**
@@ -248,10 +273,7 @@ export async function list(name, opts = {}) {
     const to = from + size - 1;
 
     // `count: 'exact'` yields the total row count for pagination (Req 12.1).
-    let query = client()
-      .from(domain.table)
-      .select('*', { count: 'exact' })
-      .range(from, to);
+    let query = client().from(domain.table).select('*', { count: 'exact' }).range(from, to);
 
     // Server-side equality filtering — issued to the DB, never applied to a full
     // client-side copy (Req 12.3, Property 11).
@@ -290,7 +312,7 @@ export async function getById(name, id) {
   try {
     const domain = requireDomain(name);
     const { data, error } = await withTimeout(
-      client().from(domain.table).select('*').eq(domain.primaryKey, id).maybeSingle(),
+      client().from(domain.table).select('*').eq(domain.primaryKey, id).maybeSingle()
     );
     if (error) return { data: null, error: mapError(error) };
     return { data: data ?? null, error: null };
@@ -314,7 +336,7 @@ export async function create(name, record) {
     if (!check.ok) return { data: null, error: validationError(check.message) };
 
     const { data, error } = await withTimeout(
-      client().from(domain.table).insert(record).select().maybeSingle(),
+      client().from(domain.table).insert(record).select().maybeSingle()
     );
     if (error) return { data: null, error: mapError(error) };
     return { data: data ?? null, error: null };
@@ -348,12 +370,21 @@ export async function update(name, id, changes, baseVersion) {
     if (error) return { data: null, error: mapError(error) };
 
     if (!data) {
-      // Zero rows changed ⇒ stale base version (or missing row). Re-read the
-      // current committed value so the UI can show it (Req 2.5, 2.6).
-      const { data: current } = await withTimeout(
-        client().from(domain.table).select('*').eq(domain.primaryKey, id).maybeSingle(),
+      // Zero rows changed may mean either a stale base version or an absent row.
+      // Re-read through the same timeout/error mapping before classifying it.
+      const { data: current, error: readError } = await withTimeout(
+        client().from(domain.table).select('*').eq(domain.primaryKey, id).maybeSingle()
       );
-      return { data: null, error: null, conflict: { current: current ?? null } };
+      if (readError) return { data: null, error: mapError(readError) };
+      if (!current) {
+        return { data: null, error: null, notFound: true, outcome: 'notFound' };
+      }
+      return {
+        data: null,
+        error: null,
+        conflict: { current },
+        outcome: 'conflict',
+      };
     }
     return { data, error: null };
   } catch (error) {
@@ -380,16 +411,113 @@ export async function remove(name, id, baseVersion) {
     const { data, error } = await withTimeout(query.select().maybeSingle());
     if (error) return { error: mapError(error) };
 
-    if (baseVersion != null && !data) {
-      // Nothing deleted under the version gate: distinguish a stale version
-      // (row still exists ⇒ conflict) from an already-absent row (no-op).
-      const { data: current } = await withTimeout(
-        client().from(domain.table).select('*').eq(domain.primaryKey, id).maybeSingle(),
+    if (!data) {
+      // Nothing deleted: distinguish a stale version from an absent row and
+      // preserve errors from the authoritative re-read.
+      const { data: current, error: readError } = await withTimeout(
+        client().from(domain.table).select('*').eq(domain.primaryKey, id).maybeSingle()
       );
-      if (current) return { error: null, conflict: { current } };
-      return { error: null };
+      if (readError) return { error: mapError(readError) };
+      if (current) {
+        return {
+          error: null,
+          conflict: { current },
+          outcome: 'conflict',
+        };
+      }
+      return { error: null, alreadyDeleted: true, outcome: 'alreadyDeleted' };
     }
-    return { error: null };
+    return { error: null, deleted: true, outcome: 'deleted' };
+  } catch (error) {
+    return { error: mapError(error) };
+  }
+}
+
+// ---- Nurse-specific record operations -------------------------------------
+
+/** List nurses and reject the complete response when any row fails decoding. */
+export async function listNurses(opts = {}) {
+  const result = await list('nurses', opts);
+  if (result.error) return result;
+
+  try {
+    return { ...result, data: fromNurseRows(result.data) };
+  } catch (error) {
+    return { ...result, data: [], total: 0, error: mapError(error) };
+  }
+}
+
+/** Read and decode one nurse, explicitly distinguishing an absent record. */
+export async function getNurse(id) {
+  const identifierError = validateNurseIdentifier(id);
+  if (identifierError) return { data: null, error: identifierError };
+
+  const result = await getById('nurses', id);
+  if (result.error) return result;
+  if (!result.data) {
+    return { data: null, error: null, notFound: true, outcome: 'notFound' };
+  }
+
+  try {
+    return { data: fromNurseRow(result.data), error: null };
+  } catch (error) {
+    return { data: null, error: mapError(error) };
+  }
+}
+
+/** Encode a camelCase nurse draft and decode the committed database row. */
+export async function createNurse(input, identity = {}) {
+  try {
+    const { draft, id, ownerId } = splitNurseCreateInput(input, identity);
+    const row = toNurseCreateRow(draft, { id, ownerId });
+    const result = await create('nurses', row);
+    if (result.error || !result.data) return result;
+    return { data: fromNurseRow(result.data), error: null };
+  } catch (error) {
+    return { data: null, error: mapError(error) };
+  }
+}
+
+/**
+ * Encode a nurse patch and require both concurrency-gate inputs before issuing
+ * any database update. Conflict rows are decoded before crossing the boundary.
+ */
+export async function updateNurse(id, changes, baseVersion) {
+  const inputError = validateNurseIdentifier(id) || validateNurseBaseVersion(baseVersion);
+  if (inputError) return { data: null, error: inputError };
+
+  try {
+    const patch = toNurseUpdatePatch(changes);
+    const result = await update('nurses', id, patch, baseVersion);
+    if (result.error || result.notFound) return result;
+    if (result.conflict) {
+      return {
+        ...result,
+        conflict: { current: fromNurseRow(result.conflict.current) },
+      };
+    }
+    return { ...result, data: fromNurseRow(result.data) };
+  } catch (error) {
+    return { data: null, error: mapError(error) };
+  }
+}
+
+/**
+ * Require a version gate for deletion and decode the current row when the gate
+ * is stale. The result explicitly identifies deleted/alreadyDeleted/conflict.
+ */
+export async function deleteNurse(id, baseVersion) {
+  const inputError = validateNurseIdentifier(id) || validateNurseBaseVersion(baseVersion);
+  if (inputError) return { error: inputError };
+
+  const result = await remove('nurses', id, baseVersion);
+  if (result.error || !result.conflict) return result;
+
+  try {
+    return {
+      ...result,
+      conflict: { current: fromNurseRow(result.conflict.current) },
+    };
   } catch (error) {
     return { error: mapError(error) };
   }
@@ -413,7 +541,7 @@ export async function bulkUpsert(name, records) {
       if (!check.ok) return { data: [], error: validationError(check.message) };
     }
     const { data, error } = await withTimeout(
-      client().from(domain.table).upsert(rows, { onConflict: domain.primaryKey }).select(),
+      client().from(domain.table).upsert(rows, { onConflict: domain.primaryKey }).select()
     );
     if (error) return { data: [], error: mapError(error) };
     return { data: data ?? [], error: null };
@@ -463,7 +591,7 @@ export async function bulkUpdate(name, records) {
     if (rows.length === 0) return { data: [], error: null };
 
     const { data, error } = await withTimeout(
-      client().rpc('bulk_update', { table_name: domain.table, payload: rows }),
+      client().rpc('bulk_update', { table_name: domain.table, payload: rows })
     );
 
     if (error) {
@@ -507,7 +635,7 @@ export async function getCollection(name) {
       return { data: data ?? [], error: null };
     }
     const { data, error } = await withTimeout(
-      client().from(domain.table).select('*').maybeSingle(),
+      client().from(domain.table).select('*').maybeSingle()
     );
     if (error) return { data: null, error: mapError(error) };
     return { data: data ?? null, error: null };
@@ -540,7 +668,7 @@ export async function saveCollection(name, value) {
 
     if (domain.kind !== 'collection') {
       const { data, error } = await withTimeout(
-        client().from(domain.table).upsert(value).select().maybeSingle(),
+        client().from(domain.table).upsert(value).select().maybeSingle()
       );
       if (error) return { data: null, error: mapError(error) };
       return { data: data ?? value, error: null };
@@ -550,13 +678,11 @@ export async function saveCollection(name, value) {
 
     // Read the current committed state to diff against (Req 6.1, 2.1).
     const { data: currentRows, error: readError } = await withTimeout(
-      client().from(domain.table).select('*'),
+      client().from(domain.table).select('*')
     );
     if (readError) return { data: null, error: mapError(readError) };
 
-    const currentById = new Map(
-      (currentRows ?? []).map((row) => [row[domain.primaryKey], row]),
-    );
+    const currentById = new Map((currentRows ?? []).map((row) => [row[domain.primaryKey], row]));
     const desiredById = new Map(desired.map((rec) => [rec[domain.primaryKey], rec]));
 
     // Creates and updates.
@@ -624,8 +750,7 @@ for (const domain of listDomains()) {
   perDomain[`create${singular}`] = (record) => create(domain.name, record);
   perDomain[`update${singular}`] = (id, changes, baseVersion) =>
     update(domain.name, id, changes, baseVersion);
-  perDomain[`delete${singular}`] = (id, baseVersion) =>
-    remove(domain.name, id, baseVersion);
+  perDomain[`delete${singular}`] = (id, baseVersion) => remove(domain.name, id, baseVersion);
   perDomain[`bulkUpsert${plural}`] = (records) => bulkUpsert(domain.name, records);
   perDomain[`bulkUpdate${plural}`] = (records) => bulkUpdate(domain.name, records);
 

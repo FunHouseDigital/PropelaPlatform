@@ -10,7 +10,7 @@ import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 import { isFeatureEnabled } from './lib/featureFlags';
 import { ROUTE_PERMISSIONS } from './lib/permissions';
-import { initializeData } from './lib/storage';
+import { initializeApplicationStorage } from './lib/storage';
 import Login from './pages/Login';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -129,11 +129,11 @@ function SupabaseRoutes() {
 }
 
 export default function App() {
-  useEffect(() => {
-    initializeData();
-  }, []);
-
   const useSupabase = isFeatureEnabled('SUPABASE_BACKEND');
+
+  useEffect(() => {
+    initializeApplicationStorage(useSupabase);
+  }, [useSupabase]);
 
   return (
     <ErrorBoundary>
