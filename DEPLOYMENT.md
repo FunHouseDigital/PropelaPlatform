@@ -14,19 +14,19 @@ Propela Platform is a React single-page application built with Vite. It is deplo
 
 All client-side environment variables must be prefixed with `VITE_`. Vite reads these values while `npm run build` runs and embeds them in the static browser bundle; changing container runtime environment variables after the image is built does not change the application. Treat every `VITE_` value as public. Never pass a Supabase service-role key or database password through a `VITE_` variable, Docker build argument, or frontend hosting setting.
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `VITE_APP_TITLE` | Application title | `Propela Platform` |
-| `VITE_APP_VERSION` | Application version | `0.0.0` |
-| `VITE_API_URL` | Backend API base URL | `http://localhost:3001/api` |
-| `VITE_SENTRY_DSN` | Sentry error tracking DSN | (empty) |
-| `VITE_ENABLE_SERVICE_WORKER` | Enable/disable service worker | `true` |
-| `VITE_ENABLE_ANALYTICS` | Enable/disable analytics | `false` |
-| `VITE_ENVIRONMENT` | Environment name (`development`, `staging`, `production`) | `development` |
-| `VITE_LOG_LEVEL` | Logging level (`debug`, `info`, `warn`, `error`) | `debug` |
-| `VITE_FEATURE_FLAGS` | Comma-separated feature flags; include `SUPABASE_BACKEND` only at cutover | (empty) |
-| `VITE_SUPABASE_URL` | Public Supabase project URL used by the browser client | (empty) |
-| `VITE_SUPABASE_ANON_KEY` | Public, RLS-constrained Supabase anonymous key | (empty) |
+| Variable                     | Description                                                                               | Default                                                         |
+| ---------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `VITE_APP_TITLE`             | Application title                                                                         | `Propela Platform`                                              |
+| `VITE_APP_VERSION`           | Application version                                                                       | `0.0.0`                                                         |
+| `VITE_API_URL`               | Backend API base URL                                                                      | `http://localhost:3001/api`                                     |
+| `VITE_SENTRY_DSN`            | Sentry error tracking DSN                                                                 | (empty)                                                         |
+| `VITE_ENABLE_SERVICE_WORKER` | Enable/disable service worker                                                             | `true`                                                          |
+| `VITE_ENABLE_ANALYTICS`      | Enable/disable analytics                                                                  | `false`                                                         |
+| `VITE_ENVIRONMENT`           | Optional environment override (`development`, `staging`, `production`, or a custom label) | Vite production build: `production`; development: `development` |
+| `VITE_LOG_LEVEL`             | Optional logging override (`debug`, `info`, `warn`, `error`)                              | Vite production build: `error`; development: `debug`            |
+| `VITE_FEATURE_FLAGS`         | Comma-separated feature flags; include `SUPABASE_BACKEND` only at cutover                 | (empty)                                                         |
+| `VITE_SUPABASE_URL`          | Public Supabase project URL used by the browser client                                    | (empty)                                                         |
+| `VITE_SUPABASE_ANON_KEY`     | Public, RLS-constrained Supabase anonymous key                                            | (empty)                                                         |
 
 Copy `.env.example` to `.env` and adjust the public build values for your environment. Docker Compose reads that file for `build.args`; it is not injected into the final nginx container. Vercel reads the same `VITE_` names from project environment settings during its build.
 
@@ -94,6 +94,7 @@ The project uses GitHub Actions (`.github/workflows/ci.yml`) with three jobs:
 3. **Build** - Builds the production bundle (depends on lint and test passing)
 
 The pipeline triggers on:
+
 - Push to `main` branch
 - Pull requests targeting `main`
 
@@ -153,10 +154,10 @@ Both nginx (`security-headers.conf`) and Vercel (`vercel.json`) must emit the sa
 
 Because this is a static build, API and Sentry hosts are also build/deployment specific. The checked-in policy contains placeholders that must be replaced consistently in **both** hosting configurations before go-live:
 
-| Placeholder | Replace with | Notes |
-|-------------|--------------|-------|
-| `https://api.example.com` | Your `VITE_API_URL` origin (scheme + host[:port], no path) | e.g. `https://api.propela.io`. For local Docker against `http://localhost:3001`, use `http://localhost:3001`. |
-| `https://sentry.example.com` | Your Sentry ingest origin from `VITE_SENTRY_DSN` | Remove this entry entirely if you do not use Sentry. |
+| Placeholder                  | Replace with                                               | Notes                                                                                                         |
+| ---------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `https://api.example.com`    | Your `VITE_API_URL` origin (scheme + host[:port], no path) | e.g. `https://api.propela.io`. For local Docker against `http://localhost:3001`, use `http://localhost:3001`. |
+| `https://sentry.example.com` | Your Sentry ingest origin from `VITE_SENTRY_DSN`           | Remove this entry entirely if you do not use Sentry.                                                          |
 
 `https://fonts.googleapis.com` and `https://fonts.gstatic.com` in `connect-src` are required so the **service worker** (`public/sw.js`) can re-fetch fonts for its stale-while-revalidate cache. Leave them while the Google Fonts link is present. After replacing optional API/Sentry placeholders, keep the nginx and Vercel CSP values identical and do **not** broaden `connect-src` to a scheme wildcard.
 
@@ -170,6 +171,7 @@ over HTTPS. It is harmless over plain HTTP (e.g. local `docker compose`).
 The Docker container includes a health check that verifies nginx is responding on port 80.
 
 A status page is available at `/status` showing:
+
 - Application version and build info
 - Environment name
 - Network connectivity status
@@ -183,7 +185,7 @@ Perform production activation in this order. Do not point smoke tests at product
 1. **Apply database migrations through `0008_nurse_owner_invariants.sql`.** Confirm the schema, version trigger, ownership invariants, and RLS policies are current before enabling browser traffic.
 2. **Configure public Supabase build values.** Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in the production build environment. The anon key is public but remains constrained by RLS; never use the service-role key or database password in the frontend.
 3. **Enable the backend intentionally.** Add `SUPABASE_BACKEND` to `VITE_FEATURE_FLAGS` only after the migrations and public configuration are ready.
-4. **Build and deploy the production static bundle.** Set `VITE_ENVIRONMENT=production` and `VITE_LOG_LEVEL=error`; build after all public values are set. For Vercel, set them in the Production environment and deploy through the normal production branch flow. For Docker, rebuild the image with Compose build arguments and deploy behind TLS termination.
+4. **Build and deploy the production static bundle.** Explicitly setting `VITE_ENVIRONMENT=production` and `VITE_LOG_LEVEL=error` is recommended for deployment clarity, but Vite production builds now infer those safe defaults when either value is omitted. Build after all public values are set. For Vercel, configure any explicit overrides in the Production environment and deploy through the normal production branch flow. For Docker, rebuild the image with Compose build arguments and deploy behind TLS termination.
 5. **Run the read-only unauthenticated verifier.** Use `npm run verify:production -- --url https://app.example.com`, set `PRODUCTION_URL`, or manually dispatch the **Verify production** GitHub workflow with the HTTPS origin. It performs bounded GET checks of `/` and `/nurses` plus the HTTP-to-HTTPS redirect; it does not authenticate or mutate data.
 6. **Run authenticated smoke tests manually.** With dedicated test accounts and non-sensitive test records, verify the Admin/Superadmin/Recruiter role matrix, nurse create/read/update/delete behavior, optimistic-concurrency conflicts, and RLS denials. Remove test records when finished.
 

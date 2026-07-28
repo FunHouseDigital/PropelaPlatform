@@ -5,16 +5,37 @@
  */
 
 // Build-time configuration from Vite environment variables
+const viteEnv = import.meta.env || {};
+
+/**
+ * Resolve the application environment while allowing explicit staging/custom
+ * labels to override Vite's build-mode defaults.
+ */
+export function resolveBuildEnvironment(env = {}) {
+  if (env.VITE_ENVIRONMENT) return env.VITE_ENVIRONMENT;
+  if (env.PROD) return 'production';
+  if (env.DEV) return 'development';
+  return 'development';
+}
+
+/**
+ * Keep production bundles quiet by default while retaining an explicit level.
+ */
+export function resolveBuildLogLevel(env = {}) {
+  if (env.VITE_LOG_LEVEL) return env.VITE_LOG_LEVEL;
+  return env.PROD ? 'error' : 'debug';
+}
+
 const buildConfig = {
-  appTitle: import.meta.env.VITE_APP_TITLE || 'Propela Platform',
-  appVersion: import.meta.env.VITE_APP_VERSION || '0.0.0',
-  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
-  sentryDsn: import.meta.env.VITE_SENTRY_DSN || '',
-  enableServiceWorker: import.meta.env.VITE_ENABLE_SERVICE_WORKER !== 'false',
-  enableAnalytics: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
-  environment: import.meta.env.VITE_ENVIRONMENT || 'development',
-  logLevel: import.meta.env.VITE_LOG_LEVEL || 'debug',
-  featureFlags: import.meta.env.VITE_FEATURE_FLAGS || '',
+  appTitle: viteEnv.VITE_APP_TITLE || 'Propela Platform',
+  appVersion: viteEnv.VITE_APP_VERSION || '0.0.0',
+  apiUrl: viteEnv.VITE_API_URL || 'http://localhost:3001/api',
+  sentryDsn: viteEnv.VITE_SENTRY_DSN || '',
+  enableServiceWorker: viteEnv.VITE_ENABLE_SERVICE_WORKER !== 'false',
+  enableAnalytics: viteEnv.VITE_ENABLE_ANALYTICS === 'true',
+  environment: resolveBuildEnvironment(viteEnv),
+  logLevel: resolveBuildLogLevel(viteEnv),
+  featureFlags: viteEnv.VITE_FEATURE_FLAGS || '',
 };
 
 // Runtime configuration (can be injected by server at request time)
