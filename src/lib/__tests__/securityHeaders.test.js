@@ -12,10 +12,11 @@
  *   - reintroduces copy-pasted header blocks instead of the shared include.
  */
 
-import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { describe, expect, it } from 'vitest';
 
 // Repo root = three levels up from src/lib/__tests__/
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -23,6 +24,9 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const NGINX_CONF = readFileSync(resolve(REPO_ROOT, 'nginx.conf'), 'utf8');
 const HEADERS_CONF = readFileSync(resolve(REPO_ROOT, 'security-headers.conf'), 'utf8');
 const INDEX_HTML = readFileSync(resolve(REPO_ROOT, 'index.html'), 'utf8');
+const VERCEL_CONFIG = JSON.parse(
+  readFileSync(resolve(REPO_ROOT, 'vercel.json'), 'utf8'),
+);
 
 const INCLUDE_DIRECTIVE = 'include /etc/nginx/security-headers.conf;';
 
@@ -66,6 +70,21 @@ function extractBlocks(text) {
 // Pull the single CSP value out of the shared snippet.
 const cspMatch = HEADERS_CONF.match(/add_header\s+Content-Security-Policy\s+"([^"]+)"/i);
 const csp = cspMatch ? parseCsp(cspMatch[1]) : {};
+
+function nginxHeaderMap() {
+  return Object.fromEntries(
+    [...HEADERS_CONF.matchAll(/add_header\s+(\S+)\s+"([^"]+)"\s+always;/gi)].map(
+      (match) => [match[1], match[2]],
+    ),
+  );
+}
+
+function vercelHeaderMap(source) {
+  const rule = VERCEL_CONFIG.headers.find((candidate) => candidate.source === source);
+  return rule
+    ? Object.fromEntries(rule.headers.map(({ key, value }) => [key, value]))
+    : {};
+}
 
 describe('security-headers.conf: required headers present exactly once', () => {
   const REQUIRED_HEADERS = [
@@ -148,7 +167,18 @@ describe('CSP: connect-src and img-src are not blanket https:', () => {
   it("connect-src is not the wildcard 'https:' scheme", () => {
     expect(csp['connect-src']).toBeDefined();
     expect(csp['connect-src']).not.toContain('https:');
+    expect(csp['connect-src']).not.toContain('wss:');
     expect(csp['connect-src']).toContain("'self'");
+  });
+
+  it('allows only the scoped Supabase HTTPS and realtime WSS origins', () => {
+    expect(csp['connect-src']).toContain('https://*.supabase.co');
+    expect(csp['connect-src']).toContain('wss://*.supabase.co');
+  });
+
+  it('retains the Google Fonts fetch origins', () => {
+    expect(csp['connect-src']).toContain('https://fonts.googleapis.com');
+    expect(csp['connect-src']).toContain('https://fonts.gstatic.com');
   });
 
   it("img-src is not the wildcard 'https:' scheme", () => {
@@ -195,6 +225,35 @@ describe('CSP <-> index.html font consistency', () => {
     if (cspAllowsGstatic) {
       expect(htmlUsesGstatic).toBe(true);
     }
+  });
+});
+
+describe('Vercel hosting: security and cache policy matches nginx', () => {
+  const nginxHeaders = nginxHeaderMap();
+  const vercelHeaders = vercelHeaderMap('/(.*)');
+
+  it('applies every shared hardening header to all Vercel responses', () => {
+    for (const [key, value] of Object.entries(nginxHeaders)) {
+      expect(vercelHeaders[key], `${key} must match the nginx policy`).toBe(value);
+    }
+  });
+
+  it('keeps strict scripts and scoped network origins on Vercel', () => {
+    const vercelCsp = parseCsp(vercelHeaders['Content-Security-Policy']);
+    expect(vercelCsp['script-src']).toEqual(["'self'"]);
+    expect(vercelCsp['connect-src']).toContain('https://*.supabase.co');
+    expect(vercelCsp['connect-src']).toContain('wss://*.supabase.co');
+    expect(vercelCsp['connect-src']).not.toContain('https:');
+    expect(vercelCsp['connect-src']).not.toContain('wss:');
+  });
+
+  it('caches hashed assets immutably and prevents SPA shell caching', () => {
+    expect(vercelHeaderMap('/assets/(.*)')['Cache-Control']).toBe(
+      'public, max-age=31536000, immutable',
+    );
+    expect(vercelHeaderMap('/((?!assets/).*)')['Cache-Control']).toBe(
+      'no-cache, no-store, must-revalidate',
+    );
   });
 });
 

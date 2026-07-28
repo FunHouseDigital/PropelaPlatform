@@ -8,7 +8,7 @@
 --   Supabase Dashboard -> SQL Editor -> New query -> paste this whole file -> Run.
 --
 -- SOURCE OF TRUTH: the individual files in supabase/migrations/ are authoritative.
--- This bundle is GENERATED from them (0001..0007 concatenated in numeric order)
+-- This bundle is GENERATED from them (0001..0008 concatenated in numeric order)
 -- and reflects the reconciled role model:
 --   * profiles.role allows {Superadmin, Admin, Manager, Recruiter, Read-only}
 --   * handle_new_user() auto-provisions a least-privilege 'Read-only' profile

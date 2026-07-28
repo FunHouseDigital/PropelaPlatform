@@ -12,8 +12,22 @@ RUN npm ci --legacy-peer-deps
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Public Vite configuration is embedded into the static bundle at build time.
+# These values are intentionally limited to browser-safe VITE_ variables.
+ARG VITE_ENVIRONMENT=production
+ARG VITE_LOG_LEVEL=error
+ARG VITE_FEATURE_FLAGS=
+ARG VITE_SUPABASE_URL=
+ARG VITE_SUPABASE_ANON_KEY=
+ENV VITE_ENVIRONMENT=${VITE_ENVIRONMENT}
+ENV VITE_LOG_LEVEL=${VITE_LOG_LEVEL}
+ENV VITE_FEATURE_FLAGS=${VITE_FEATURE_FLAGS}
+ENV VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+ENV VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+
+# Build through the required-config guard. When SUPABASE_BACKEND is enabled,
+# missing public Supabase configuration fails the image build.
+RUN npm run build:vercel
 
 # Stage 2: Serve
 FROM nginx:alpine
