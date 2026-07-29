@@ -1,4 +1,4 @@
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('config module', () => {
   beforeEach(() => {
@@ -60,6 +60,49 @@ describe('config module', () => {
     expect(appConfig).toHaveProperty('environment');
     expect(appConfig).toHaveProperty('logLevel');
     expect(appConfig).toHaveProperty('featureFlags');
+  });
+});
+
+describe('build environment defaults', () => {
+  it.each(['development', 'staging', 'production', 'quality-assurance'])(
+    'preserves the explicit environment value %s',
+    async (environment) => {
+      const { resolveBuildEnvironment } = await import('../config');
+
+      expect(
+        resolveBuildEnvironment({
+          VITE_ENVIRONMENT: environment,
+          PROD: environment !== 'production',
+          DEV: environment === 'production',
+        })
+      ).toBe(environment);
+    }
+  );
+
+  it.each(['debug', 'info', 'warn', 'error', 'silent'])(
+    'preserves the explicit log level %s',
+    async (logLevel) => {
+      const { resolveBuildLogLevel } = await import('../config');
+
+      expect(resolveBuildLogLevel({ VITE_LOG_LEVEL: logLevel, PROD: true })).toBe(logLevel);
+      expect(resolveBuildLogLevel({ VITE_LOG_LEVEL: logLevel, DEV: true })).toBe(logLevel);
+    }
+  );
+
+  it('infers production and error when overrides are omitted in a Vite production build', async () => {
+    const { resolveBuildEnvironment, resolveBuildLogLevel } = await import('../config');
+    const productionEnv = { PROD: true, DEV: false };
+
+    expect(resolveBuildEnvironment(productionEnv)).toBe('production');
+    expect(resolveBuildLogLevel(productionEnv)).toBe('error');
+  });
+
+  it('infers development and debug when overrides are omitted in a Vite development build', async () => {
+    const { resolveBuildEnvironment, resolveBuildLogLevel } = await import('../config');
+    const developmentEnv = { PROD: false, DEV: true };
+
+    expect(resolveBuildEnvironment(developmentEnv)).toBe('development');
+    expect(resolveBuildLogLevel(developmentEnv)).toBe('debug');
   });
 });
 
@@ -130,9 +173,6 @@ describe('validateSupabaseConfig', () => {
   it('preserves the declaration order of REQUIRED_SUPABASE_CONFIG', async () => {
     const { REQUIRED_SUPABASE_CONFIG } = await import('../config');
 
-    expect(REQUIRED_SUPABASE_CONFIG).toEqual([
-      'VITE_SUPABASE_URL',
-      'VITE_SUPABASE_ANON_KEY',
-    ]);
+    expect(REQUIRED_SUPABASE_CONFIG).toEqual(['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY']);
   });
 });
