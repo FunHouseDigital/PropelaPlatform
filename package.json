@@ -12,6 +12,7 @@
     "check:migrations": "node scripts/check-migrations.mjs",
     "smoke": "node scripts/smoke-checks.mjs",
     "verify:production": "node scripts/verify-production.mjs",
+    "verify:supabase-production": "node scripts/verify-supabase-production.mjs",
     "migrate:build": "esbuild scripts/migrate-seed-data.mjs --bundle --platform=node --format=esm --packages=external --outfile=scripts/dist/migrate-seed.mjs",
     "migrate:seed": "npm run migrate:build && node scripts/dist/migrate-seed.mjs",
     "lint": "eslint .",

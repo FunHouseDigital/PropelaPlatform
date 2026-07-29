@@ -178,20 +178,65 @@ A status page is available at `/status` showing:
 - Service worker status
 - localStorage usage
 
-### Go-live order
+### Current production follow-up order
 
-Perform production activation in this order. Do not point smoke tests at production until the read-only verifier passes.
+The Vercel production site is live and has been observed with the Supabase backend
+and valid public browser configuration. `main` includes merged PR #49's production
+mode/log-level inference fix. The repository bundle contains migration
+`0008_nurse_owner_invariants.sql`; its presence in source does not establish that
+it has been applied to production. The latest bounded read-only probe reached the
+required `nurses` and `profiles` columns and reported "no anonymous rows
+observed." This observation does not establish RLS denial because either table
+could be empty. Auth settings did not confirm public signups disabled. Disable
+public signups and rerun the local verifiers before authorized testing. For a new
+environment, migrations must
+still be applied before enabling `SUPABASE_BACKEND`. For the current live
+follow-up, use this non-mutating-first sequence:
 
-1. **Apply database migrations through `0008_nurse_owner_invariants.sql`.** Confirm the schema, version trigger, ownership invariants, and RLS policies are current before enabling browser traffic.
-2. **Configure public Supabase build values.** Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in the production build environment. The anon key is public but remains constrained by RLS; never use the service-role key or database password in the frontend.
-3. **Enable the backend intentionally.** Add `SUPABASE_BACKEND` to `VITE_FEATURE_FLAGS` only after the migrations and public configuration are ready.
-4. **Build and deploy the production static bundle.** Explicitly setting `VITE_ENVIRONMENT=production` and `VITE_LOG_LEVEL=error` is recommended for deployment clarity, but Vite production builds now infer those safe defaults when either value is omitted. Build after all public values are set. For Vercel, configure any explicit overrides in the Production environment and deploy through the normal production branch flow. For Docker, rebuild the image with Compose build arguments and deploy behind TLS termination.
-5. **Run the read-only unauthenticated verifier.** Use `npm run verify:production -- --url https://app.example.com`, set `PRODUCTION_URL`, or manually dispatch the **Verify production** GitHub workflow with the HTTPS origin. It performs bounded GET checks of `/` and `/nurses` plus the HTTP-to-HTTPS redirect; it does not authenticate or mutate data.
-6. **Run authenticated smoke tests manually.** With dedicated test accounts and non-sensitive test records, verify the Admin/Superadmin/Recruiter role matrix, nurse create/read/update/delete behavior, optimistic-concurrency conflicts, and RLS denials. Remove test records when finished.
+1. **Confirm the current Vercel deployment contains merged PR #49.** Production
+   builds infer `VITE_ENVIRONMENT=production` and `VITE_LOG_LEVEL=error` when no
+   explicit overrides are set.
+2. **Run the application read-only verifier.** Use
+   `npm run verify:production -- --url https://app.example.com`, set
+   `PRODUCTION_URL`, or manually dispatch **Verify production**. It performs
+   bounded GET checks of `/` and `/nurses` plus the HTTP-to-HTTPS redirect.
+3. **Run the Supabase read-only verifier locally.** It is intentionally
+   operator-run only; there is no secret-bearing GitHub workflow. Set
+   `SUPABASE_VERIFY_URL` to the production Supabase origin. Load
+   `SUPABASE_VERIFY_ANON_KEY` from a pre-provisioned secure environment, or use a
+   masked shell prompt as shown in `docs/GO_LIVE.md`; then run
+   `npm run verify:supabase-production` and unset the key.
+4. **Have an authorized operator confirm migration 0008.** Verify production has
+   applied migrations through `0008_nurse_owner_invariants.sql`, including the
+   nurse owner invariant and version trigger. Neither read-only verifier proves
+   this database state.
+5. **Run authorized nurse behavior checks with disposable records.** Exercise
+   create/read/refresh/update/delete as Superadmin, Admin, and Recruiter; produce
+   and reject a stale-version update; confirm delete and already-deleted
+   convergence; and confirm RLS denial for missing-profile and non-operational
+   roles. Remove temporary records and role profiles afterward.
+
+The Supabase verifier sends only bounded unauthenticated GET requests. It checks
+that auth settings report public signups disabled and that the selected `nurses`
+and `profiles` columns are reachable; for successful empty responses it reports
+only "no anonymous rows observed." This observation does not prove RLS denial
+because the tables may be empty. RLS enforcement requires an authorized test with
+known existing or disposable rows. It prints no anon key, rows, response bodies, request
+headers, cookies, query strings, or raw backend errors.
+
+This probe is operational evidence only. It cannot establish requirements involving
+authenticated sessions, application failure handling, telemetry, store isolation,
+migration 0008, authenticated policies, CRUD, optimistic concurrency, or delete
+behavior. Those remain authorized operator checks.
 
 ### Production checklist
 
-- [ ] Complete the six go-live steps above in order
+- [ ] Current Vercel deployment contains merged PR #49
+- [ ] Application and Supabase read-only verifiers both pass
+- [ ] Authorized operator confirms migration 0008 is applied in production
+- [ ] Disposable Superadmin/Admin/Recruiter CRUD checks pass
+- [ ] Stale-version conflict, delete convergence, and RLS-denial checks pass
+- [ ] Disposable records and temporary role profiles are removed
 - [ ] Set `VITE_ENABLE_ANALYTICS=true` only if analytics are approved
 - [ ] Configure `VITE_API_URL` and optional `VITE_SENTRY_DSN` for production
 - [ ] Keep nginx and Vercel CSP values aligned, with scoped `https://*.supabase.co` and `wss://*.supabase.co`
