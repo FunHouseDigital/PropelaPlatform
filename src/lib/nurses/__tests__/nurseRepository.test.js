@@ -64,6 +64,8 @@ function activeSession() {
       access_token: 'test-session-token',
       expires_at: Math.floor(Date.now() / 1000) + 3600,
     },
+    userId: OWNER_ID,
+    authEpoch: 1,
     error: null,
   };
 }
@@ -72,7 +74,7 @@ function repository(ops, overrides = {}) {
   return createNurseRepository({
     operations: ops,
     supabase: true,
-    readSession: vi.fn(async () => activeSession()),
+    requireActiveSession: vi.fn(async () => activeSession()),
     ...overrides,
   });
 }
@@ -115,6 +117,31 @@ describe('nurseRepository complete pagination', () => {
 
     expect(result).toEqual({ status: 'error', error: pageFailure });
     expect(result).not.toHaveProperty('nurses');
+  });
+
+  it('preserves a plain categorized NETWORK failure from page 2 by identity', async () => {
+    const pageFailure = Object.freeze({
+      code: DataErrorCode.NETWORK,
+      message: 'Unable to load the next page.',
+    });
+    const invalidateSession = vi.fn();
+    const ops = operations({
+      list: vi
+        .fn()
+        .mockResolvedValueOnce({
+          data: Array.from({ length: 100 }, (_, index) => ({ id: `nurse-${index}` })),
+          error: null,
+          total: 101,
+        })
+        .mockResolvedValueOnce({ data: [], error: pageFailure, total: 101 }),
+    });
+
+    const result = await repository(ops, { invalidateSession }).listAll();
+
+    expect(result).toEqual({ status: 'error', error: pageFailure });
+    expect(result.error).toBe(pageFailure);
+    expect(result).not.toHaveProperty('nurses');
+    expect(invalidateSession).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -169,7 +196,7 @@ describe('nurseRepository authentication and mutations', () => {
 
   it('requires an active Supabase session before every persistence operation', async () => {
     const repo = repository(ops, {
-      readSession: vi.fn(async () => ({ session: null, error: null })),
+      requireActiveSession: vi.fn(async () => ({ session: null, error: null })),
     });
     const draft = validDraft();
 
@@ -188,6 +215,70 @@ describe('nurseRepository authentication and mutations', () => {
     expect(ops.create).not.toHaveBeenCalled();
     expect(ops.update).not.toHaveBeenCalled();
     expect(ops.remove).not.toHaveBeenCalled();
+  });
+
+  it('invalidates shared readiness only after a server AUTH response and blocks later requests', async () => {
+    const serverAuth = new DataError(DataErrorCode.AUTH);
+    ops.list.mockResolvedValueOnce({ data: [], error: serverAuth, total: 0 });
+    let blocked = false;
+    const requireActiveSession = vi.fn(async () =>
+      blocked
+        ? { session: null, userId: null, authEpoch: 1, error: new Error('blocked') }
+        : activeSession()
+    );
+    const invalidateSession = vi.fn(({ userId, authEpoch }) => {
+      expect({ userId, authEpoch }).toEqual({ userId: OWNER_ID, authEpoch: 1 });
+      blocked = true;
+      return true;
+    });
+    const repo = repository(ops, { requireActiveSession, invalidateSession });
+
+    const rejected = await repo.listAll();
+    const blockedResult = await repo.listAll();
+
+    expect(rejected).toEqual({ status: 'error', error: serverAuth });
+    expect(blockedResult).toMatchObject({ status: 'error', error: { code: DataErrorCode.AUTH } });
+    expect(invalidateSession).toHaveBeenCalledTimes(1);
+    expect(ops.list).toHaveBeenCalledTimes(1);
+  });
+
+  it('maps a server 401 to AUTH for the captured epoch but never invalidates local validation', async () => {
+    const server401 = { status: 401, message: 'Unauthorized' };
+    ops.get.mockResolvedValueOnce({ data: null, error: server401 });
+    const invalidateSession = vi.fn(() => true);
+    const repo = repository(ops, { invalidateSession });
+
+    const localFailure = await repo.get('');
+    expect(localFailure).toMatchObject({
+      status: 'error',
+      error: { code: DataErrorCode.VALIDATION },
+    });
+    expect(invalidateSession).not.toHaveBeenCalled();
+    expect(ops.get).not.toHaveBeenCalled();
+
+    const rejected = await repo.get('nurse-1');
+    expect(rejected).toMatchObject({ status: 'error', error: { code: DataErrorCode.AUTH } });
+    expect(rejected.error.cause).toBe(server401);
+    expect(invalidateSession).toHaveBeenCalledWith({ userId: OWNER_ID, authEpoch: 1 });
+  });
+
+  it('does not invalidate shared readiness for a local gateway AUTH failure', async () => {
+    const invalidateSession = vi.fn();
+    const repo = repository(ops, {
+      requireActiveSession: vi.fn(async () => ({
+        session: null,
+        userId: null,
+        authEpoch: 4,
+        error: new Error('Authentication required.'),
+      })),
+      invalidateSession,
+    });
+
+    const result = await repo.listAll();
+
+    expect(result).toMatchObject({ status: 'error', error: { code: DataErrorCode.AUTH } });
+    expect(invalidateSession).not.toHaveBeenCalled();
+    expect(ops.list).not.toHaveBeenCalled();
   });
 
   it('assigns owner identity from the session and returns the authoritative create row', async () => {

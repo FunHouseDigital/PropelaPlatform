@@ -253,7 +253,7 @@ function repositoryFor(generated, operations, events) {
   return createNurseRepository({
     operations,
     supabase: generated.supabase,
-    readSession: vi.fn(async () => activeSession()),
+    requireActiveSession: vi.fn(async () => activeSession()),
     sessionExpired: () => false,
     emitOperation: (event) => events.push(event),
     now: makeClock(generated.elapsed),

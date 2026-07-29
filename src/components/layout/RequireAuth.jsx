@@ -23,7 +23,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 
 import { useAuth } from '../../context/AuthContext';
-import { isSessionExpired } from '../../lib/auth';
 import { isFeatureEnabled } from '../../lib/featureFlags';
 import LoadingSpinner from './LoadingSpinner';
 
@@ -32,7 +31,7 @@ import LoadingSpinner from './LoadingSpinner';
  */
 export default function RequireAuth({ children }) {
   const enabled = isFeatureEnabled('SUPABASE_BACKEND');
-  const { session, loading } = useAuth();
+  const { readiness } = useAuth();
   const location = useLocation();
 
   // Legacy path: no gating whatsoever (Req 9.1).
@@ -41,12 +40,12 @@ export default function RequireAuth({ children }) {
   }
 
   // Avoid redirecting while the session is still being hydrated.
-  if (loading) {
+  if (readiness.status === 'initializing') {
     return <LoadingSpinner />;
   }
 
-  // No session or an expired session forces (re-)authentication (Req 3.1, 3.9).
-  if (!session || isSessionExpired(session)) {
+  // Signed-out and expired snapshots fail closed through the shared authority.
+  if (readiness.status !== 'active') {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 

@@ -88,7 +88,7 @@ function createRepository(operations, ownerId) {
   return createNurseRepository({
     operations,
     supabase: true,
-    readSession: async () => activeSession(ownerId),
+    requireActiveSession: async () => activeSession(ownerId),
     sessionExpired: () => false,
   });
 }

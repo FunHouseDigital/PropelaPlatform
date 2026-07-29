@@ -165,7 +165,7 @@ describe('Property 6: Create identity, ownership, defaults, and confirmation', (
             get: vi.fn(async () => ({ data: null, error: null, notFound: true })),
           },
           supabase: true,
-          readSession: vi.fn(async () => activeSession(ownerId)),
+          requireActiveSession: vi.fn(async () => activeSession(ownerId)),
           sessionExpired: () => false,
         });
         const confirmedBefore = structuredClone(confirmed);
@@ -207,7 +207,7 @@ describe('Property 6: Create identity, ownership, defaults, and confirmation', (
             get: vi.fn(async () => ({ data: null, error: null, notFound: true })),
           },
           supabase: true,
-          readSession: vi.fn(async () => activeSession(ownerId)),
+          requireActiveSession: vi.fn(async () => activeSession(ownerId)),
           sessionExpired: () => false,
         });
         const failed = await failedRepository.create(submittedDraft);
@@ -221,7 +221,7 @@ describe('Property 6: Create identity, ownership, defaults, and confirmation', (
             get: vi.fn(),
           },
           supabase: true,
-          readSession: vi.fn(async () => ({ session: null, error: null })),
+          requireActiveSession: vi.fn(async () => ({ session: null, error: null })),
           sessionExpired: () => false,
         });
         const unauthenticated = await unauthenticatedRepository.create(submittedDraft);

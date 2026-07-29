@@ -141,8 +141,14 @@ import {
   saveCollection as dlSaveCollection,
 } from '../lib/dataLayer';
 import { getDomain } from '../lib/dataLayer/domains';
-import { mapError } from '../lib/dataLayer/errors';
-import { createNurseController, NurseAsyncState } from '../lib/nurses/nurseController';
+import { DataError, DataErrorCode, mapError } from '../lib/dataLayer/errors';
+import {
+  createInitialNurseState,
+  createNurseController,
+  NurseAsyncState,
+} from '../lib/nurses/nurseController';
+import { createNurseRepository } from '../lib/nurses/nurseRepository';
+import { useAuth } from './AuthContext';
 import {
   getActiveDashboardLayout,
   getActivityFeed,
@@ -317,6 +323,15 @@ function makeInitialSlices() {
 }
 
 export function AppProvider({ children }) {
+  const {
+    readiness,
+    requireActiveSession,
+    getReadinessSnapshot,
+    invalidateSession,
+  } = useAuth();
+  // Completion-time authorization always consults the provider's synchronous
+  // readiness authority. React effects still synchronize controller execution
+  // boundaries for dedupe detachment, but they are not a security boundary.
   // ── Per-domain data state ────────────────────────────────────────────────
   // COMPATIBILITY: When the SUPABASE_BACKEND flag is OFF (default) each slice is
   // initialized synchronously from localStorage via storage.js exactly as before
@@ -326,6 +341,10 @@ export function AppProvider({ children }) {
   const [nurses, setNurses] = useState(() => (isSupabaseBackend ? [] : getNurses()));
   const [nurseController] = useState(() =>
     createNurseController({
+      repository: isSupabaseBackend
+        ? createNurseRepository({ requireActiveSession, invalidateSession })
+        : undefined,
+      getReadinessSnapshot: isSupabaseBackend ? getReadinessSnapshot : undefined,
       initialState: isSupabaseBackend
         ? null
         : {
@@ -340,6 +359,32 @@ export function AppProvider({ children }) {
     })
   );
   const [nurseSlice, setNurseSlice] = useState(() => nurseController.getState());
+  const [nurseDataPrincipal, setNurseDataPrincipal] = useState(null);
+  const [nurseSlicePrincipal, setNurseSlicePrincipal] = useState(null);
+  const nurseBoundaryRef = useRef(null);
+  const lastNursePrincipalRef = useRef(null);
+
+  const synchronizeNurseAuthBoundary = useCallback(() => {
+    if (!isSupabaseBackend) return { userId: null, authEpoch: 0 };
+    const snapshot = getReadinessSnapshot();
+    const active = snapshot.status === 'active' && !!snapshot.userId;
+    const nextBoundary = {
+      userId: active ? snapshot.userId : null,
+      authEpoch: snapshot.authEpoch,
+    };
+    const key = `${snapshot.status}:${nextBoundary.userId ?? 'none'}:${nextBoundary.authEpoch}`;
+    if (nurseBoundaryRef.current !== key) {
+      const principalChanged =
+        active &&
+        lastNursePrincipalRef.current !== null &&
+        lastNursePrincipalRef.current !== snapshot.userId;
+      nurseController.transitionAuthBoundary(nextBoundary, { principalChanged });
+      nurseBoundaryRef.current = key;
+      if (principalChanged) setNurseDataPrincipal(null);
+      if (active) lastNursePrincipalRef.current = snapshot.userId;
+    }
+    return active ? nextBoundary : null;
+  }, [getReadinessSnapshot, nurseController]);
   const [facilities, setFacilities] = useState(() => (isSupabaseBackend ? [] : getFacilities()));
   const [cohorts, setCohorts] = useState(() => (isSupabaseBackend ? [] : getCohorts()));
   const [referrers, setReferrers] = useState(() => (isSupabaseBackend ? [] : getReferrers()));
@@ -454,6 +499,8 @@ export function AppProvider({ children }) {
 
   // Additive per-domain async slice metadata (Req 6.6, 9.3, 12.2).
   const [slices, setSlices] = useState(makeInitialSlices);
+  const [domainDataPrincipals, setDomainDataPrincipals] = useState({});
+  const [domainSlicePrincipals, setDomainSlicePrincipals] = useState({});
 
   // ── Toast system (unchanged public behavior) ─────────────────────────────
   const toastIdCounter = useRef(0);
@@ -531,6 +578,18 @@ export function AppProvider({ children }) {
     setSlices((prev) => ({ ...prev, [name]: { ...prev[name], ...patch } }));
   }, []);
 
+  const bindSliceToPrincipal = useCallback((name, userId) => {
+    setDomainSlicePrincipals((prev) =>
+      prev[name] === userId ? prev : { ...prev, [name]: userId }
+    );
+  }, []);
+
+  const bindDataToPrincipal = useCallback((name, userId) => {
+    setDomainDataPrincipals((prev) =>
+      prev[name] === userId ? prev : { ...prev, [name]: userId }
+    );
+  }, []);
+
   // The controller is the only authority for nurse record workflows. Keep the
   // legacy top-level `nurses` array synchronized for unrelated consumers while
   // exposing the complete controller slice to nurse-management UI.
@@ -544,14 +603,39 @@ export function AppProvider({ children }) {
   );
 
   const refreshNurses = useCallback(
-    (...args) => nurseController.refreshNurses(...args),
-    [nurseController]
+    async (...args) => {
+      const boundary = synchronizeNurseAuthBoundary();
+      if (boundary) setNurseSlicePrincipal(boundary.userId);
+      const result = await nurseController.refreshNurses(...args);
+      const latestReadiness = getReadinessSnapshot();
+      if (
+        result.status === 'ok' &&
+        boundary &&
+        latestReadiness.status === 'active' &&
+        latestReadiness.userId === boundary.userId &&
+        latestReadiness.authEpoch === boundary.authEpoch
+      ) {
+        setNurseDataPrincipal(boundary.userId);
+      }
+      return result;
+    },
+    [getReadinessSnapshot, nurseController, synchronizeNurseAuthBoundary]
+  );
+  const runNurseCommand = useCallback(
+    (command, args) => {
+      synchronizeNurseAuthBoundary();
+      return nurseController[command](...args);
+    },
+    [nurseController, synchronizeNurseAuthBoundary]
   );
   const retryNurses = useCallback(
-    (...args) => nurseController.retryNurses(...args),
-    [nurseController]
+    (...args) => runNurseCommand('retryNurses', args),
+    [runNurseCommand]
   );
-  const openNurse = useCallback((...args) => nurseController.openNurse(...args), [nurseController]);
+  const openNurse = useCallback(
+    (...args) => runNurseCommand('openNurse', args),
+    [runNurseCommand]
+  );
   const openCreate = useCallback(
     (...args) => nurseController.openCreate(...args),
     [nurseController]
@@ -565,20 +649,20 @@ export function AppProvider({ children }) {
     [nurseController]
   );
   const createNurse = useCallback(
-    (...args) => nurseController.createNurse(...args),
-    [nurseController]
+    (...args) => runNurseCommand('createNurse', args),
+    [runNurseCommand]
   );
   const retryCreate = useCallback(
-    (...args) => nurseController.retryCreate(...args),
-    [nurseController]
+    (...args) => runNurseCommand('retryCreate', args),
+    [runNurseCommand]
   );
   const retryCreateAfterCollision = useCallback(
-    (...args) => nurseController.retryCreateAfterCollision(...args),
-    [nurseController]
+    (...args) => runNurseCommand('retryCreateAfterCollision', args),
+    [runNurseCommand]
   );
   const retryDetail = useCallback(
-    (...args) => nurseController.retryDetail(...args),
-    [nurseController]
+    (...args) => runNurseCommand('retryDetail', args),
+    [runNurseCommand]
   );
   const closeNurseDetail = useCallback(
     (...args) => nurseController.closeDetail(...args),
@@ -596,10 +680,13 @@ export function AppProvider({ children }) {
     (...args) => nurseController.resolveDiscard(...args),
     [nurseController]
   );
-  const saveNurse = useCallback((...args) => nurseController.saveNurse(...args), [nurseController]);
+  const saveNurse = useCallback(
+    (...args) => runNurseCommand('saveNurse', args),
+    [runNurseCommand]
+  );
   const retrySaveNurse = useCallback(
-    (...args) => nurseController.retrySave(...args),
-    [nurseController]
+    (...args) => runNurseCommand('retrySave', args),
+    [runNurseCommand]
   );
   const applyNurseConflictToLatest = useCallback(
     (...args) => nurseController.applyConflictToLatest(...args),
@@ -614,16 +701,16 @@ export function AppProvider({ children }) {
     [nurseController]
   );
   const changeNursePipeline = useCallback(
-    (...args) => nurseController.changeNursePipeline(...args),
-    [nurseController]
+    (...args) => runNurseCommand('changeNursePipeline', args),
+    [runNurseCommand]
   );
   const retryNursePipeline = useCallback(
-    (...args) => nurseController.retryPipeline(...args),
-    [nurseController]
+    (...args) => runNurseCommand('retryPipeline', args),
+    [runNurseCommand]
   );
   const reloadNursePipeline = useCallback(
-    (...args) => nurseController.reloadPipeline(...args),
-    [nurseController]
+    (...args) => runNurseCommand('reloadPipeline', args),
+    [runNurseCommand]
   );
   const rebaseNursePipeline = useCallback(
     (...args) => nurseController.rebasePipeline(...args),
@@ -638,16 +725,16 @@ export function AppProvider({ children }) {
     [nurseController]
   );
   const deleteNurse = useCallback(
-    (...args) => nurseController.confirmDelete(...args),
-    [nurseController]
+    (...args) => runNurseCommand('confirmDelete', args),
+    [runNurseCommand]
   );
   const retryDeleteNurse = useCallback(
-    (...args) => nurseController.retryDelete(...args),
-    [nurseController]
+    (...args) => runNurseCommand('retryDelete', args),
+    [runNurseCommand]
   );
   const reloadNurseAfterDeleteConflict = useCallback(
-    (...args) => nurseController.reloadAfterDeleteConflict(...args),
-    [nurseController]
+    (...args) => runNurseCommand('reloadAfterDeleteConflict', args),
+    [runNurseCommand]
   );
 
   /**
@@ -661,6 +748,28 @@ export function AppProvider({ children }) {
    */
   const loadDomain = useCallback(
     async (name, opts = {}) => {
+      const currentReadiness = getReadinessSnapshot();
+      if (isSupabaseBackend && currentReadiness.status !== 'active') {
+        return {
+          data: null,
+          error: new DataError(DataErrorCode.AUTH, 'Authentication required.'),
+        };
+      }
+      const requestBoundary = isSupabaseBackend
+        ? { userId: currentReadiness.userId, authEpoch: currentReadiness.authEpoch }
+        : null;
+      const principalIsCurrent = () => {
+        const latestReadiness = getReadinessSnapshot();
+        return (
+          !isSupabaseBackend ||
+          (latestReadiness.status === 'active' &&
+            latestReadiness.userId === requestBoundary.userId &&
+            latestReadiness.authEpoch === requestBoundary.authEpoch)
+        );
+      };
+      const invalidateForServerAuth = async (error) => {
+        if (error?.code === DataErrorCode.AUTH) await invalidateSession(requestBoundary);
+      };
       // Nurse reads use the record repository/controller in both modes. This
       // prevents Supabase nurse hydration from reaching whole-collection APIs
       // and lets the facade-selected storage adapter preserve legacy routing.
@@ -668,6 +777,7 @@ export function AppProvider({ children }) {
       if (!isSupabaseBackend) return { data: null, error: null };
       const setter = setters[name];
       const domain = getDomain(name);
+      bindSliceToPrincipal(name, requestBoundary.userId);
       patchSlice(name, { loading: true, error: null });
       try {
         const wantsPage =
@@ -676,11 +786,14 @@ export function AppProvider({ children }) {
           (opts.page != null || opts.filters != null || opts.sort != null);
         if (wantsPage) {
           const res = await dlList(name, opts);
+          if (!principalIsCurrent()) return res;
           if (res.error) {
+            await invalidateForServerAuth(res.error);
             patchSlice(name, { loading: false, error: res.error, staleWarning: true });
             return res;
           }
           if (setter) setter(res.data);
+          bindDataToPrincipal(name, requestBoundary.userId);
           patchSlice(name, {
             loading: false,
             error: null,
@@ -693,22 +806,38 @@ export function AppProvider({ children }) {
         }
 
         const res = await dlGetCollection(name);
+        if (!principalIsCurrent()) return res;
         if (res.error) {
+          await invalidateForServerAuth(res.error);
           // Keep previously displayed records; mark potentially stale (Req 1.6).
           patchSlice(name, { loading: false, error: res.error, staleWarning: true });
           return res;
         }
         if (setter) setter(res.data);
+        bindDataToPrincipal(name, requestBoundary.userId);
         const total = Array.isArray(res.data) ? res.data.length : 0;
         patchSlice(name, { loading: false, error: null, staleWarning: false, total });
         return res;
       } catch (err) {
         const mapped = mapError(err);
+        if (!principalIsCurrent()) return { data: null, error: mapped };
+        await invalidateForServerAuth(mapped);
         patchSlice(name, { loading: false, error: mapped, staleWarning: true });
         return { data: null, error: mapped };
       }
     },
-    [patchSlice, refreshNurses, setters]
+    [
+      bindDataToPrincipal,
+      bindSliceToPrincipal,
+      getReadinessSnapshot,
+      invalidateSession,
+      patchSlice,
+      readiness.authEpoch,
+      readiness.status,
+      readiness.userId,
+      refreshNurses,
+      setters,
+    ]
   );
 
   /** Retry a failed load; a successful load clears the failed/stale state. */
@@ -722,9 +851,30 @@ export function AppProvider({ children }) {
    */
   const writeThrough = useCallback(
     (name, value) => {
+      const current = getReadinessSnapshot();
+      if (current.status !== 'active' || !current.userId) {
+        const authError = new DataError(DataErrorCode.AUTH, 'Authentication required.');
+        patchSlice(name, { loading: false, error: authError, staleWarning: true });
+        return;
+      }
+      const boundary = { userId: current.userId, authEpoch: current.authEpoch };
+      const boundaryIsCurrent = () => {
+        const latest = getReadinessSnapshot();
+        return (
+          latest.status === 'active' &&
+          latest.userId === boundary.userId &&
+          latest.authEpoch === boundary.authEpoch
+        );
+      };
+      bindSliceToPrincipal(name, boundary.userId);
+      bindDataToPrincipal(name, boundary.userId);
       patchSlice(name, { loading: true, error: null });
       Promise.resolve(dlSaveCollection(name, value))
-        .then((res) => {
+        .then(async (res) => {
+          if (!boundaryIsCurrent()) return;
+          if (res?.error?.code === DataErrorCode.AUTH) {
+            await invalidateSession(boundary);
+          }
           if (res && res.conflict) {
             addToast({
               type: 'warning',
@@ -744,13 +894,22 @@ export function AppProvider({ children }) {
             patchSlice(name, { loading: false, error: null, staleWarning: false });
           }
         })
-        .catch((err) => {
+        .catch(async (err) => {
+          if (!boundaryIsCurrent()) return;
           const mapped = mapError(err);
+          if (mapped.code === DataErrorCode.AUTH) await invalidateSession(boundary);
           addToast({ type: 'error', title: 'Not saved', message: mapped.message });
           patchSlice(name, { loading: false, error: mapped, staleWarning: true });
         });
     },
-    [patchSlice, addToast]
+    [
+      addToast,
+      bindDataToPrincipal,
+      bindSliceToPrincipal,
+      getReadinessSnapshot,
+      invalidateSession,
+      patchSlice,
+    ]
   );
 
   // ── Update functions ──────────────────────────────────────────────────────
@@ -1215,67 +1374,47 @@ export function AppProvider({ children }) {
     return actions;
   }, [loadDomain, refreshNurses, retryDomain, retryNurses]);
 
-  // Hydrate through the selected persistence mode. Nurse hydration always uses
-  // the record controller; all unrelated domains retain their existing facade
-  // hydration behavior in Supabase mode.
+  const hydratedPrincipalRef = useRef(null);
+
+  // Every readiness epoch is an execution boundary, even for repeated sign-in
+  // by the same user. Detach old in-flight work while preserving confirmed state
+  // and drafts for that same principal; clear state only when the principal changes.
   useEffect(() => {
     if (!isSupabaseBackend) return;
+    const active = readiness.status === 'active' && !!readiness.userId;
+    const nextBoundary = {
+      userId: active ? readiness.userId : null,
+      authEpoch: readiness.authEpoch,
+    };
+    const key = `${readiness.status}:${nextBoundary.userId ?? 'none'}:${nextBoundary.authEpoch}`;
+    if (nurseBoundaryRef.current !== key) {
+      const principalChanged =
+        active &&
+        lastNursePrincipalRef.current !== null &&
+        lastNursePrincipalRef.current !== readiness.userId;
+      nurseController.transitionAuthBoundary(nextBoundary, { principalChanged });
+      nurseBoundaryRef.current = key;
+      if (principalChanged) setNurseDataPrincipal(null);
+      if (active) lastNursePrincipalRef.current = readiness.userId;
+    }
+
+    if (!active) return;
+    if (hydratedPrincipalRef.current === readiness.userId) return;
+    hydratedPrincipalRef.current = readiness.userId;
+
     Promise.all(CONTEXT_DOMAINS.map((name) => loadDomain(name))).catch(() => {
       // Per-domain failures are captured on each slice; nothing to do globally.
     });
-  }, [loadDomain]);
+  }, [
+    loadDomain,
+    nurseController,
+    readiness.authEpoch,
+    readiness.status,
+    readiness.userId,
+  ]);
 
-  const exposedSlices = useMemo(
+  const rawDomainValues = useMemo(
     () => ({
-      ...slices,
-      nurses: {
-        ...slices.nurses,
-        loading: nurseSlice.listState === NurseAsyncState.LOADING,
-        error: nurseSlice.listError,
-        total: nurseSlice.total,
-        staleWarning: nurseSlice.staleWarning,
-      },
-    }),
-    [nurseSlice, slices]
-  );
-
-  // NOTE: This useMemo has 90+ dependencies covering every state slice and updater.
-  // It effectively recomputes on every state change, providing minimal memoization benefit.
-  // This is intentional scaffolding for a future context-splitting refactor where individual
-  // domain slices will be moved into separate providers, at which point each useMemo will
-  // have a smaller, meaningful dependency set.
-  const value = useMemo(
-    () => ({
-      nurses,
-      nurseSlice,
-      refreshNurses,
-      retryNurses,
-      openNurse,
-      openCreate,
-      updateCreateDraft,
-      closeCreate,
-      createNurse,
-      retryCreate,
-      retryCreateAfterCollision,
-      retryDetail,
-      closeNurseDetail,
-      updateNurseDraft,
-      requestCancelNurseEdit,
-      resolveNurseDiscard,
-      saveNurse,
-      retrySaveNurse,
-      applyNurseConflictToLatest,
-      requestDiscardNurseConflict,
-      keepEditingNurseConflict,
-      changeNursePipeline,
-      retryNursePipeline,
-      reloadNursePipeline,
-      rebaseNursePipeline,
-      requestDeleteNurse,
-      cancelDeleteNurse,
-      deleteNurse,
-      retryDeleteNurse,
-      reloadNurseAfterDeleteConflict,
       facilities,
       cohorts,
       referrers,
@@ -1322,6 +1461,162 @@ export function AppProvider({ children }) {
       onboardingState,
       tourState,
       articleVotes,
+    }),
+    [
+      facilities,
+      cohorts,
+      referrers,
+      communityChannels,
+      events,
+      outreachTemplates,
+      placements,
+      settings,
+      documents,
+      documentTemplates,
+      verificationQueue,
+      communications,
+      notifications,
+      commEmailTemplates,
+      alertRules,
+      alertHistory,
+      notificationPreferences,
+      scheduledReports,
+      exportHistory,
+      dashboardLayouts,
+      activeDashboardLayout,
+      integrations,
+      apiEndpoints,
+      apiKeys,
+      webhooks,
+      webhookDeliveryLog,
+      syncStatus,
+      activityFeed,
+      auditLog,
+      userSessions,
+      changeHistory,
+      recentSearches,
+      savedViews,
+      recentlyViewed,
+      automationRules,
+      automationTemplates,
+      executionLog,
+      scheduledActions,
+      notificationAlerts,
+      notifAlertConfig,
+      notificationLog,
+      toastPreferences,
+      helpArticles,
+      onboardingState,
+      tourState,
+      articleVotes,
+    ]
+  );
+
+  const visibleDomainValues = useMemo(() => {
+    if (!isSupabaseBackend) return rawDomainValues;
+    const activeUserId = readiness.status === 'active' ? readiness.userId : null;
+    return Object.fromEntries(
+      Object.entries(rawDomainValues).map(([name, value]) => {
+        if (activeUserId && domainDataPrincipals[name] === activeUserId) return [name, value];
+        return [name, getDomain(name)?.kind === 'collection' ? [] : null];
+      })
+    );
+  }, [domainDataPrincipals, rawDomainValues, readiness.status, readiness.userId]);
+
+  const nursePrincipalMatches =
+    !isSupabaseBackend ||
+    (readiness.status === 'active' && nurseDataPrincipal === readiness.userId);
+  const visibleNurses = useMemo(
+    () => (nursePrincipalMatches ? nurses : []),
+    [nursePrincipalMatches, nurses]
+  );
+  const nurseSlicePrincipalMatches =
+    !isSupabaseBackend ||
+    (readiness.status === 'active' && nurseSlicePrincipal === readiness.userId);
+  const visibleNurseSlice = useMemo(() => {
+    if (nurseSlicePrincipalMatches) return nurseSlice;
+    return {
+      ...createInitialNurseState(),
+      listState:
+        readiness.status === 'active' ? NurseAsyncState.LOADING : NurseAsyncState.IDLE,
+    };
+  }, [nurseSlicePrincipalMatches, nurseSlice, readiness.status]);
+
+  const exposedSlices = useMemo(() => {
+    const activeUserId = readiness.status === 'active' ? readiness.userId : null;
+    const visible = {};
+    for (const name of CONTEXT_DOMAINS) {
+      if (name === 'nurses') {
+        visible.nurses = {
+          ...slices.nurses,
+          loading: visibleNurseSlice.listState === NurseAsyncState.LOADING,
+          error: visibleNurseSlice.listError,
+          total: visibleNurseSlice.total,
+          staleWarning: visibleNurseSlice.staleWarning,
+        };
+      } else if (
+        !isSupabaseBackend ||
+        (activeUserId && domainSlicePrincipals[name] === activeUserId)
+      ) {
+        visible[name] = slices[name];
+      } else {
+        visible[name] = {
+          ...slices[name],
+          loading: !!activeUserId,
+          error: null,
+          page: 1,
+          total: 0,
+          staleWarning: false,
+        };
+      }
+    }
+    return visible;
+  }, [
+    domainSlicePrincipals,
+    readiness.status,
+    readiness.userId,
+    slices,
+    visibleNurseSlice,
+  ]);
+
+  // NOTE: This useMemo has 90+ dependencies covering every state slice and updater.
+  // It effectively recomputes on every state change, providing minimal memoization benefit.
+  // This is intentional scaffolding for a future context-splitting refactor where individual
+  // domain slices will be moved into separate providers, at which point each useMemo will
+  // have a smaller, meaningful dependency set.
+  const value = useMemo(
+    () => ({
+      nurses: visibleNurses,
+      nurseSlice: visibleNurseSlice,
+      refreshNurses,
+      retryNurses,
+      openNurse,
+      openCreate,
+      updateCreateDraft,
+      closeCreate,
+      createNurse,
+      retryCreate,
+      retryCreateAfterCollision,
+      retryDetail,
+      closeNurseDetail,
+      updateNurseDraft,
+      requestCancelNurseEdit,
+      resolveNurseDiscard,
+      saveNurse,
+      retrySaveNurse,
+      applyNurseConflictToLatest,
+      requestDiscardNurseConflict,
+      keepEditingNurseConflict,
+      changeNursePipeline,
+      retryNursePipeline,
+      reloadNursePipeline,
+      rebaseNursePipeline,
+      requestDeleteNurse,
+      cancelDeleteNurse,
+      deleteNurse,
+      retryDeleteNurse,
+      reloadNurseAfterDeleteConflict,
+      ...visibleDomainValues,
       updateNurses,
       updateFacilities,
       updateCohorts,
@@ -1379,8 +1674,8 @@ export function AppProvider({ children }) {
       ...domainActions,
     }),
     [
-      nurses,
-      nurseSlice,
+      visibleNurses,
+      visibleNurseSlice,
       refreshNurses,
       retryNurses,
       openNurse,
@@ -1409,52 +1704,7 @@ export function AppProvider({ children }) {
       deleteNurse,
       retryDeleteNurse,
       reloadNurseAfterDeleteConflict,
-      facilities,
-      cohorts,
-      referrers,
-      communityChannels,
-      events,
-      outreachTemplates,
-      placements,
-      settings,
-      documents,
-      documentTemplates,
-      verificationQueue,
-      communications,
-      notifications,
-      commEmailTemplates,
-      alertRules,
-      alertHistory,
-      notificationPreferences,
-      scheduledReports,
-      exportHistory,
-      dashboardLayouts,
-      activeDashboardLayout,
-      integrations,
-      apiEndpoints,
-      apiKeys,
-      webhooks,
-      webhookDeliveryLog,
-      syncStatus,
-      activityFeed,
-      auditLog,
-      userSessions,
-      changeHistory,
-      recentSearches,
-      savedViews,
-      recentlyViewed,
-      automationRules,
-      automationTemplates,
-      executionLog,
-      scheduledActions,
-      notificationAlerts,
-      notifAlertConfig,
-      notificationLog,
-      toastPreferences,
-      helpArticles,
-      onboardingState,
-      tourState,
-      articleVotes,
+      visibleDomainValues,
       updateNurses,
       updateFacilities,
       updateCohorts,

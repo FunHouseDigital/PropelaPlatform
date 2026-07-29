@@ -80,7 +80,7 @@ function repository(overrides = {}) {
   return createNurseRepository({
     operations: adapterOperations(),
     supabase: true,
-    readSession: vi.fn(async () => activeSession()),
+    requireActiveSession: vi.fn(async () => activeSession()),
     sessionExpired: () => false,
     ...overrides,
   });
@@ -248,7 +248,7 @@ describe('fake-Supabase nurse adapter and authorization integration', () => {
     const clientFactory = vi.fn(() => client);
     supabaseAdapter.__setClientFactory(clientFactory);
     const repo = repository({
-      readSession: vi.fn(async () => ({ session: null, error: null })),
+      requireActiveSession: vi.fn(async () => ({ session: null, error: null })),
     });
     const draft = validDraft();
 

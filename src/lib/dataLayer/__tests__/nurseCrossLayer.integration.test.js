@@ -83,7 +83,7 @@ function repository(adapter, supabase) {
   return createNurseRepository({
     operations: operations(adapter),
     supabase,
-    readSession: vi.fn(async () => activeSession()),
+    requireActiveSession: vi.fn(async () => activeSession()),
     sessionExpired: () => false,
     emitOperation: vi.fn(),
   });
