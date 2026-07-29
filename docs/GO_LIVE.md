@@ -3,12 +3,26 @@
 Ordered steps to take Propela Ops live on Supabase for **exactly two full-access
 superadmins** (Vuyo, Aya). Public sign-ups stay **OFF**.
 
+**Current production state:** the Vercel production site is live and has been
+observed serving a Supabase-enabled bundle with valid public configuration.
+`main` now includes the production-mode correction from merged PR #49. Confirm
+that Vercel has redeployed that merge before accepting the cutover. The repository
+contains migrations through `0008_nurse_owner_invariants.sql`, but repository
+parity and the read-only checks below do **not** establish that migration 0008 is
+applied in the production database. The latest bounded read-only check reached
+both required tables and reported "no anonymous rows observed." That observation
+does not establish RLS denial because either table could be empty. Auth settings
+did not confirm signups disabled. Disabling public signups and rerunning both local
+verifiers is therefore the immediate production blocker; no authenticated or
+mutating check was attempted.
+
 - **Supabase project URL:** `https://erlmsfxpwskufxmmeztg.supabase.co`
 - **Backend cutover is flag-gated** by `SUPABASE_BACKEND`. Until it is ON, the app
   keeps using the legacy localStorage backend — so this can be prepared safely and
   flipped when ready.
 
 > ## SECURITY — READ FIRST
+>
 > - **NEVER commit or paste the `service_role` key or the database password** into
 >   the repo, chat, tickets, or the SQL Editor. They grant full, RLS-bypassing access.
 > - The **only** Supabase values that belong in the frontend are the **project URL**
@@ -126,9 +140,9 @@ any per-domain count mismatch.
 In the Vercel project → **Settings** → **Environment Variables**, set for
 **Production**:
 
-| Variable | Value |
-|----------|-------|
-| `VITE_SUPABASE_URL` | `https://erlmsfxpwskufxmmeztg.supabase.co` |
+| Variable                 | Value                                                       |
+| ------------------------ | ----------------------------------------------------------- |
+| `VITE_SUPABASE_URL`      | `https://erlmsfxpwskufxmmeztg.supabase.co`                  |
 | `VITE_SUPABASE_ANON_KEY` | the public **anon** key (Supabase → Project Settings → API) |
 
 Then **Redeploy**. These are the only Supabase values that belong in the frontend.
@@ -140,8 +154,8 @@ Then **Redeploy**. These are the only Supabase values that belong in the fronten
 The Data_Layer routes to Supabase only when the `SUPABASE_BACKEND` feature flag is
 ON. Enable it in Vercel → **Environment Variables** (Production):
 
-| Variable | Value |
-|----------|-------|
+| Variable             | Value              |
+| -------------------- | ------------------ |
 | `VITE_FEATURE_FLAGS` | `SUPABASE_BACKEND` |
 
 (If other flags are already set, append comma-separated, e.g.
@@ -153,8 +167,82 @@ is needed to fall back.
 
 ---
 
-## Post-cutover smoke check
+## Current post-cutover verification checklist
 
-1. Sign in as `Vuyo@propela.co` and `Aya@propela.co`; confirm full access.
-2. Confirm no one can self-register (sign-ups OFF).
-3. Confirm seeded data is visible and edits persist.
+Run the checks in this order against the current Vercel production deployment.
+They are intentionally split between unauthenticated read-only evidence and
+operator-authorized database/application evidence.
+
+### 1. Run both read-only verifiers
+
+First verify the deployed SPA, routing, cache policy, HTTPS redirect, and security
+headers:
+
+```bash
+npm run verify:production -- --url https://your-production-app.example
+```
+
+Then verify the production Supabase public boundary locally. The verifier is
+operator-run only; there is no secret-bearing GitHub workflow. Set the non-secret
+URL, read the public anon key with a masked prompt, export it for the verifier,
+and unset it immediately afterward:
+
+```bash
+export SUPABASE_VERIFY_URL="https://erlmsfxpwskufxmmeztg.supabase.co"
+read -rsp "Supabase production anon key: " SUPABASE_VERIFY_ANON_KEY
+echo
+export SUPABASE_VERIFY_ANON_KEY
+npm run verify:supabase-production
+unset SUPABASE_VERIFY_ANON_KEY
+```
+
+A pre-provisioned secure environment that exports `SUPABASE_VERIFY_ANON_KEY` is
+also acceptable; run the verifier and unset the key afterward. Never place the
+key in an inline command assignment, command argument, log, ticket, or document.
+
+The Supabase verifier uses only bounded unauthenticated GET requests. It checks
+that public signups report disabled and that the required `nurses` columns
+(`id`, `owner_id`, `version`) and `profiles` columns (`user_id`, `role`) are
+reachable. For successful empty responses it reports only "no anonymous rows
+observed." This observation does not prove RLS denial because the tables may be
+empty. RLS enforcement requires an authorized test with known existing or
+disposable rows. The verifier never prints response bodies, rows, request headers,
+query strings, raw backend errors, or the anon key.
+
+This probe is operational evidence only. It cannot establish requirements involving
+authenticated sessions, application failure handling, telemetry, store isolation,
+migration 0008, authenticated policies, CRUD, optimistic concurrency, or delete
+behavior.
+
+### 2. Complete the authorized production checks
+
+Only after both read-only verifiers pass, an authorized operator must:
+
+- confirm production has applied migrations through
+  `0008_nurse_owner_invariants.sql`, including the nurse ownership invariant and
+  version trigger;
+- using disposable records and approved temporary role profiles, exercise nurse
+  create, authoritative read/refresh, update, and delete as **Superadmin**,
+  **Admin**, and **Recruiter**;
+- create a two-session stale-version update and confirm the stale write is
+  rejected without overwriting the newer record;
+- verify successful delete convergence and the already-deleted/stale-delete
+  outcome;
+- confirm denied anonymous, missing-profile, and non-operational-role requests do
+  not become client success, regardless of visible frontend controls; and
+- remove every disposable nurse and temporary role profile after evidence is
+  recorded.
+
+These authorized checks remain the evidence for migration 0008's ownership
+trigger, authenticated role policies, nurse CRUD, optimistic concurrency, delete
+convergence, and RLS denial. Neither read-only verifier can prove those behaviors.
+
+### Acceptance checklist
+
+- [ ] Current Vercel production deployment contains merged PR #49
+- [ ] `npm run verify:production` passes against the live application origin
+- [ ] `npm run verify:supabase-production` passes against the production Supabase origin
+- [ ] Authorized operator confirms migration `0008_nurse_owner_invariants.sql` is applied
+- [ ] Disposable Superadmin/Admin/Recruiter nurse CRUD checks pass
+- [ ] Stale-version conflict, delete convergence, and authenticated RLS-denial checks pass
+- [ ] Disposable records and temporary role profiles are removed
