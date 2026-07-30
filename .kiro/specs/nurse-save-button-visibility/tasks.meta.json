@@ -1,0 +1,22 @@
+{
+  "pbtResults": {
+    "1. Add failing nurse-action geometry reproduction tests": {
+      "status": "passed",
+      "failingExample": "Seed 20260624, create at 320x568: before action rect top=3996.0144 bottom=4034.0144, dialog rect top=80.0144 bottom=832.0144, one scroll owner clientHeight=503 scrollHeight=3893 maxScrollTop=3390, transformed ancestor .animate-page-enter matrix(1,0,0,1,0,0). After maximum ordinary scroll/focus, dialog rect top=-256.2968 bottom=495.7032, so frameBounded=false. At 767x568 after max scroll, action rect bottom=539.3958 exceeded dialog bottom=495.3958, actionComplete=false, and all sampled hit tests hit the bottom NAV rather than Create nurse.",
+      "lastRunTimestamp": 1785409325770
+    },
+    "2. Add component and accessibility preservation property tests": {
+      "status": "passed",
+      "lastRunTimestamp": 1785409384358
+    },
+    "3.5 Re-run the bug-condition property as the fix check": {
+      "status": "passed",
+      "lastRunTimestamp": 1785446404234
+    },
+    "3.6 Re-run the preservation property after the fix": {
+      "status": "passed",
+      "lastRunTimestamp": 1785446487815
+    }
+  },
+  "executionHistory": {}
+}

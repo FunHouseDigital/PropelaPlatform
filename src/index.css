@@ -22,6 +22,36 @@ body {
   box-sizing: border-box;
 }
 
+.responsive-modal-frame {
+  max-block-size: 100vh;
+}
+
+.nurse-card-frame {
+  max-block-size: calc(100vh - 3rem);
+}
+
+@supports (height: 100dvh) {
+  .responsive-modal-frame {
+    max-block-size: 100dvh;
+  }
+
+  .nurse-card-frame {
+    max-block-size: calc(100dvh - 3rem);
+  }
+}
+
+@media (min-width: 768px) {
+  .responsive-modal-frame {
+    max-block-size: calc(100vh - 2rem);
+  }
+
+  @supports (height: 100dvh) {
+    .responsive-modal-frame {
+      max-block-size: calc(100dvh - 2rem);
+    }
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;

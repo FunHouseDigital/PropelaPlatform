@@ -39,6 +39,7 @@ import {
 } from '../../lib/constants';
 import { diffNurseFields } from '../../lib/nurses/nurseWorkflow';
 import { MAX_LENGTHS, sanitizeText, validateRequired } from '../../lib/validation';
+import BodyPortal from '../ui/BodyPortal';
 import ConfirmationDialog from '../ui/ConfirmationDialog';
 import DeleteNurseDialog from './DeleteNurseDialog';
 
@@ -128,7 +129,7 @@ function EditableSelect({ value, options, onChange, disabled = false, className 
       onChange={(event) => onChange(event.target.value)}
       disabled={disabled}
       aria-label={ariaLabel}
-      className={`rounded border border-gray-200 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-propela-purple disabled:cursor-not-allowed disabled:bg-gray-100 ${className}`}
+      className={`min-w-0 max-w-full rounded border border-gray-200 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-propela-purple disabled:cursor-not-allowed disabled:bg-gray-100 md:max-w-none ${className}`}
     >
       <option value="">-- Select --</option>
       {options.map((option) => (
@@ -192,11 +193,11 @@ function EditableTextarea({ value, onChange, disabled = false, placeholder = '',
 
 function ScorecardField({ label, weight, value, onChange, disabled }) {
   return (
-    <div className="flex items-center gap-2 py-1">
-      <span className="w-36 shrink-0 text-xs text-gray-600">
+    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 py-1 md:flex-nowrap md:gap-2">
+      <span className="w-full min-w-0 shrink-0 text-xs text-gray-600 md:w-36">
         {label} <span className="text-gray-400">(x{weight})</span>
       </span>
-      <div className="flex items-center gap-1">
+      <div className="flex min-w-0 flex-wrap items-center gap-1 md:flex-nowrap">
         {[1, 2, 3, 4, 5].map((number) => (
           <button
             key={number}
@@ -204,7 +205,7 @@ function ScorecardField({ label, weight, value, onChange, disabled }) {
             disabled={disabled}
             aria-label={`${label} ${number}`}
             onClick={() => onChange(number)}
-            className={`h-7 w-7 rounded border text-xs font-medium disabled:cursor-not-allowed disabled:opacity-60 ${
+            className={`h-7 w-7 shrink-0 rounded border text-xs font-medium disabled:cursor-not-allowed disabled:opacity-60 ${
               value === number
                 ? 'border-propela-purple bg-propela-purple text-white'
                 : 'border-gray-200 bg-white text-gray-600 hover:border-propela-purple-mid'
@@ -461,14 +462,16 @@ export default function NurseCard({
 
   if (detailState !== 'success' || !draft) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-        <DetailStatePanel
-          state={detailState}
-          error={nurseSlice?.detailError}
-          onRetry={onRetryDetail}
-          onClose={closeImmediately}
-        />
-      </div>
+      <BodyPortal>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <DetailStatePanel
+            state={detailState}
+            error={nurseSlice?.detailError}
+            onRetry={onRetryDetail}
+            onClose={closeImmediately}
+          />
+        </div>
+      </BodyPortal>
     );
   }
 
@@ -529,652 +532,674 @@ export default function NurseCard({
   const dirty = diffNurseFields(nurseSlice.originalBase, draft).length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pb-6 pt-6">
-      <button
-        type="button"
-        aria-label="Close nurse details"
-        className="absolute inset-0 bg-black/30"
-        onClick={requestClose}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="nurse-detail-title"
-        className="relative flex max-h-[calc(100vh-3rem)] w-full max-w-2xl flex-col rounded-xl bg-white shadow-2xl"
-      >
-        <div className="shrink-0 rounded-t-xl border-b border-gray-100 bg-white p-5">
-          <div className="mb-3 flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              {draft.photoURL ? (
-                <img src={draft.photoURL} alt="" className="h-14 w-14 rounded-full object-cover" />
-              ) : (
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-propela-purple text-lg font-semibold text-white">
-                  {initials}
-                </div>
-              )}
-              <div>
-                <h2 id="nurse-detail-title" className="text-lg font-semibold text-gray-900">
-                  {draft.fullName || 'Nurse details'}
-                </h2>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <EditableSelect
-                    ariaLabel="Pipeline stage"
-                    value={draft.pipelineStage}
-                    options={PIPELINE_STAGES}
-                    onChange={(value) => updateField('pipelineStage', value)}
-                    disabled={editingDisabled}
-                    className="text-xs"
+    <BodyPortal>
+      <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pb-6 pt-6">
+        <button
+          type="button"
+          aria-label="Close nurse details"
+          className="absolute inset-0 bg-black/30"
+          onClick={requestClose}
+        />
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="nurse-detail-title"
+          data-nurse-card-frame="true"
+          className="nurse-card-frame relative flex min-h-0 w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
+        >
+          <div className="min-w-0 shrink-0 rounded-t-xl border-b border-gray-100 bg-white p-5">
+            <div className="mb-3 flex min-w-0 items-start justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-3">
+                {draft.photoURL ? (
+                  <img
+                    src={draft.photoURL}
+                    alt=""
+                    className="h-14 w-14 rounded-full object-cover"
                   />
-                  {draft.flags > 0 && (
-                    <span className="flex items-center gap-0.5 text-xs text-red-600">
-                      <Flag size={12} className="fill-red-600" /> {draft.flags}
-                    </span>
-                  )}
-                  {dirty && (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                      Unsaved changes
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-            <button
-              type="button"
-              aria-label="Close"
-              disabled={isSaving || isDeleting}
-              onClick={requestClose}
-              className="rounded p-1 hover:bg-gray-100 disabled:opacity-50"
-            >
-              <X size={20} className="text-gray-500" />
-            </button>
-          </div>
-          <div className={`rounded-lg border p-3 ${naColor.bg} ${naColor.border}`}>
-            <label
-              htmlFor="nurse-next-action"
-              className="mb-1 block text-xs font-medium text-gray-500"
-            >
-              <span className="mb-1 block">Next Action</span>
-              <select
-                id="nurse-next-action"
-                value={draft.nextAction || ''}
-                disabled={editingDisabled}
-                onChange={(event) => updateField('nextAction', event.target.value)}
-                className={`w-full border-none bg-transparent text-base font-semibold focus:outline-none disabled:opacity-60 ${naColor.text}`}
-              >
-                <option value="">-- Select --</option>
-                {NEXT_ACTION_VALUES.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-gray-500">
-            <span className="flex items-center gap-1">
-              <Calendar size={12} />
-              Submitted: {draft.submittedAt || '—'}
-            </span>
-            {draft.lastContacted && (
-              <span className="flex items-center gap-1">
-                <MessageSquare size={12} />
-                Last contacted: {draft.lastContacted}
-              </span>
-            )}
-            <span className="rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-600">
-              {draft.readinessStatus || 'Not Ready'}
-            </span>
-          </div>
-        </div>
-
-        {conflictVisible && (
-          <ConflictPanel
-            originalBase={nurseSlice.originalBase}
-            draft={draft}
-            decision={saveDecision}
-            reviewOpen={showConflictReview}
-            onReview={() => setShowConflictReview((visible) => !visible)}
-            onRebase={() => {
-              onApplyConflictToLatest();
-              setShowConflictReview(false);
-            }}
-            onRequestDiscard={onRequestDiscardConflict}
-            onKeepEditing={() => {
-              onKeepEditingAfterConflict();
-              setShowConflictReview(false);
-            }}
-          />
-        )}
-
-        {nurseSlice?.saveError && (
-          <div
-            role="alert"
-            className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
-          >
-            <p className="font-semibold">
-              {ERROR_TITLES[nurseSlice.saveError.code] || ERROR_TITLES.UNKNOWN}
-            </p>
-            <p className="mt-1">{nurseSlice.saveError.message || 'Your changes were not saved.'}</p>
-            {canEditNurse && saveDecision?.retryAvailable && (
-              <button
-                type="button"
-                onClick={onRetrySave}
-                className="mt-2 rounded border border-red-200 bg-white px-3 py-1.5 font-medium"
-              >
-                Retry save
-              </button>
-            )}
-          </div>
-        )}
-
-        <div className="flex-1 overflow-y-auto">
-          <Section title="Personal Information" defaultOpen>
-            <FieldRow label="Full name" error={saveErrors.fullName}>
-              <EditableText
-                ariaLabel="Full name"
-                value={draft.fullName}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('fullName', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Preferred name" error={saveErrors.preferredName}>
-              <EditableText
-                ariaLabel="Preferred name"
-                value={draft.preferredName}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('preferredName', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Email" error={saveErrors.email}>
-              <EditableText
-                ariaLabel="Email"
-                type="email"
-                value={draft.email}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('email', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Phone" error={saveErrors.contactNumber}>
-              <EditableText
-                ariaLabel="Phone"
-                value={draft.contactNumber}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('contactNumber', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Gender" error={saveErrors.gender}>
-              <EditableSelect
-                ariaLabel="Gender"
-                value={draft.gender}
-                options={GENDERS}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('gender', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Age group" error={saveErrors.ageGroup}>
-              <EditableSelect
-                ariaLabel="Age group"
-                value={draft.ageGroup}
-                options={AGE_GROUPS}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('ageGroup', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Province" error={saveErrors.province}>
-              <EditableText
-                ariaLabel="Province"
-                value={draft.province}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('province', value)}
-              />
-            </FieldRow>
-            <FieldRow label="City" error={saveErrors.city}>
-              <EditableText
-                ariaLabel="City"
-                value={draft.city}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('city', value)}
-              />
-            </FieldRow>
-          </Section>
-
-          <Section title="Professional Profile">
-            <FieldRow label="Registered with SANC" error={saveErrors.registeredWithSANC}>
-              <EditableSelect
-                value={draft.registeredWithSANC}
-                options={YES_NO}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('registeredWithSANC', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Registered nurse in SA" error={saveErrors.registeredNurseInSA}>
-              <EditableSelect
-                value={draft.registeredNurseInSA}
-                options={YES_NO}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('registeredNurseInSA', value)}
-              />
-            </FieldRow>
-            <FieldRow label="SANC number" error={saveErrors.sancNumber}>
-              <EditableText
-                value={draft.sancNumber}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('sancNumber', value)}
-              />
-            </FieldRow>
-            <FieldRow label="SANC APC expiry" error={saveErrors.sancAPCExpiry}>
-              <EditableText
-                type="date"
-                value={draft.sancAPCExpiry}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('sancAPCExpiry', value)}
-              />
-            </FieldRow>
-            <FieldRow label="SANC APC status" error={saveErrors.sancAPCStatus}>
-              <EditableSelect
-                value={draft.sancAPCStatus}
-                options={SANC_APC_STATUSES}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('sancAPCStatus', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Highest qualification" error={saveErrors.highestQualification}>
-              <EditableSelect
-                value={draft.highestQualification}
-                options={QUALIFICATION_TYPES}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('highestQualification', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Institution" error={saveErrors.qualificationInstitution}>
-              <EditableText
-                value={draft.qualificationInstitution}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('qualificationInstitution', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Years experience" error={saveErrors.yearsOfClinicalExperience}>
-              <EditableSelect
-                value={draft.yearsOfClinicalExperience}
-                options={YEARS_EXPERIENCE}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('yearsOfClinicalExperience', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Primary specialty" error={saveErrors.primaryClinicalSpecialty}>
-              <EditableSelect
-                value={draft.primaryClinicalSpecialty}
-                options={SPECIALTIES}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('primaryClinicalSpecialty', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Additional certifications" error={saveErrors.additionalCertifications}>
-              <EditableText
-                value={(draft.additionalCertifications || []).join(', ')}
-                disabled={editingDisabled}
-                onChange={(value) =>
-                  updateField(
-                    'additionalCertifications',
-                    value
-                      .split(',')
-                      .map((item) => item.trim())
-                      .filter(Boolean)
-                  )
-                }
-              />
-            </FieldRow>
-            <FieldRow label="Employment status" error={saveErrors.employmentStatus}>
-              <EditableSelect
-                value={draft.employmentStatus}
-                options={EMPLOYMENT_STATUSES}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('employmentStatus', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Current employer" error={saveErrors.currentEmployer}>
-              <EditableText
-                value={draft.currentEmployer}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('currentEmployer', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Valid passport" error={saveErrors.validPassport}>
-              <EditableSelect
-                value={draft.validPassport}
-                options={YES_NO}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('validPassport', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Passport expiry" error={saveErrors.passportExpiryDate}>
-              <EditableText
-                type="date"
-                value={draft.passportExpiryDate}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('passportExpiryDate', value)}
-              />
-            </FieldRow>
-          </Section>
-
-          <Section title="English Proficiency">
-            <FieldRow label="EF SET score" error={saveErrors.efSetScore}>
-              <EditableNumber
-                value={draft.efSetScore}
-                min={0}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('efSetScore', value)}
-              />
-            </FieldRow>
-            <FieldRow label="EF SET level" error={saveErrors.efSetLevel}>
-              <EditableSelect
-                value={draft.efSetLevel}
-                options={EFSET_LEVELS}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('efSetLevel', value)}
-              />
-            </FieldRow>
-            <FieldRow label="English points" error={saveErrors.englishPts}>
-              <EditableNumber
-                value={draft.englishPts}
-                min={0}
-                max={3}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('englishPts', value)}
-              />
-            </FieldRow>
-            <FieldRow label="OET status" error={saveErrors.oetStatus}>
-              <EditableSelect
-                value={draft.oetStatus}
-                options={OET_STATUSES}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('oetStatus', value)}
-              />
-            </FieldRow>
-          </Section>
-
-          <Section title="Scorecard" defaultOpen>
-            {[
-              ['hospitalExp', 'Hospital Exp', 3],
-              ['sancStatus', 'SANC Status', 3],
-              ['qualifications', 'Qualifications', 2],
-              ['specialisation', 'Specialisation', 1],
-              ['financialReadiness', 'Financial Readiness', 1],
-              ['motivation', 'Motivation', 2],
-              ['passport', 'Passport', 1],
-            ].map(([field, label, weight]) => (
-              <div key={field}>
-                <ScorecardField
-                  label={label}
-                  weight={weight}
-                  value={draft.scorecardFields?.[field]}
-                  disabled={editingDisabled}
-                  onChange={(value) => updateScorecard(field, value)}
-                />
-                {saveErrors[`scorecardFields.${field}`] && (
-                  <p className="text-xs text-red-600">{saveErrors[`scorecardFields.${field}`]}</p>
+                ) : (
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-propela-purple text-lg font-semibold text-white">
+                    {initials}
+                  </div>
                 )}
-              </div>
-            ))}
-            <div className="mt-3 rounded-lg bg-gray-50 p-3 text-sm">
-              <div className="flex justify-between">
-                <span>CV Score</span>
-                <span className="flex items-center gap-1">
-                  {renderStars(draft.cvScore)} {draft.cvScore}/5
-                </span>
-              </div>
-              <div className="mt-1 flex justify-between">
-                <span>Final Score</span>
-                <strong>{draft.finalScore}/5</strong>
-              </div>
-              <div className="mt-1 flex justify-between">
-                <span>Tier</span>
-                <strong>{draft.tier || '—'}</strong>
-              </div>
-            </div>
-          </Section>
-
-          <Section title="Selection and Cohort">
-            <FieldRow label="Shortlist decision" error={saveErrors.shortlistDecision}>
-              <EditableSelect
-                value={draft.shortlistDecision}
-                options={SHORTLIST_DECISIONS}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('shortlistDecision', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Cohort assigned" error={saveErrors.cohortAssigned}>
-              <EditableText
-                value={draft.cohortAssigned}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('cohortAssigned', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Agreement signed" error={saveErrors.agreementSigned}>
-              <EditableSelect
-                value={draft.agreementSigned ? 'Yes' : 'No'}
-                options={YES_NO}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('agreementSigned', value === 'Yes')}
-              />
-            </FieldRow>
-            <FieldRow label="Commitment fee" error={saveErrors.commitmentFeeStatus}>
-              <EditableSelect
-                value={draft.commitmentFeeStatus}
-                options={COMMITMENT_FEE_STATUSES}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('commitmentFeeStatus', value)}
-              />
-            </FieldRow>
-          </Section>
-
-          <Section title="Notes / Flags / Source">
-            <FieldRow label="Source" error={saveErrors.source}>
-              <EditableSelect
-                value={draft.source}
-                options={SOURCE_OPTIONS}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('source', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Flags" error={saveErrors.flags}>
-              <EditableNumber
-                value={draft.flags}
-                min={0}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('flags', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Motivations" error={saveErrors.motivations}>
-              <EditableTextarea
-                value={draft.motivations}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('motivations', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Questions" error={saveErrors.questions}>
-              <EditableTextarea
-                value={draft.questions}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('questions', value)}
-              />
-            </FieldRow>
-            <FieldRow label="Notes / flags" error={saveErrors.notesFlags}>
-              <EditableTextarea
-                value={draft.notesFlags}
-                disabled={editingDisabled}
-                onChange={(value) => updateField('notesFlags', value)}
-              />
-            </FieldRow>
-          </Section>
-
-          <Section title="Communication Log" defaultOpen>
-            <div className="space-y-2">
-              {(draft.communicationLog || []).length === 0 ? (
-                <p className="text-sm italic text-gray-400">No communications logged yet.</p>
-              ) : (
-                [...draft.communicationLog]
-                  .sort((left, right) => (right.date || '').localeCompare(left.date || ''))
-                  .map((entry, index) => (
-                    <div
-                      key={`${entry.date}-${index}`}
-                      className="rounded-lg bg-gray-50 p-2.5 text-sm"
-                    >
-                      <div className="mb-1 flex items-center gap-2 text-xs text-gray-500">
-                        <span>{entry.date}</span>
-                        <span className="rounded bg-gray-200 px-1.5 py-0.5">{entry.channel}</span>
-                      </div>
-                      <p className="text-gray-700">{entry.summary}</p>
-                      {entry.nextAction && (
-                        <p className="mt-1 text-xs text-teal-600">Next: {entry.nextAction}</p>
-                      )}
-                    </div>
-                  ))
-              )}
-              {!showAddCommunication ? (
-                <button
-                  type="button"
-                  disabled={editingDisabled}
-                  onClick={() => setShowAddCommunication(true)}
-                  className="mt-2 flex items-center gap-1 text-sm font-medium text-propela-purple disabled:opacity-50"
-                >
-                  <Plus size={14} />
-                  Add Communication
-                </button>
-              ) : (
-                <div className="mt-2 space-y-2 rounded-lg bg-propela-purple-light p-3">
-                  <EditableSelect
-                    value={communication.channel}
-                    options={['Email', 'WhatsApp', 'Phone', 'LinkedIn', 'In-person']}
-                    disabled={editingDisabled}
-                    onChange={(channel) => setCommunication((current) => ({ ...current, channel }))}
-                  />
-                  <EditableTextarea
-                    value={communication.summary}
-                    placeholder="Summary of communication..."
-                    disabled={editingDisabled}
-                    onChange={(summary) => setCommunication((current) => ({ ...current, summary }))}
-                  />
-                  <EditableText
-                    value={communication.nextAction}
-                    placeholder="Next action set (optional)"
-                    disabled={editingDisabled}
-                    onChange={(nextAction) =>
-                      setCommunication((current) => ({ ...current, nextAction }))
-                    }
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
+                <div className="min-w-0">
+                  <h2
+                    id="nurse-detail-title"
+                    className="break-words text-lg font-semibold text-gray-900"
+                  >
+                    {draft.fullName || 'Nurse details'}
+                  </h2>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <EditableSelect
+                      ariaLabel="Pipeline stage"
+                      value={draft.pipelineStage}
+                      options={PIPELINE_STAGES}
+                      onChange={(value) => updateField('pipelineStage', value)}
                       disabled={editingDisabled}
-                      onClick={addCommunication}
-                      className="rounded bg-propela-purple px-3 py-1.5 text-sm text-white disabled:opacity-50"
-                    >
-                      Add entry
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowAddCommunication(false)}
-                      className="rounded px-3 py-1.5 text-sm text-gray-600"
-                    >
-                      Cancel entry
-                    </button>
+                      className="text-xs"
+                    />
+                    {draft.flags > 0 && (
+                      <span className="flex items-center gap-0.5 text-xs text-red-600">
+                        <Flag size={12} className="fill-red-600" /> {draft.flags}
+                      </span>
+                    )}
+                    {dirty && (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                        Unsaved changes
+                      </span>
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
-          </Section>
-
-          <Section title="Record Metadata">
-            <dl className="space-y-2 text-sm">
-              {[
-                ['Record ID', draft.id],
-                ['Owner ID', draft.ownerId],
-                ['Version', draft.version],
-                ['Created', draft.createdAt],
-                ['Last updated', draft.updatedAt],
-              ].map(([label, value]) => (
-                <div key={label} className="flex gap-3">
-                  <dt className="w-28 shrink-0 text-xs text-gray-500">{label}</dt>
-                  <dd className="break-all text-gray-800">{formatDifference(value)}</dd>
-                </div>
-              ))}
-            </dl>
-          </Section>
-        </div>
-
-        <div className="flex shrink-0 items-center justify-between gap-3 rounded-b-xl border-t border-gray-100 bg-white p-4">
-          <div className="flex items-center gap-3">
-            {canDeleteNurse && (
+              </div>
               <button
                 type="button"
-                disabled={isSaving || isDeleting || Boolean(nurseSlice?.deleteDecision)}
-                onClick={() => onRequestDelete?.()}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Close"
+                disabled={isSaving || isDeleting}
+                onClick={requestClose}
+                className="rounded p-1 hover:bg-gray-100 disabled:opacity-50"
               >
-                <Trash2 size={15} />
-                Delete nurse
+                <X size={20} className="text-gray-500" />
               </button>
-            )}
-            <p className="text-xs text-gray-500">
-              Base version {nurseSlice.baseVersion ?? '—'}
-              {nurseSlice.saveState === 'success' ? ' · Saved' : ''}
-            </p>
+            </div>
+            <div className={`rounded-lg border p-3 ${naColor.bg} ${naColor.border}`}>
+              <label
+                htmlFor="nurse-next-action"
+                className="mb-1 block text-xs font-medium text-gray-500"
+              >
+                <span className="mb-1 block">Next Action</span>
+                <select
+                  id="nurse-next-action"
+                  value={draft.nextAction || ''}
+                  disabled={editingDisabled}
+                  onChange={(event) => updateField('nextAction', event.target.value)}
+                  className={`w-full border-none bg-transparent text-base font-semibold focus:outline-none disabled:opacity-60 ${naColor.text}`}
+                >
+                  <option value="">-- Select --</option>
+                  {NEXT_ACTION_VALUES.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <Calendar size={12} />
+                Submitted: {draft.submittedAt || '—'}
+              </span>
+              {draft.lastContacted && (
+                <span className="flex items-center gap-1">
+                  <MessageSquare size={12} />
+                  Last contacted: {draft.lastContacted}
+                </span>
+              )}
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-600">
+                {draft.readinessStatus || 'Not Ready'}
+              </span>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={isSaving || isDeleting}
-              onClick={requestClose}
-              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={isSaving || isDeleting || !canEditNurse || conflictVisible || !dirty}
-              onClick={onSave}
-              className="inline-flex items-center gap-2 rounded-lg bg-propela-purple px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isSaving && <LoaderCircle size={15} className="animate-spin" />}
-              {isSaving ? 'Saving...' : 'Save changes'}
-            </button>
+
+          <div data-nurse-card-scroll-region="true" className="min-h-0 flex-1 overflow-y-auto">
+            {conflictVisible && (
+              <ConflictPanel
+                originalBase={nurseSlice.originalBase}
+                draft={draft}
+                decision={saveDecision}
+                reviewOpen={showConflictReview}
+                onReview={() => setShowConflictReview((visible) => !visible)}
+                onRebase={() => {
+                  onApplyConflictToLatest();
+                  setShowConflictReview(false);
+                }}
+                onRequestDiscard={onRequestDiscardConflict}
+                onKeepEditing={() => {
+                  onKeepEditingAfterConflict();
+                  setShowConflictReview(false);
+                }}
+              />
+            )}
+
+            {nurseSlice?.saveError && (
+              <div
+                role="alert"
+                className="m-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+              >
+                <p className="font-semibold">
+                  {ERROR_TITLES[nurseSlice.saveError.code] || ERROR_TITLES.UNKNOWN}
+                </p>
+                <p className="mt-1">
+                  {nurseSlice.saveError.message || 'Your changes were not saved.'}
+                </p>
+                {canEditNurse && saveDecision?.retryAvailable && (
+                  <button
+                    type="button"
+                    onClick={onRetrySave}
+                    className="mt-2 rounded border border-red-200 bg-white px-3 py-1.5 font-medium"
+                  >
+                    Retry save
+                  </button>
+                )}
+              </div>
+            )}
+
+            <Section title="Personal Information" defaultOpen>
+              <FieldRow label="Full name" error={saveErrors.fullName}>
+                <EditableText
+                  ariaLabel="Full name"
+                  value={draft.fullName}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('fullName', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Preferred name" error={saveErrors.preferredName}>
+                <EditableText
+                  ariaLabel="Preferred name"
+                  value={draft.preferredName}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('preferredName', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Email" error={saveErrors.email}>
+                <EditableText
+                  ariaLabel="Email"
+                  type="email"
+                  value={draft.email}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('email', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Phone" error={saveErrors.contactNumber}>
+                <EditableText
+                  ariaLabel="Phone"
+                  value={draft.contactNumber}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('contactNumber', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Gender" error={saveErrors.gender}>
+                <EditableSelect
+                  ariaLabel="Gender"
+                  value={draft.gender}
+                  options={GENDERS}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('gender', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Age group" error={saveErrors.ageGroup}>
+                <EditableSelect
+                  ariaLabel="Age group"
+                  value={draft.ageGroup}
+                  options={AGE_GROUPS}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('ageGroup', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Province" error={saveErrors.province}>
+                <EditableText
+                  ariaLabel="Province"
+                  value={draft.province}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('province', value)}
+                />
+              </FieldRow>
+              <FieldRow label="City" error={saveErrors.city}>
+                <EditableText
+                  ariaLabel="City"
+                  value={draft.city}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('city', value)}
+                />
+              </FieldRow>
+            </Section>
+
+            <Section title="Professional Profile">
+              <FieldRow label="Registered with SANC" error={saveErrors.registeredWithSANC}>
+                <EditableSelect
+                  value={draft.registeredWithSANC}
+                  options={YES_NO}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('registeredWithSANC', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Registered nurse in SA" error={saveErrors.registeredNurseInSA}>
+                <EditableSelect
+                  value={draft.registeredNurseInSA}
+                  options={YES_NO}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('registeredNurseInSA', value)}
+                />
+              </FieldRow>
+              <FieldRow label="SANC number" error={saveErrors.sancNumber}>
+                <EditableText
+                  value={draft.sancNumber}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('sancNumber', value)}
+                />
+              </FieldRow>
+              <FieldRow label="SANC APC expiry" error={saveErrors.sancAPCExpiry}>
+                <EditableText
+                  type="date"
+                  value={draft.sancAPCExpiry}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('sancAPCExpiry', value)}
+                />
+              </FieldRow>
+              <FieldRow label="SANC APC status" error={saveErrors.sancAPCStatus}>
+                <EditableSelect
+                  value={draft.sancAPCStatus}
+                  options={SANC_APC_STATUSES}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('sancAPCStatus', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Highest qualification" error={saveErrors.highestQualification}>
+                <EditableSelect
+                  value={draft.highestQualification}
+                  options={QUALIFICATION_TYPES}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('highestQualification', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Institution" error={saveErrors.qualificationInstitution}>
+                <EditableText
+                  value={draft.qualificationInstitution}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('qualificationInstitution', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Years experience" error={saveErrors.yearsOfClinicalExperience}>
+                <EditableSelect
+                  value={draft.yearsOfClinicalExperience}
+                  options={YEARS_EXPERIENCE}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('yearsOfClinicalExperience', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Primary specialty" error={saveErrors.primaryClinicalSpecialty}>
+                <EditableSelect
+                  value={draft.primaryClinicalSpecialty}
+                  options={SPECIALTIES}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('primaryClinicalSpecialty', value)}
+                />
+              </FieldRow>
+              <FieldRow
+                label="Additional certifications"
+                error={saveErrors.additionalCertifications}
+              >
+                <EditableText
+                  value={(draft.additionalCertifications || []).join(', ')}
+                  disabled={editingDisabled}
+                  onChange={(value) =>
+                    updateField(
+                      'additionalCertifications',
+                      value
+                        .split(',')
+                        .map((item) => item.trim())
+                        .filter(Boolean)
+                    )
+                  }
+                />
+              </FieldRow>
+              <FieldRow label="Employment status" error={saveErrors.employmentStatus}>
+                <EditableSelect
+                  value={draft.employmentStatus}
+                  options={EMPLOYMENT_STATUSES}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('employmentStatus', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Current employer" error={saveErrors.currentEmployer}>
+                <EditableText
+                  value={draft.currentEmployer}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('currentEmployer', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Valid passport" error={saveErrors.validPassport}>
+                <EditableSelect
+                  value={draft.validPassport}
+                  options={YES_NO}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('validPassport', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Passport expiry" error={saveErrors.passportExpiryDate}>
+                <EditableText
+                  type="date"
+                  value={draft.passportExpiryDate}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('passportExpiryDate', value)}
+                />
+              </FieldRow>
+            </Section>
+
+            <Section title="English Proficiency">
+              <FieldRow label="EF SET score" error={saveErrors.efSetScore}>
+                <EditableNumber
+                  value={draft.efSetScore}
+                  min={0}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('efSetScore', value)}
+                />
+              </FieldRow>
+              <FieldRow label="EF SET level" error={saveErrors.efSetLevel}>
+                <EditableSelect
+                  value={draft.efSetLevel}
+                  options={EFSET_LEVELS}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('efSetLevel', value)}
+                />
+              </FieldRow>
+              <FieldRow label="English points" error={saveErrors.englishPts}>
+                <EditableNumber
+                  value={draft.englishPts}
+                  min={0}
+                  max={3}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('englishPts', value)}
+                />
+              </FieldRow>
+              <FieldRow label="OET status" error={saveErrors.oetStatus}>
+                <EditableSelect
+                  value={draft.oetStatus}
+                  options={OET_STATUSES}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('oetStatus', value)}
+                />
+              </FieldRow>
+            </Section>
+
+            <Section title="Scorecard" defaultOpen>
+              {[
+                ['hospitalExp', 'Hospital Exp', 3],
+                ['sancStatus', 'SANC Status', 3],
+                ['qualifications', 'Qualifications', 2],
+                ['specialisation', 'Specialisation', 1],
+                ['financialReadiness', 'Financial Readiness', 1],
+                ['motivation', 'Motivation', 2],
+                ['passport', 'Passport', 1],
+              ].map(([field, label, weight]) => (
+                <div key={field}>
+                  <ScorecardField
+                    label={label}
+                    weight={weight}
+                    value={draft.scorecardFields?.[field]}
+                    disabled={editingDisabled}
+                    onChange={(value) => updateScorecard(field, value)}
+                  />
+                  {saveErrors[`scorecardFields.${field}`] && (
+                    <p className="text-xs text-red-600">{saveErrors[`scorecardFields.${field}`]}</p>
+                  )}
+                </div>
+              ))}
+              <div className="mt-3 rounded-lg bg-gray-50 p-3 text-sm">
+                <div className="flex justify-between">
+                  <span>CV Score</span>
+                  <span className="flex items-center gap-1">
+                    {renderStars(draft.cvScore)} {draft.cvScore}/5
+                  </span>
+                </div>
+                <div className="mt-1 flex justify-between">
+                  <span>Final Score</span>
+                  <strong>{draft.finalScore}/5</strong>
+                </div>
+                <div className="mt-1 flex justify-between">
+                  <span>Tier</span>
+                  <strong>{draft.tier || '—'}</strong>
+                </div>
+              </div>
+            </Section>
+
+            <Section title="Selection and Cohort">
+              <FieldRow label="Shortlist decision" error={saveErrors.shortlistDecision}>
+                <EditableSelect
+                  value={draft.shortlistDecision}
+                  options={SHORTLIST_DECISIONS}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('shortlistDecision', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Cohort assigned" error={saveErrors.cohortAssigned}>
+                <EditableText
+                  value={draft.cohortAssigned}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('cohortAssigned', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Agreement signed" error={saveErrors.agreementSigned}>
+                <EditableSelect
+                  value={draft.agreementSigned ? 'Yes' : 'No'}
+                  options={YES_NO}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('agreementSigned', value === 'Yes')}
+                />
+              </FieldRow>
+              <FieldRow label="Commitment fee" error={saveErrors.commitmentFeeStatus}>
+                <EditableSelect
+                  value={draft.commitmentFeeStatus}
+                  options={COMMITMENT_FEE_STATUSES}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('commitmentFeeStatus', value)}
+                />
+              </FieldRow>
+            </Section>
+
+            <Section title="Notes / Flags / Source">
+              <FieldRow label="Source" error={saveErrors.source}>
+                <EditableSelect
+                  value={draft.source}
+                  options={SOURCE_OPTIONS}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('source', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Flags" error={saveErrors.flags}>
+                <EditableNumber
+                  value={draft.flags}
+                  min={0}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('flags', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Motivations" error={saveErrors.motivations}>
+                <EditableTextarea
+                  value={draft.motivations}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('motivations', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Questions" error={saveErrors.questions}>
+                <EditableTextarea
+                  value={draft.questions}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('questions', value)}
+                />
+              </FieldRow>
+              <FieldRow label="Notes / flags" error={saveErrors.notesFlags}>
+                <EditableTextarea
+                  value={draft.notesFlags}
+                  disabled={editingDisabled}
+                  onChange={(value) => updateField('notesFlags', value)}
+                />
+              </FieldRow>
+            </Section>
+
+            <Section title="Communication Log" defaultOpen>
+              <div className="space-y-2">
+                {(draft.communicationLog || []).length === 0 ? (
+                  <p className="text-sm italic text-gray-400">No communications logged yet.</p>
+                ) : (
+                  [...draft.communicationLog]
+                    .sort((left, right) => (right.date || '').localeCompare(left.date || ''))
+                    .map((entry, index) => (
+                      <div
+                        key={`${entry.date}-${index}`}
+                        className="rounded-lg bg-gray-50 p-2.5 text-sm"
+                      >
+                        <div className="mb-1 flex items-center gap-2 text-xs text-gray-500">
+                          <span>{entry.date}</span>
+                          <span className="rounded bg-gray-200 px-1.5 py-0.5">{entry.channel}</span>
+                        </div>
+                        <p className="text-gray-700">{entry.summary}</p>
+                        {entry.nextAction && (
+                          <p className="mt-1 text-xs text-teal-600">Next: {entry.nextAction}</p>
+                        )}
+                      </div>
+                    ))
+                )}
+                {!showAddCommunication ? (
+                  <button
+                    type="button"
+                    disabled={editingDisabled}
+                    onClick={() => setShowAddCommunication(true)}
+                    className="mt-2 flex items-center gap-1 text-sm font-medium text-propela-purple disabled:opacity-50"
+                  >
+                    <Plus size={14} />
+                    Add Communication
+                  </button>
+                ) : (
+                  <div className="mt-2 space-y-2 rounded-lg bg-propela-purple-light p-3">
+                    <EditableSelect
+                      value={communication.channel}
+                      options={['Email', 'WhatsApp', 'Phone', 'LinkedIn', 'In-person']}
+                      disabled={editingDisabled}
+                      onChange={(channel) =>
+                        setCommunication((current) => ({ ...current, channel }))
+                      }
+                    />
+                    <EditableTextarea
+                      value={communication.summary}
+                      placeholder="Summary of communication..."
+                      disabled={editingDisabled}
+                      onChange={(summary) =>
+                        setCommunication((current) => ({ ...current, summary }))
+                      }
+                    />
+                    <EditableText
+                      value={communication.nextAction}
+                      placeholder="Next action set (optional)"
+                      disabled={editingDisabled}
+                      onChange={(nextAction) =>
+                        setCommunication((current) => ({ ...current, nextAction }))
+                      }
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        disabled={editingDisabled}
+                        onClick={addCommunication}
+                        className="rounded bg-propela-purple px-3 py-1.5 text-sm text-white disabled:opacity-50"
+                      >
+                        Add entry
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddCommunication(false)}
+                        className="rounded px-3 py-1.5 text-sm text-gray-600"
+                      >
+                        Cancel entry
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Section>
+
+            <Section title="Record Metadata">
+              <dl className="space-y-2 text-sm">
+                {[
+                  ['Record ID', draft.id],
+                  ['Owner ID', draft.ownerId],
+                  ['Version', draft.version],
+                  ['Created', draft.createdAt],
+                  ['Last updated', draft.updatedAt],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex gap-3">
+                    <dt className="w-28 shrink-0 text-xs text-gray-500">{label}</dt>
+                    <dd className="break-all text-gray-800">{formatDifference(value)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </Section>
+          </div>
+
+          <div
+            data-nurse-card-action-region="true"
+            className="flex shrink-0 flex-col items-stretch gap-3 rounded-b-xl border-t border-gray-100 bg-white p-4 md:flex-row md:items-center md:justify-between"
+          >
+            <div className="flex min-w-0 flex-wrap items-center gap-3">
+              {canDeleteNurse && (
+                <button
+                  type="button"
+                  disabled={isSaving || isDeleting || Boolean(nurseSlice?.deleteDecision)}
+                  onClick={() => onRequestDelete?.()}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Trash2 size={15} />
+                  Delete nurse
+                </button>
+              )}
+              <p className="text-xs text-gray-500">
+                Base version {nurseSlice.baseVersion ?? '—'}
+                {nurseSlice.saveState === 'success' ? ' · Saved' : ''}
+              </p>
+            </div>
+            <div className="flex w-full min-w-0 justify-end gap-2 md:w-auto">
+              <button
+                type="button"
+                disabled={isSaving || isDeleting}
+                onClick={requestClose}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSaving || isDeleting || !canEditNurse || conflictVisible || !dirty}
+                onClick={onSave}
+                className="inline-flex items-center gap-2 rounded-lg bg-propela-purple px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isSaving && <LoaderCircle size={15} className="animate-spin" />}
+                {isSaving ? 'Saving...' : 'Save changes'}
+              </button>
+            </div>
           </div>
         </div>
+
+        <ConfirmationDialog
+          isOpen={nurseSlice?.discardDecision?.type === 'discardEdit'}
+          title={`Discard changes to ${draft.fullName || 'this nurse'}?`}
+          description="Your unsaved local edits will be lost. No update will be sent to the database."
+          confirmLabel="Discard and close"
+          cancelLabel="Keep editing"
+          onConfirm={() => resolveDiscard(true)}
+          onCancel={() => resolveDiscard(false)}
+          destructive
+        />
+
+        <ConfirmationDialog
+          isOpen={nurseSlice?.discardDecision?.type === 'discardConflict'}
+          title={`Discard local changes to ${draft.fullName || 'this nurse'}?`}
+          description="Your local edits will be discarded and replaced with the latest saved nurse. No update will be sent until you make changes and save again."
+          confirmLabel="Confirm discard"
+          cancelLabel="Keep my edits"
+          onConfirm={() => resolveDiscard(true)}
+          onCancel={() => resolveDiscard(false)}
+          destructive
+        />
+
+        <DeleteNurseDialog
+          decision={nurseSlice?.deleteDecision}
+          deleteState={nurseSlice?.deleteState}
+          error={nurseSlice?.deleteError}
+          fallbackNurseName={draft.fullName}
+          onCancel={onCancelDelete}
+          onConfirm={() => runDeleteAction(onConfirmDelete)}
+          onRetry={() => runDeleteAction(onRetryDelete)}
+          onReload={() => runDeleteAction(onReloadAfterDeleteConflict)}
+        />
       </div>
-
-      <ConfirmationDialog
-        isOpen={nurseSlice?.discardDecision?.type === 'discardEdit'}
-        title={`Discard changes to ${draft.fullName || 'this nurse'}?`}
-        description="Your unsaved local edits will be lost. No update will be sent to the database."
-        confirmLabel="Discard and close"
-        cancelLabel="Keep editing"
-        onConfirm={() => resolveDiscard(true)}
-        onCancel={() => resolveDiscard(false)}
-        destructive
-      />
-
-      <ConfirmationDialog
-        isOpen={nurseSlice?.discardDecision?.type === 'discardConflict'}
-        title={`Discard local changes to ${draft.fullName || 'this nurse'}?`}
-        description="Your local edits will be discarded and replaced with the latest saved nurse. No update will be sent until you make changes and save again."
-        confirmLabel="Confirm discard"
-        cancelLabel="Keep my edits"
-        onConfirm={() => resolveDiscard(true)}
-        onCancel={() => resolveDiscard(false)}
-        destructive
-      />
-
-      <DeleteNurseDialog
-        decision={nurseSlice?.deleteDecision}
-        deleteState={nurseSlice?.deleteState}
-        error={nurseSlice?.deleteError}
-        fallbackNurseName={draft.fullName}
-        onCancel={onCancelDelete}
-        onConfirm={() => runDeleteAction(onConfirmDelete)}
-        onRetry={() => runDeleteAction(onRetryDelete)}
-        onReload={() => runDeleteAction(onReloadAfterDeleteConflict)}
-      />
-    </div>
+    </BodyPortal>
   );
 }

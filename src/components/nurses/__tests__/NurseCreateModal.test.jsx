@@ -75,7 +75,7 @@ describe('NurseCreateModal', () => {
     });
     const props = makeProps(
       { createDraft: makeDraft({ fullName: 'New Nurse' }) },
-      { onSubmit: vi.fn(() => pending) },
+      { onSubmit: vi.fn(() => pending) }
     );
     render(<NurseCreateModal {...props} />);
 
@@ -91,7 +91,7 @@ describe('NurseCreateModal', () => {
   it('closes through the committed callback only for a saved result', async () => {
     const failedProps = makeProps(
       { createDraft: makeDraft({ fullName: 'Kept Nurse' }) },
-      { onSubmit: vi.fn(async () => ({ status: 'error' })) },
+      { onSubmit: vi.fn(async () => ({ status: 'error' })) }
     );
     const { rerender } = render(<NurseCreateModal {...failedProps} />);
 
@@ -107,15 +107,15 @@ describe('NurseCreateModal', () => {
           status: 'saved',
           nurse: { id: `nurse-${UUID}`, fullName: 'Kept Nurse', version: 1 },
         })),
-      },
+      }
     );
     rerender(<NurseCreateModal {...savedProps} />);
     fireEvent.click(screen.getByRole('button', { name: 'Create nurse' }));
 
     await waitFor(() =>
       expect(savedProps.onCommitted).toHaveBeenCalledWith(
-        expect.objectContaining({ fullName: 'Kept Nurse', version: 1 }),
-      ),
+        expect.objectContaining({ fullName: 'Kept Nurse', version: 1 })
+      )
     );
   });
 
@@ -151,7 +151,7 @@ describe('NurseCreateModal', () => {
         createError: { code: 'NETWORK', message: 'Connection lost.' },
         createDecision: { type: 'createFailure', retryAvailable: true },
       },
-      { onRetry: vi.fn(async () => ({ status: 'error' })) },
+      { onRetry: vi.fn(async () => ({ status: 'error' })) }
     );
     render(<NurseCreateModal {...props} />);
 
@@ -224,5 +224,49 @@ describe('NurseCreateModal', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Retry with a new ID' }));
     expect(props.onRetryCollision).toHaveBeenCalledTimes(1);
     expect(props.onRetry).not.toHaveBeenCalled();
+  });
+
+  it('preserves field and action order with one primary action', () => {
+    render(<NurseCreateModal {...makeProps()} />);
+    const dialog = screen.getByRole('dialog', { name: 'Add Nurse' });
+    const controls = [...dialog.querySelectorAll('input, select, textarea, button')];
+    const names = controls.map(
+      (control) =>
+        control.getAttribute('aria-label') ||
+        control.getAttribute('aria-labelledby') ||
+        control.textContent.trim()
+    );
+
+    expect(names.filter((name) => name === 'Create nurse')).toHaveLength(1);
+    expect(names.indexOf('fullName-label')).toBeLessThan(names.indexOf('preferredName-label'));
+    expect(names.indexOf('Cancel')).toBeLessThan(names.indexOf('Create nurse'));
+
+    const form = dialog.querySelector('form');
+    const scrollRegion = dialog.querySelector('[data-nurse-create-scroll-region="true"]');
+    const actionRegion = dialog.querySelector('[data-nurse-create-action-region="true"]');
+    expect(form).toHaveClass('flex', 'h-full', 'min-h-0', 'flex-col');
+    expect(scrollRegion).toHaveClass('min-h-0', 'flex-1', 'overflow-y-auto');
+    expect(actionRegion).toHaveClass('shrink-0', 'flex-wrap', 'bg-white');
+    expect(form).toContainElement(scrollRegion);
+    expect(form).toContainElement(actionRegion);
+    expect(scrollRegion).not.toContainElement(actionRegion);
+    expect(scrollRegion.compareDocumentPosition(actionRegion)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+  });
+
+  it('keeps the pending draft visible and prevents close or duplicate submit commands', () => {
+    const props = makeProps({
+      createDraft: makeDraft({ fullName: 'Pending Draft' }),
+      createState: 'loading',
+    });
+    render(<NurseCreateModal {...props} />);
+
+    expect(screen.getByRole('textbox', { name: 'Full name' })).toHaveValue('Pending Draft');
+    expect(screen.getByRole('button', { name: 'Creating...' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(props.onClose).not.toHaveBeenCalled();
+    expect(props.onSubmit).not.toHaveBeenCalled();
   });
 });

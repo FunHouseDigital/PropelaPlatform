@@ -219,484 +219,505 @@ export default function NurseCreateModal({
     decision?.type === 'createCollision' && decision.retryAvailable === true;
 
   return (
-    <ResponsiveModal isOpen={isOpen} onClose={handleClose} title="Add Nurse" size="lg">
-      <form ref={formRef} onSubmit={handleSubmit} noValidate tabIndex={-1}>
-        <p className="mb-5 text-sm text-gray-600">
-          Enter the nurse&apos;s business details. Record ownership and system metadata are set
-          automatically when the nurse is saved.
-        </p>
+    <ResponsiveModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Add Nurse"
+      size="lg"
+      bodyMode="contained"
+    >
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit}
+        noValidate
+        tabIndex={-1}
+        className="flex h-full min-h-0 flex-col"
+      >
+        <div data-nurse-create-scroll-region="true" className="min-h-0 flex-1 overflow-y-auto p-4">
+          <p className="mb-5 text-sm text-gray-600">
+            Enter the nurse&apos;s business details. Record ownership and system metadata are set
+            automatically when the nurse is saved.
+          </p>
 
-        {error && (
-          <div
-            role="alert"
-            className="mb-5 flex gap-3 rounded-lg border border-red-200 bg-red-50 p-3"
-          >
-            <AlertTriangle size={18} className="mt-0.5 shrink-0 text-red-600" />
-            <div>
-              <p className="text-sm font-semibold text-red-800">
-                {ERROR_TITLES[error.code] || ERROR_TITLES.UNKNOWN}
-              </p>
-              <p className="mt-0.5 text-sm text-red-700">
-                {error.message || 'Your entries were kept. Please review the form and try again.'}
-              </p>
-            </div>
-          </div>
-        )}
-
-        <fieldset disabled={isSubmitting} className="space-y-6">
-          <legend className="sr-only">Nurse business details</legend>
-
-          <section aria-labelledby="create-contact-heading">
-            <h3 id="create-contact-heading" className="mb-3 text-sm font-semibold text-gray-900">
-              Contact details
-            </h3>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <TextField
-                label="Full name"
-                name="fullName"
-                value={draft.fullName}
-                error={errors.fullName}
-                disabled={isSubmitting}
-                onChange={updateField}
-                required
-              />
-              <TextField
-                label="Preferred name"
-                name="preferredName"
-                value={draft.preferredName}
-                error={errors.preferredName}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <TextField
-                label="Email"
-                name="email"
-                value={draft.email}
-                error={errors.email}
-                disabled={isSubmitting}
-                onChange={updateField}
-                type="email"
-              />
-              <TextField
-                label="Contact number"
-                name="contactNumber"
-                value={draft.contactNumber}
-                error={errors.contactNumber}
-                disabled={isSubmitting}
-                onChange={updateField}
-                type="tel"
-              />
-              <SelectField
-                label="Gender"
-                name="gender"
-                value={draft.gender}
-                options={NURSE_SELECT_OPTIONS.gender}
-                error={errors.gender}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <SelectField
-                label="Age group"
-                name="ageGroup"
-                value={draft.ageGroup}
-                options={NURSE_SELECT_OPTIONS.ageGroup}
-                error={errors.ageGroup}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <SelectField
-                label="Province"
-                name="province"
-                value={draft.province}
-                options={PROVINCES}
-                error={errors.province}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <TextField
-                label="City"
-                name="city"
-                value={draft.city}
-                error={errors.city}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-            </div>
-          </section>
-
-          <section aria-labelledby="create-application-heading">
-            <h3
-              id="create-application-heading"
-              className="mb-3 text-sm font-semibold text-gray-900"
+          {error && (
+            <div
+              role="alert"
+              className="mb-5 flex gap-3 rounded-lg border border-red-200 bg-red-50 p-3"
             >
-              Application
-            </h3>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <SelectField
-                label="Pipeline stage"
-                name="pipelineStage"
-                value={draft.pipelineStage}
-                options={NURSE_SELECT_OPTIONS.pipelineStage}
-                error={errors.pipelineStage}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <SelectField
-                label="Next action"
-                name="nextAction"
-                value={draft.nextAction}
-                options={NURSE_SELECT_OPTIONS.nextAction}
-                error={errors.nextAction}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <TextField
-                label="Cohort"
-                name="cohortAssigned"
-                value={draft.cohortAssigned}
-                error={errors.cohortAssigned}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <SelectField
-                label="Source"
-                name="source"
-                value={draft.source}
-                options={NURSE_SELECT_OPTIONS.source}
-                error={errors.source}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <TextField
-                label="Submitted date"
-                name="submittedAt"
-                value={draft.submittedAt}
-                error={errors.submittedAt}
-                disabled={isSubmitting}
-                onChange={updateField}
-                type="date"
-              />
-              <TextField
-                label="Next action due"
-                name="nextActionDueDate"
-                value={draft.nextActionDueDate}
-                error={errors.nextActionDueDate}
-                disabled={isSubmitting}
-                onChange={updateField}
-                type="date"
-              />
+              <AlertTriangle size={18} className="mt-0.5 shrink-0 text-red-600" />
+              <div>
+                <p className="text-sm font-semibold text-red-800">
+                  {ERROR_TITLES[error.code] || ERROR_TITLES.UNKNOWN}
+                </p>
+                <p className="mt-0.5 text-sm text-red-700">
+                  {error.message || 'Your entries were kept. Please review the form and try again.'}
+                </p>
+              </div>
             </div>
-          </section>
+          )}
 
-          <section aria-labelledby="create-professional-heading">
-            <h3
-              id="create-professional-heading"
-              className="mb-3 text-sm font-semibold text-gray-900"
-            >
-              Professional details
-            </h3>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <SelectField
-                label="Registered with SANC"
-                name="registeredWithSANC"
-                value={draft.registeredWithSANC}
-                options={NURSE_SELECT_OPTIONS.registeredWithSANC}
-                error={errors.registeredWithSANC}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <SelectField
-                label="Registered nurse in South Africa"
-                name="registeredNurseInSA"
-                value={draft.registeredNurseInSA}
-                options={NURSE_SELECT_OPTIONS.registeredNurseInSA}
-                error={errors.registeredNurseInSA}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <TextField
-                label="SANC number"
-                name="sancNumber"
-                value={draft.sancNumber}
-                error={errors.sancNumber}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <SelectField
-                label="SANC APC status"
-                name="sancAPCStatus"
-                value={draft.sancAPCStatus}
-                options={NURSE_SELECT_OPTIONS.sancAPCStatus}
-                error={errors.sancAPCStatus}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <TextField
-                label="SANC APC expiry"
-                name="sancAPCExpiry"
-                value={draft.sancAPCExpiry}
-                error={errors.sancAPCExpiry}
-                disabled={isSubmitting}
-                onChange={updateField}
-                type="date"
-              />
-              <SelectField
-                label="Highest qualification"
-                name="highestQualification"
-                value={draft.highestQualification}
-                options={NURSE_SELECT_OPTIONS.highestQualification}
-                error={errors.highestQualification}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <TextField
-                label="Qualification institution"
-                name="qualificationInstitution"
-                value={draft.qualificationInstitution}
-                error={errors.qualificationInstitution}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <SelectField
-                label="Years of clinical experience"
-                name="yearsOfClinicalExperience"
-                value={draft.yearsOfClinicalExperience}
-                options={NURSE_SELECT_OPTIONS.yearsOfClinicalExperience}
-                error={errors.yearsOfClinicalExperience}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <SelectField
-                label="Primary clinical specialty"
-                name="primaryClinicalSpecialty"
-                value={draft.primaryClinicalSpecialty}
-                options={NURSE_SELECT_OPTIONS.primaryClinicalSpecialty}
-                error={errors.primaryClinicalSpecialty}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <SelectField
-                label="Employment status"
-                name="employmentStatus"
-                value={draft.employmentStatus}
-                options={NURSE_SELECT_OPTIONS.employmentStatus}
-                error={errors.employmentStatus}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <TextField
-                label="Current employer"
-                name="currentEmployer"
-                value={draft.currentEmployer}
-                error={errors.currentEmployer}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <SelectField
-                label="Valid passport"
-                name="validPassport"
-                value={draft.validPassport}
-                options={NURSE_SELECT_OPTIONS.validPassport}
-                error={errors.validPassport}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <TextField
-                label="Passport expiry date"
-                name="passportExpiryDate"
-                value={draft.passportExpiryDate}
-                error={errors.passportExpiryDate}
-                disabled={isSubmitting}
-                onChange={updateField}
-                type="date"
-              />
-            </div>
-          </section>
+          <fieldset disabled={isSubmitting} className="space-y-6">
+            <legend className="sr-only">Nurse business details</legend>
 
-          <section aria-labelledby="create-assessment-heading">
-            <h3 id="create-assessment-heading" className="mb-3 text-sm font-semibold text-gray-900">
-              Assessment
-            </h3>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <SelectField
-                label="OET status"
-                name="oetStatus"
-                value={draft.oetStatus}
-                options={NURSE_SELECT_OPTIONS.oetStatus}
-                error={errors.oetStatus}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <SelectField
-                label="EF SET level"
-                name="efSetLevel"
-                value={draft.efSetLevel}
-                options={NURSE_SELECT_OPTIONS.efSetLevel}
-                error={errors.efSetLevel}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <Field label="EF SET score" name="efSetScore" error={errors.efSetScore}>
-                {(accessibility) => (
-                  <input
-                    {...accessibility}
-                    name="efSetScore"
-                    type="number"
-                    min="0"
-                    value={draft.efSetScore ?? ''}
-                    disabled={isSubmitting}
-                    onChange={(event) => updateNumber('efSetScore', event.target.value)}
-                    className={`${INPUT_CLASS} ${errors.efSetScore ? ERROR_INPUT_CLASS : ''}`}
-                  />
-                )}
-              </Field>
-              <Field label="English points" name="englishPts" error={errors.englishPts}>
-                {(accessibility) => (
-                  <input
-                    {...accessibility}
-                    name="englishPts"
-                    type="number"
-                    min="0"
-                    max="3"
-                    step="0.1"
-                    value={draft.englishPts ?? ''}
-                    disabled={isSubmitting}
-                    onChange={(event) => updateNumber('englishPts', event.target.value)}
-                    className={`${INPUT_CLASS} ${errors.englishPts ? ERROR_INPUT_CLASS : ''}`}
-                  />
-                )}
-              </Field>
-              <SelectField
-                label="Shortlist decision"
-                name="shortlistDecision"
-                value={draft.shortlistDecision}
-                options={NURSE_SELECT_OPTIONS.shortlistDecision}
-                error={errors.shortlistDecision}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-              <SelectField
-                label="Commitment fee status"
-                name="commitmentFeeStatus"
-                value={draft.commitmentFeeStatus}
-                options={NURSE_SELECT_OPTIONS.commitmentFeeStatus}
-                error={errors.commitmentFeeStatus}
-                disabled={isSubmitting}
-                onChange={updateField}
-              />
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {SCORECARD_FIELD_NAMES.map((field) => {
-                const name = `scorecardFields.${field}`;
-                return (
-                  <Field
-                    key={field}
-                    label={SCORECARD_LABELS[field]}
-                    name={name}
-                    error={errors[name]}
-                  >
-                    {(accessibility) => (
-                      <input
-                        {...accessibility}
-                        name={name}
-                        type="number"
-                        min="0"
-                        max="5"
-                        step="1"
-                        value={draft.scorecardFields?.[field] ?? 0}
-                        disabled={isSubmitting}
-                        onChange={(event) =>
-                          onUpdateDraft({
-                            scorecardFields: {
-                              ...draft.scorecardFields,
-                              [field]: event.target.value === '' ? '' : Number(event.target.value),
-                            },
-                          })
-                        }
-                        className={`${INPUT_CLASS} ${errors[name] ? ERROR_INPUT_CLASS : ''}`}
-                      />
-                    )}
-                  </Field>
-                );
-              })}
-            </div>
-            <label
-              htmlFor="agreementSigned"
-              className="mt-4 flex items-center gap-2 text-sm font-medium text-gray-700"
-            >
-              <input
-                id="agreementSigned"
-                name="agreementSigned"
-                type="checkbox"
-                checked={Boolean(draft.agreementSigned)}
-                disabled={isSubmitting}
-                onChange={(event) => updateField('agreementSigned', event.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-propela-purple focus:ring-propela-purple"
-              />
-              Agreement signed
-            </label>
-          </section>
+            <section aria-labelledby="create-contact-heading">
+              <h3 id="create-contact-heading" className="mb-3 text-sm font-semibold text-gray-900">
+                Contact details
+              </h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <TextField
+                  label="Full name"
+                  name="fullName"
+                  value={draft.fullName}
+                  error={errors.fullName}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                  required
+                />
+                <TextField
+                  label="Preferred name"
+                  name="preferredName"
+                  value={draft.preferredName}
+                  error={errors.preferredName}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <TextField
+                  label="Email"
+                  name="email"
+                  value={draft.email}
+                  error={errors.email}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                  type="email"
+                />
+                <TextField
+                  label="Contact number"
+                  name="contactNumber"
+                  value={draft.contactNumber}
+                  error={errors.contactNumber}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                  type="tel"
+                />
+                <SelectField
+                  label="Gender"
+                  name="gender"
+                  value={draft.gender}
+                  options={NURSE_SELECT_OPTIONS.gender}
+                  error={errors.gender}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <SelectField
+                  label="Age group"
+                  name="ageGroup"
+                  value={draft.ageGroup}
+                  options={NURSE_SELECT_OPTIONS.ageGroup}
+                  error={errors.ageGroup}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <SelectField
+                  label="Province"
+                  name="province"
+                  value={draft.province}
+                  options={PROVINCES}
+                  error={errors.province}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <TextField
+                  label="City"
+                  name="city"
+                  value={draft.city}
+                  error={errors.city}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+              </div>
+            </section>
 
-          <section aria-labelledby="create-notes-heading">
-            <h3 id="create-notes-heading" className="mb-3 text-sm font-semibold text-gray-900">
-              Notes
-            </h3>
-            <div className="space-y-4">
-              <TextField
-                label="Motivations"
-                name="motivations"
-                value={draft.motivations}
-                error={errors.motivations}
-                disabled={isSubmitting}
-                onChange={updateField}
-                multiline
-              />
-              <TextField
-                label="Questions"
-                name="questions"
-                value={draft.questions}
-                error={errors.questions}
-                disabled={isSubmitting}
-                onChange={updateField}
-                multiline
-              />
-              <TextField
-                label="Notes and flags"
-                name="notesFlags"
-                value={draft.notesFlags}
-                error={errors.notesFlags}
-                disabled={isSubmitting}
-                onChange={updateField}
-                multiline
-              />
-              <Field
-                label="Additional certifications"
-                name="additionalCertifications"
-                error={errors.additionalCertifications}
-                hint="Enter one certification per line."
+            <section aria-labelledby="create-application-heading">
+              <h3
+                id="create-application-heading"
+                className="mb-3 text-sm font-semibold text-gray-900"
               >
-                {(accessibility) => (
-                  <textarea
-                    {...accessibility}
-                    name="additionalCertifications"
-                    rows={3}
-                    value={(draft.additionalCertifications || []).join('\n')}
-                    disabled={isSubmitting}
-                    onChange={(event) =>
-                      updateField(
-                        'additionalCertifications',
-                        event.target.value.split('\n').filter((value) => value.trim() !== '')
-                      )
-                    }
-                    className={`${INPUT_CLASS} ${errors.additionalCertifications ? ERROR_INPUT_CLASS : ''}`}
-                  />
-                )}
-              </Field>
-            </div>
-          </section>
-        </fieldset>
+                Application
+              </h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <SelectField
+                  label="Pipeline stage"
+                  name="pipelineStage"
+                  value={draft.pipelineStage}
+                  options={NURSE_SELECT_OPTIONS.pipelineStage}
+                  error={errors.pipelineStage}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <SelectField
+                  label="Next action"
+                  name="nextAction"
+                  value={draft.nextAction}
+                  options={NURSE_SELECT_OPTIONS.nextAction}
+                  error={errors.nextAction}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <TextField
+                  label="Cohort"
+                  name="cohortAssigned"
+                  value={draft.cohortAssigned}
+                  error={errors.cohortAssigned}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <SelectField
+                  label="Source"
+                  name="source"
+                  value={draft.source}
+                  options={NURSE_SELECT_OPTIONS.source}
+                  error={errors.source}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <TextField
+                  label="Submitted date"
+                  name="submittedAt"
+                  value={draft.submittedAt}
+                  error={errors.submittedAt}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                  type="date"
+                />
+                <TextField
+                  label="Next action due"
+                  name="nextActionDueDate"
+                  value={draft.nextActionDueDate}
+                  error={errors.nextActionDueDate}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                  type="date"
+                />
+              </div>
+            </section>
 
-        <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-4">
+            <section aria-labelledby="create-professional-heading">
+              <h3
+                id="create-professional-heading"
+                className="mb-3 text-sm font-semibold text-gray-900"
+              >
+                Professional details
+              </h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <SelectField
+                  label="Registered with SANC"
+                  name="registeredWithSANC"
+                  value={draft.registeredWithSANC}
+                  options={NURSE_SELECT_OPTIONS.registeredWithSANC}
+                  error={errors.registeredWithSANC}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <SelectField
+                  label="Registered nurse in South Africa"
+                  name="registeredNurseInSA"
+                  value={draft.registeredNurseInSA}
+                  options={NURSE_SELECT_OPTIONS.registeredNurseInSA}
+                  error={errors.registeredNurseInSA}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <TextField
+                  label="SANC number"
+                  name="sancNumber"
+                  value={draft.sancNumber}
+                  error={errors.sancNumber}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <SelectField
+                  label="SANC APC status"
+                  name="sancAPCStatus"
+                  value={draft.sancAPCStatus}
+                  options={NURSE_SELECT_OPTIONS.sancAPCStatus}
+                  error={errors.sancAPCStatus}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <TextField
+                  label="SANC APC expiry"
+                  name="sancAPCExpiry"
+                  value={draft.sancAPCExpiry}
+                  error={errors.sancAPCExpiry}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                  type="date"
+                />
+                <SelectField
+                  label="Highest qualification"
+                  name="highestQualification"
+                  value={draft.highestQualification}
+                  options={NURSE_SELECT_OPTIONS.highestQualification}
+                  error={errors.highestQualification}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <TextField
+                  label="Qualification institution"
+                  name="qualificationInstitution"
+                  value={draft.qualificationInstitution}
+                  error={errors.qualificationInstitution}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <SelectField
+                  label="Years of clinical experience"
+                  name="yearsOfClinicalExperience"
+                  value={draft.yearsOfClinicalExperience}
+                  options={NURSE_SELECT_OPTIONS.yearsOfClinicalExperience}
+                  error={errors.yearsOfClinicalExperience}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <SelectField
+                  label="Primary clinical specialty"
+                  name="primaryClinicalSpecialty"
+                  value={draft.primaryClinicalSpecialty}
+                  options={NURSE_SELECT_OPTIONS.primaryClinicalSpecialty}
+                  error={errors.primaryClinicalSpecialty}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <SelectField
+                  label="Employment status"
+                  name="employmentStatus"
+                  value={draft.employmentStatus}
+                  options={NURSE_SELECT_OPTIONS.employmentStatus}
+                  error={errors.employmentStatus}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <TextField
+                  label="Current employer"
+                  name="currentEmployer"
+                  value={draft.currentEmployer}
+                  error={errors.currentEmployer}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <SelectField
+                  label="Valid passport"
+                  name="validPassport"
+                  value={draft.validPassport}
+                  options={NURSE_SELECT_OPTIONS.validPassport}
+                  error={errors.validPassport}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <TextField
+                  label="Passport expiry date"
+                  name="passportExpiryDate"
+                  value={draft.passportExpiryDate}
+                  error={errors.passportExpiryDate}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                  type="date"
+                />
+              </div>
+            </section>
+
+            <section aria-labelledby="create-assessment-heading">
+              <h3
+                id="create-assessment-heading"
+                className="mb-3 text-sm font-semibold text-gray-900"
+              >
+                Assessment
+              </h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <SelectField
+                  label="OET status"
+                  name="oetStatus"
+                  value={draft.oetStatus}
+                  options={NURSE_SELECT_OPTIONS.oetStatus}
+                  error={errors.oetStatus}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <SelectField
+                  label="EF SET level"
+                  name="efSetLevel"
+                  value={draft.efSetLevel}
+                  options={NURSE_SELECT_OPTIONS.efSetLevel}
+                  error={errors.efSetLevel}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <Field label="EF SET score" name="efSetScore" error={errors.efSetScore}>
+                  {(accessibility) => (
+                    <input
+                      {...accessibility}
+                      name="efSetScore"
+                      type="number"
+                      min="0"
+                      value={draft.efSetScore ?? ''}
+                      disabled={isSubmitting}
+                      onChange={(event) => updateNumber('efSetScore', event.target.value)}
+                      className={`${INPUT_CLASS} ${errors.efSetScore ? ERROR_INPUT_CLASS : ''}`}
+                    />
+                  )}
+                </Field>
+                <Field label="English points" name="englishPts" error={errors.englishPts}>
+                  {(accessibility) => (
+                    <input
+                      {...accessibility}
+                      name="englishPts"
+                      type="number"
+                      min="0"
+                      max="3"
+                      step="0.1"
+                      value={draft.englishPts ?? ''}
+                      disabled={isSubmitting}
+                      onChange={(event) => updateNumber('englishPts', event.target.value)}
+                      className={`${INPUT_CLASS} ${errors.englishPts ? ERROR_INPUT_CLASS : ''}`}
+                    />
+                  )}
+                </Field>
+                <SelectField
+                  label="Shortlist decision"
+                  name="shortlistDecision"
+                  value={draft.shortlistDecision}
+                  options={NURSE_SELECT_OPTIONS.shortlistDecision}
+                  error={errors.shortlistDecision}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+                <SelectField
+                  label="Commitment fee status"
+                  name="commitmentFeeStatus"
+                  value={draft.commitmentFeeStatus}
+                  options={NURSE_SELECT_OPTIONS.commitmentFeeStatus}
+                  error={errors.commitmentFeeStatus}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                />
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {SCORECARD_FIELD_NAMES.map((field) => {
+                  const name = `scorecardFields.${field}`;
+                  return (
+                    <Field
+                      key={field}
+                      label={SCORECARD_LABELS[field]}
+                      name={name}
+                      error={errors[name]}
+                    >
+                      {(accessibility) => (
+                        <input
+                          {...accessibility}
+                          name={name}
+                          type="number"
+                          min="0"
+                          max="5"
+                          step="1"
+                          value={draft.scorecardFields?.[field] ?? 0}
+                          disabled={isSubmitting}
+                          onChange={(event) =>
+                            onUpdateDraft({
+                              scorecardFields: {
+                                ...draft.scorecardFields,
+                                [field]:
+                                  event.target.value === '' ? '' : Number(event.target.value),
+                              },
+                            })
+                          }
+                          className={`${INPUT_CLASS} ${errors[name] ? ERROR_INPUT_CLASS : ''}`}
+                        />
+                      )}
+                    </Field>
+                  );
+                })}
+              </div>
+              <label
+                htmlFor="agreementSigned"
+                className="mt-4 flex items-center gap-2 text-sm font-medium text-gray-700"
+              >
+                <input
+                  id="agreementSigned"
+                  name="agreementSigned"
+                  type="checkbox"
+                  checked={Boolean(draft.agreementSigned)}
+                  disabled={isSubmitting}
+                  onChange={(event) => updateField('agreementSigned', event.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-propela-purple focus:ring-propela-purple"
+                />
+                Agreement signed
+              </label>
+            </section>
+
+            <section aria-labelledby="create-notes-heading">
+              <h3 id="create-notes-heading" className="mb-3 text-sm font-semibold text-gray-900">
+                Notes
+              </h3>
+              <div className="space-y-4">
+                <TextField
+                  label="Motivations"
+                  name="motivations"
+                  value={draft.motivations}
+                  error={errors.motivations}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                  multiline
+                />
+                <TextField
+                  label="Questions"
+                  name="questions"
+                  value={draft.questions}
+                  error={errors.questions}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                  multiline
+                />
+                <TextField
+                  label="Notes and flags"
+                  name="notesFlags"
+                  value={draft.notesFlags}
+                  error={errors.notesFlags}
+                  disabled={isSubmitting}
+                  onChange={updateField}
+                  multiline
+                />
+                <Field
+                  label="Additional certifications"
+                  name="additionalCertifications"
+                  error={errors.additionalCertifications}
+                  hint="Enter one certification per line."
+                >
+                  {(accessibility) => (
+                    <textarea
+                      {...accessibility}
+                      name="additionalCertifications"
+                      rows={3}
+                      value={(draft.additionalCertifications || []).join('\n')}
+                      disabled={isSubmitting}
+                      onChange={(event) =>
+                        updateField(
+                          'additionalCertifications',
+                          event.target.value.split('\n').filter((value) => value.trim() !== '')
+                        )
+                      }
+                      className={`${INPUT_CLASS} ${errors.additionalCertifications ? ERROR_INPUT_CLASS : ''}`}
+                    />
+                  )}
+                </Field>
+              </div>
+            </section>
+          </fieldset>
+        </div>
+
+        <div
+          data-nurse-create-action-region="true"
+          className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-100 bg-white p-4"
+        >
           {canRetryFailure && (
             <button
               type="button"
