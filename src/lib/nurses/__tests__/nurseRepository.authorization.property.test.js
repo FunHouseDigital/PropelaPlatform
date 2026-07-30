@@ -215,11 +215,11 @@ describe('nurseRepository authorization denials (Property 18)', () => {
           const clientFactory = vi.fn(() => client);
           supabaseAdapter.__setClientFactory(clientFactory);
 
-          const readSession = vi.fn(async () => sessionResult(scenario, generated.token));
+          const requireActiveSession = vi.fn(async () => sessionResult(scenario, generated.token));
           const repo = createNurseRepository({
             operations: operations(),
             supabase: true,
-            readSession,
+            requireActiveSession,
             sessionExpired: () => scenario.session === 'expired',
           });
 
@@ -238,7 +238,7 @@ describe('nurseRepository authorization denials (Property 18)', () => {
           expect(result, scenario.name).not.toHaveProperty('nurses');
           expect(result, scenario.name).not.toHaveProperty('deleted');
           expect(state, scenario.name).toEqual(before);
-          expect(readSession, scenario.name).toHaveBeenCalledTimes(1);
+          expect(requireActiveSession, scenario.name).toHaveBeenCalledTimes(1);
 
           if (scenario.requestExpected) {
             expect(clientFactory, scenario.name).toHaveBeenCalledTimes(1);

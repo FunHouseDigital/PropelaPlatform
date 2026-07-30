@@ -13,7 +13,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import RequireAuth from '../RequireAuth';
 
 const flag = { value: true };
-const authState = { value: { session: null, loading: false } };
+const authState = { value: { readiness: { status: 'signedOut' } } };
 
 vi.mock('../../../lib/featureFlags', () => ({
   isFeatureEnabled: () => flag.value,
@@ -43,20 +43,27 @@ function renderGuard() {
 
 beforeEach(() => {
   flag.value = true;
-  authState.value = { session: null, loading: false };
+  authState.value = { readiness: { status: 'signedOut' } };
 });
 
 describe('RequireAuth', () => {
   it('renders children with no gating when the flag is OFF (Req 9.1)', () => {
     flag.value = false;
-    authState.value = { session: null, loading: false };
+    authState.value = { readiness: { status: 'signedOut' } };
     renderGuard();
     expect(screen.getByText('secret content')).toBeInTheDocument();
   });
 
+  it('shows loading while shared readiness is initializing', () => {
+    authState.value = { readiness: { status: 'initializing' } };
+    const { container } = renderGuard();
+    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
+    expect(screen.queryByText('login page')).not.toBeInTheDocument();
+  });
+
   it('redirects an unauthenticated user to /login (Req 3.1)', () => {
     flag.value = true;
-    authState.value = { session: null, loading: false };
+    authState.value = { readiness: { status: 'signedOut' } };
     renderGuard();
     expect(screen.getByText('login page')).toBeInTheDocument();
     expect(screen.queryByText('secret content')).not.toBeInTheDocument();
@@ -64,20 +71,14 @@ describe('RequireAuth', () => {
 
   it('forces re-auth when the session has expired (Req 3.9)', () => {
     flag.value = true;
-    authState.value = {
-      session: { expires_at: Math.floor(Date.now() / 1000) - 60 },
-      loading: false,
-    };
+    authState.value = { readiness: { status: 'expired' } };
     renderGuard();
     expect(screen.getByText('login page')).toBeInTheDocument();
   });
 
   it('renders children for a valid active session', () => {
     flag.value = true;
-    authState.value = {
-      session: { expires_at: Math.floor(Date.now() / 1000) + 3600 },
-      loading: false,
-    };
+    authState.value = { readiness: { status: 'active' } };
     renderGuard();
     expect(screen.getByText('secret content')).toBeInTheDocument();
   });

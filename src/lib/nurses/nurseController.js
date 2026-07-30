@@ -130,6 +130,42 @@ export function createInitialNurseState() {
  */
 export function nurseControllerReducer(state, action) {
   switch (action.type) {
+    case 'SESSION_PRINCIPAL_CHANGED':
+      return createInitialNurseState();
+    case 'SESSION_EPOCH_CHANGED': {
+      const pipeline = Object.fromEntries(
+        Object.entries(state.pipeline).map(([id, progress]) => [
+          id,
+          progress?.state === NurseAsyncState.LOADING
+            ? { ...progress, state: NurseAsyncState.IDLE, error: null }
+            : progress,
+        ])
+      );
+      return {
+        ...state,
+        listState:
+          state.listState === NurseAsyncState.LOADING
+            ? state.hasAcceptedList
+              ? NurseAsyncState.SUCCESS
+              : NurseAsyncState.IDLE
+            : state.listState,
+        detailState:
+          state.detailState === NurseAsyncState.LOADING
+            ? state.selected
+              ? NurseAsyncState.SUCCESS
+              : NurseAsyncState.IDLE
+            : state.detailState,
+        createState:
+          state.createState === NurseAsyncState.LOADING
+            ? NurseAsyncState.IDLE
+            : state.createState,
+        saveState:
+          state.saveState === NurseAsyncState.LOADING ? NurseAsyncState.IDLE : state.saveState,
+        deleteState:
+          state.deleteState === NurseAsyncState.LOADING ? NurseAsyncState.IDLE : state.deleteState,
+        pipeline,
+      };
+    }
     case 'LIST_STARTED':
       return { ...state, listState: NurseAsyncState.LOADING, listError: null };
     case 'LIST_SUCCEEDED': {
@@ -674,10 +710,13 @@ export function createNurseController({
   makeCreateDraft = createBlankNurseDraft,
   makeDraftId = createNurseDraftId,
   initialState = null,
+  getReadinessSnapshot = null,
 } = {}) {
   let state = initialState
     ? { ...createInitialNurseState(), ...clone(initialState) }
     : createInitialNurseState();
+  let principalGeneration = 0;
+  let authBoundary = { userId: null, authEpoch: 0 };
   let detailGeneration = 0;
   const listeners = new Set();
   let listRequest = null;
@@ -705,12 +744,37 @@ export function createNurseController({
     return () => listeners.delete(listener);
   }
 
+  function captureAuthBoundary() {
+    return { ...authBoundary, generation: principalGeneration };
+  }
+
+  function authBoundaryIsCurrent(boundary) {
+    const controllerBoundaryIsCurrent =
+      boundary.generation === principalGeneration &&
+      boundary.userId === authBoundary.userId &&
+      boundary.authEpoch === authBoundary.authEpoch;
+    if (!controllerBoundaryIsCurrent) return false;
+    if (typeof getReadinessSnapshot !== 'function') return true;
+
+    // AuthContext commits this snapshot synchronously. Consulting it at the
+    // completion boundary closes the render/effect handoff window where an old
+    // same-user epoch could otherwise commit before AppContext transitions us.
+    const readiness = getReadinessSnapshot();
+    return (
+      readiness?.status === 'active' &&
+      readiness.userId === boundary.userId &&
+      readiness.authEpoch === boundary.authEpoch
+    );
+  }
+
   function refreshNurses(options = {}) {
     if (listRequest) return listRequest;
+    const boundary = captureAuthBoundary();
     dispatch({ type: 'LIST_STARTED' });
-    listRequest = repository
+    const request = repository
       .listAll(options)
       .then((result) => {
+        if (!authBoundaryIsCurrent(boundary)) return result;
         if (result.status === 'ok') {
           dispatch({ type: 'LIST_SUCCEEDED', nurses: result.nurses, total: result.total });
         } else {
@@ -719,9 +783,10 @@ export function createNurseController({
         return result;
       })
       .finally(() => {
-        listRequest = null;
+        if (listRequest === request) listRequest = null;
       });
-    return listRequest;
+    listRequest = request;
+    return request;
   }
 
   function retryNurses(options = {}) {
@@ -740,10 +805,17 @@ export function createNurseController({
   function loadDetail(id, { preserveSession = false, options = {} } = {}) {
     detailGeneration += 1;
     const generation = detailGeneration;
+    const boundary = captureAuthBoundary();
     dispatch({ type: 'DETAIL_STARTED', id, generation, preserveSession });
 
     return repository.get(id, options).then((result) => {
-      if (generation !== detailGeneration || state.selectedId !== id) return result;
+      if (
+        !authBoundaryIsCurrent(boundary) ||
+        generation !== detailGeneration ||
+        state.selectedId !== id
+      ) {
+        return result;
+      }
       if (result.status === 'ok') {
         dispatch({ type: 'DETAIL_SUCCEEDED', nurse: result.nurse });
       } else if (result.status === 'notFound') {
@@ -838,11 +910,13 @@ export function createNurseController({
       });
     }
     const submitted = clone(state.createDraft);
+    const boundary = captureAuthBoundary();
     const retryCount = retry ? state.createRetryCount + 1 : state.createRetryCount;
     dispatch({ type: 'CREATE_STARTED' });
-    createRequest = repository
+    const request = repository
       .create(submitted, { retry, retryCount })
       .then((result) => {
+        if (!authBoundaryIsCurrent(boundary)) return result;
         if (result.status === 'saved') {
           dispatch({ type: 'CREATE_SUCCEEDED', nurse: result.nurse });
         } else if (result.status === 'collision') {
@@ -862,9 +936,10 @@ export function createNurseController({
         return result;
       })
       .finally(() => {
-        createRequest = null;
+        if (createRequest === request) createRequest = null;
       });
-    return createRequest;
+    createRequest = request;
+    return request;
   }
 
   function createNurse() {
@@ -912,13 +987,15 @@ export function createNurseController({
     }
 
     const id = state.selectedId;
+    const boundary = captureAuthBoundary();
     const baseVersion = state.baseVersion;
     const submitted = clone(validation.value);
     const retryCount = retry ? state.saveRetryCount + 1 : state.saveRetryCount;
     dispatch({ type: 'SAVE_STARTED' });
-    saveRequest = repository
+    const request = repository
       .save(id, submitted, baseVersion, { retryCount })
       .then((result) => {
+        if (!authBoundaryIsCurrent(boundary)) return result;
         if (result.status === 'saved') {
           if (!Number.isInteger(result.nurse?.version) || result.nurse.version <= baseVersion) {
             const error = unknownFailure('The saved nurse did not include an advanced version.');
@@ -936,9 +1013,10 @@ export function createNurseController({
         return result;
       })
       .finally(() => {
-        saveRequest = null;
+        if (saveRequest === request) saveRequest = null;
       });
-    return saveRequest;
+    saveRequest = request;
+    return request;
   }
 
   function saveNurse() {
@@ -1014,6 +1092,7 @@ export function createNurseController({
       readinessStatus: readinessStatus ?? derivedReadiness,
     };
     const previousProgress = state.pipeline[id];
+    const boundary = captureAuthBoundary();
     const retryCount = retry ? (previousProgress?.retryCount ?? 0) + 1 : 0;
     dispatch({
       type: 'PIPELINE_STARTED',
@@ -1027,6 +1106,7 @@ export function createNurseController({
     const request = repository
       .save(id, proposed, baseVersion, { retryCount })
       .then((result) => {
+        if (!authBoundaryIsCurrent(boundary)) return result;
         if (result.status === 'saved') {
           if (!Number.isInteger(result.nurse?.version) || result.nurse.version <= baseVersion) {
             const error = unknownFailure(
@@ -1045,7 +1125,9 @@ export function createNurseController({
         }
         return result;
       })
-      .finally(() => pipelineRequests.delete(id));
+      .finally(() => {
+        if (pipelineRequests.get(id) === request) pipelineRequests.delete(id);
+      });
     pipelineRequests.set(id, request);
     return request;
   }
@@ -1084,12 +1166,14 @@ export function createNurseController({
     if (pipelineRequests.has(id)) return pipelineRequests.get(id);
 
     dispatch({ type: 'PIPELINE_RESOLUTION_STARTED', id, resolution: 'reload' });
+    const boundary = captureAuthBoundary();
     const request = repository
       .get(id, {
         ...options,
         retryCount: (options.retryCount ?? 0) + 1,
       })
       .then((result) => {
+        if (!authBoundaryIsCurrent(boundary)) return result;
         if (result.status === 'ok') {
           dispatch({
             type: 'PIPELINE_RESOLVED',
@@ -1103,7 +1187,9 @@ export function createNurseController({
         }
         return result;
       })
-      .finally(() => pipelineRequests.delete(id));
+      .finally(() => {
+        if (pipelineRequests.get(id) === request) pipelineRequests.delete(id);
+      });
     pipelineRequests.set(id, request);
     return request;
   }
@@ -1153,11 +1239,13 @@ export function createNurseController({
       });
     }
     const { id, baseVersion } = decision;
+    const boundary = captureAuthBoundary();
     const retryCount = retry ? state.deleteRetryCount + 1 : state.deleteRetryCount;
     dispatch({ type: 'DELETE_STARTED' });
-    deleteRequest = repository
+    const request = repository
       .remove(id, baseVersion, { retryCount })
       .then((result) => {
+        if (!authBoundaryIsCurrent(boundary)) return result;
         if (result.status === 'deleted') {
           dispatch({ type: 'DELETE_CONVERGED', id, alreadyDeleted: false });
         } else if (result.status === 'alreadyDeleted') {
@@ -1170,9 +1258,10 @@ export function createNurseController({
         return result;
       })
       .finally(() => {
-        deleteRequest = null;
+        if (deleteRequest === request) deleteRequest = null;
       });
-    return deleteRequest;
+    deleteRequest = request;
+    return request;
   }
 
   function confirmDelete() {
@@ -1195,11 +1284,18 @@ export function createNurseController({
     dispatch({ type: 'DELETE_RELOAD_STARTED' });
     detailGeneration += 1;
     const generation = detailGeneration;
+    const boundary = captureAuthBoundary();
     dispatch({ type: 'DETAIL_STARTED', id, generation, preserveSession: true });
     return repository
       .get(id, { ...options, retryCount: (options.retryCount ?? 0) + 1 })
       .then((result) => {
-        if (generation !== detailGeneration || state.selectedId !== id) return result;
+        if (
+          !authBoundaryIsCurrent(boundary) ||
+          generation !== detailGeneration ||
+          state.selectedId !== id
+        ) {
+          return result;
+        }
         if (result.status === 'ok') {
           dispatch({ type: 'DETAIL_SUCCEEDED', nurse: result.nurse });
         } else if (result.status === 'notFound') {
@@ -1209,6 +1305,38 @@ export function createNurseController({
         }
         return result;
       });
+  }
+
+  function transitionAuthBoundary(nextBoundary = {}, { principalChanged = false } = {}) {
+    const next = {
+      userId: typeof nextBoundary.userId === 'string' ? nextBoundary.userId : null,
+      authEpoch: Number.isInteger(nextBoundary.authEpoch) ? nextBoundary.authEpoch : 0,
+    };
+    if (
+      !principalChanged &&
+      next.userId === authBoundary.userId &&
+      next.authEpoch === authBoundary.authEpoch
+    ) {
+      return false;
+    }
+
+    principalGeneration += 1;
+    authBoundary = next;
+    detailGeneration += 1;
+    listRequest = null;
+    createRequest = null;
+    saveRequest = null;
+    deleteRequest = null;
+    pipelineRequests.clear();
+    dispatch({ type: principalChanged ? 'SESSION_PRINCIPAL_CHANGED' : 'SESSION_EPOCH_CHANGED' });
+    return true;
+  }
+
+  function clearForPrincipalChange() {
+    return transitionAuthBoundary(
+      { userId: null, authEpoch: authBoundary.authEpoch + 1 },
+      { principalChanged: true }
+    );
   }
 
   function clearNotice() {
@@ -1247,6 +1375,8 @@ export function createNurseController({
     confirmDelete,
     retryDelete,
     reloadAfterDeleteConflict,
+    transitionAuthBoundary,
+    clearForPrincipalChange,
     clearNotice,
   });
 }

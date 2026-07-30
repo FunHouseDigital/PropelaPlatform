@@ -137,13 +137,13 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <AppProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <AppProvider>
           <BrowserRouter>
             {useSupabase ? <SupabaseRoutes /> : <LegacyRoutes />}
           </BrowserRouter>
-        </AuthProvider>
-      </AppProvider>
+        </AppProvider>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

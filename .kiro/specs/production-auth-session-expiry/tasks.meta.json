@@ -1,0 +1,18 @@
+{
+  "pbtResults": {
+    "1. Write the reproducible cross-layer bug-condition integration test": {
+      "status": "passed",
+      "failingExample": "Clean-browser sequence: HYDRATE_NONE -> SIGN_IN_SUCCESS(user-1) -> route allowed -> nurse data absent; expected one server-confirmed list request. Repeated sequence also failed before one shared readiness epoch existed. No session credential was recorded.",
+      "lastRunTimestamp": 1785334094734
+    },
+    "5.7 Verify the original bug-condition test now passes": {
+      "status": "passed",
+      "lastRunTimestamp": 1785355577571
+    },
+    "5.8 Verify all pre-fix preservation tests still pass": {
+      "status": "passed",
+      "lastRunTimestamp": 1785357062826
+    }
+  },
+  "executionHistory": {}
+}

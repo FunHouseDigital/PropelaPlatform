@@ -189,7 +189,7 @@ function createRepositoryFor(pages) {
     repository: createNurseRepository({
       operations: { list },
       supabase: true,
-      readSession: async () => ({
+      requireActiveSession: async () => ({
         session: {
           user: { id: OWNER_ID },
           access_token: 'property-test-session',

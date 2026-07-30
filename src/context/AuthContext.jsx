@@ -34,6 +34,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -113,6 +114,35 @@ function readLockStatus(email) {
  * provider. Carries BOTH the legacy contract and the Supabase contract so any
  * consumer stays import-safe regardless of which mode it expects.
  */
+const SIGNED_OUT_READINESS = Object.freeze({
+  status: 'signedOut',
+  session: null,
+  userId: null,
+  authEpoch: 0,
+});
+
+const inactiveSessionResult = async () => ({
+  session: null,
+  userId: null,
+  authEpoch: 0,
+  error: new Error('Authentication required.'),
+});
+
+const inactiveSessionInvalidation = () => false;
+const getSignedOutReadiness = () => SIGNED_OUT_READINESS;
+
+function sessionsMatch(left, right) {
+  if (left === right) return true;
+  const leftToken = left?.access_token;
+  const rightToken = right?.access_token;
+  return (
+    typeof leftToken === 'string' &&
+    leftToken.length > 0 &&
+    typeof rightToken === 'string' &&
+    leftToken === rightToken
+  );
+}
+
 const SIGNED_OUT_DEFAULT = Object.freeze({
   // Legacy (hardened localStorage) contract
   currentUser: null,
@@ -125,6 +155,10 @@ const SIGNED_OUT_DEFAULT = Object.freeze({
   role: null,
   session: null,
   loading: false,
+  readiness: SIGNED_OUT_READINESS,
+  requireActiveSession: inactiveSessionResult,
+  getReadinessSnapshot: getSignedOutReadiness,
+  invalidateSession: inactiveSessionInvalidation,
   error: null,
   enabled: false,
   signIn: async () => ({ data: null, error: null }),
@@ -251,6 +285,10 @@ function LegacyAuthProvider({ children }) {
       role: currentUser?.role ?? null,
       session: null,
       loading: false,
+      readiness: SIGNED_OUT_READINESS,
+      requireActiveSession: inactiveSessionResult,
+      getReadinessSnapshot: getSignedOutReadiness,
+      invalidateSession: inactiveSessionInvalidation,
       error: null,
       enabled: false,
       signIn: async () => ({ data: null, error: null }),
@@ -274,22 +312,141 @@ function LegacyAuthProvider({ children }) {
  * to a `null` role.
  */
 function SupabaseAuthProvider({ children }) {
-  const enabled = true; // only rendered when the flag is ON
-
-  const [session, setSession] = useState(null);
+  const enabled = true;
+  const initialReadiness = Object.freeze({
+    status: 'initializing',
+    session: null,
+    userId: null,
+    authEpoch: 0,
+  });
+  const [readiness, setReadiness] = useState(initialReadiness);
+  const readinessRef = useRef(initialReadiness);
+  const pendingReadinessRef = useRef(null);
+  const explicitSignInRef = useRef(false);
+  const signInAttemptRef = useRef(0);
+  // Server-invalidated boundaries are principal-scoped. Keeping only one global
+  // marker would let an explicit sign-in by B erase A's rejection boundary,
+  // allowing a delayed ordinary SIGNED_IN(A) callback to replace B.
+  // Values contain identity/epoch metadata only; no session credentials.
+  const invalidatedBoundariesRef = useRef(new Map());
+  const expiryDeadlineRef = useRef({ generation: 0, timer: null });
+  const roleRequestRef = useRef(0);
   const [role, setRole] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [roleUserId, setRoleUserId] = useState(null);
   const [error, setError] = useState(null);
 
-  /**
-   * Look up the caller's role from `profiles` for UI gating. No profile row ⇒
-   * role null. Failures degrade gracefully to a null role rather than throwing;
-   * RLS remains the authoritative gate regardless.
-   */
+  const commitSession = useCallback((nextSession, source = 'event') => {
+    const previous = readinessRef.current;
+    const userId = nextSession?.user?.id;
+    const hasUser = typeof userId === 'string' && userId.trim().length > 0;
+    const expired = !!nextSession && supabaseAuth.isSessionExpired(nextSession);
+    const status = !nextSession ? 'signedOut' : !hasUser || expired ? 'expired' : 'active';
+    const previousUserId = previous.session?.user?.id ?? previous.userId;
+    const duplicateSession =
+      previousUserId === userId && sessionsMatch(previous.session, nextSession);
+    const invalidated = invalidatedBoundariesRef.current.get(userId);
+    const isInvalidatedSignInEvent =
+      status === 'active' && source === 'event' && invalidated !== undefined;
+
+    // Once the server rejects an epoch, no ordinary SIGNED_IN callback may
+    // reopen that same principal. Callback tokens can differ because delayed
+    // events from older sessions are still not proof of recovery. Only a newer
+    // successful explicit sign-in or TOKEN_REFRESHED event may recover it.
+    // Return null so callback-side work cannot treat the retained snapshot as
+    // acceptance of the rejected session.
+    if (isInvalidatedSignInEvent) return null;
+
+    const principalChanged = previous.userId !== (status === 'active' ? userId : null);
+    if (principalChanged) {
+      roleRequestRef.current += 1;
+      setRole(null);
+      setRoleUserId(null);
+    }
+    let authEpoch = previous.authEpoch;
+
+    if (status === 'active') {
+      const sameActivePrincipal = previous.status === 'active' && previous.userId === userId;
+      const recoveringFromInvalidation =
+        invalidated?.userId === userId && invalidated?.authEpoch === previous.authEpoch;
+      if (
+        source === 'explicitSignIn' ||
+        (source === 'refresh' && recoveringFromInvalidation) ||
+        (!sameActivePrincipal && !duplicateSession)
+      ) {
+        authEpoch += 1;
+      }
+      if (source === 'explicitSignIn' || source === 'refresh') {
+        invalidatedBoundariesRef.current.delete(userId);
+      }
+    }
+
+    const next = Object.freeze({
+      status,
+      session: status === 'signedOut' ? null : nextSession,
+      userId: status === 'active' ? userId : null,
+      authEpoch,
+    });
+    readinessRef.current = next;
+    setReadiness(next);
+    return next;
+  }, []);
+
+  const invalidateSession = useCallback(({ userId, authEpoch } = {}) => {
+    const current = readinessRef.current;
+    if (
+      current.status !== 'active' ||
+      current.userId !== userId ||
+      current.authEpoch !== authEpoch
+    ) {
+      return false;
+    }
+
+    invalidatedBoundariesRef.current.set(userId, { userId, authEpoch });
+    roleRequestRef.current += 1;
+    setRole(null);
+    setRoleUserId(null);
+    const expired = Object.freeze({
+      status: 'expired',
+      session: current.session,
+      userId: null,
+      authEpoch: current.authEpoch,
+    });
+    readinessRef.current = expired;
+    setReadiness(expired);
+    return true;
+  }, []);
+
+  const expireSessionBoundary = useCallback(({ userId, authEpoch, session }) => {
+    const current = readinessRef.current;
+    if (
+      current.status !== 'active' ||
+      current.userId !== userId ||
+      current.authEpoch !== authEpoch ||
+      current.session !== session
+    ) {
+      return false;
+    }
+    roleRequestRef.current += 1;
+    setRole(null);
+    setRoleUserId(null);
+    const expired = Object.freeze({
+      status: 'expired',
+      session: current.session,
+      userId: null,
+      authEpoch: current.authEpoch,
+    });
+    readinessRef.current = expired;
+    setReadiness(expired);
+    return true;
+  }, []);
+
   const fetchRole = useCallback(async (activeSession) => {
+    const request = roleRequestRef.current + 1;
+    roleRequestRef.current = request;
     const userId = activeSession?.user?.id;
     if (!userId) {
       setRole(null);
+      setRoleUserId(null);
       return;
     }
     try {
@@ -299,35 +456,69 @@ function SupabaseAuthProvider({ children }) {
         .select('role')
         .eq('user_id', userId)
         .maybeSingle();
-      setRole(roleError ? null : (data?.role ?? null));
+      if (roleRequestRef.current === request) {
+        setRole(roleError ? null : (data?.role ?? null));
+        setRoleUserId(userId);
+      }
     } catch {
-      setRole(null);
+      if (roleRequestRef.current === request) {
+        setRole(null);
+        setRoleUserId(userId);
+      }
     }
   }, []);
 
-  // Hydrate session + subscribe to auth changes.
   useEffect(() => {
     let active = true;
-
-    (async () => {
+    const hydration = (async () => {
       const { session: current, error: sessionError } = await supabaseAuth.getSession();
       if (!active) return;
       if (sessionError) setError(sessionError);
-      setSession(current);
-      await fetchRole(current);
-      if (active) setLoading(false);
+      if (readinessRef.current.status === 'initializing') {
+        commitSession(current, 'hydration');
+        await fetchRole(current);
+      }
     })();
+    pendingReadinessRef.current = hydration;
+    hydration.finally(() => {
+      if (pendingReadinessRef.current === hydration) pendingReadinessRef.current = null;
+    });
 
     let subscription;
     try {
-      const { data } = supabaseAuth.onAuthStateChange((_event, nextSession) => {
-        setSession(nextSession);
-        fetchRole(nextSession);
+      const { data } = supabaseAuth.onAuthStateChange((event, nextSession) => {
+        if (event === 'SIGNED_IN') {
+          if (explicitSignInRef.current) return;
+          const current = readinessRef.current;
+          const callbackUserId = nextSession?.user?.id;
+          // Supabase can deliver the SIGNED_IN callback after the explicit
+          // promise. Once an explicit same-user session is active, only its
+          // duplicate callback or TOKEN_REFRESHED may update that boundary;
+          // an older same-user callback must not roll the gateway backward.
+          if (
+            current.status === 'active' &&
+            current.userId === callbackUserId &&
+            !sessionsMatch(current.session, nextSession)
+          ) {
+            return;
+          }
+        }
+        const acceptedReadiness = commitSession(
+          nextSession,
+          event === 'TOKEN_REFRESHED' ? 'refresh' : 'event'
+        );
+        const callbackUserId = nextSession?.user?.id;
+        if (
+          acceptedReadiness?.status === 'active' &&
+          acceptedReadiness.userId === callbackUserId &&
+          sessionsMatch(acceptedReadiness.session, nextSession)
+        ) {
+          fetchRole(acceptedReadiness.session);
+        }
       });
       subscription = data?.subscription;
     } catch {
-      // If subscription cannot be established, session hydration above still
-      // drives the initial state; nothing else to do here.
+      // Initial provider-owned hydration remains authoritative without a listener.
     }
 
     return () => {
@@ -336,51 +527,139 @@ function SupabaseAuthProvider({ children }) {
         subscription.unsubscribe();
       }
     };
-  }, [fetchRole]);
+  }, [commitSession, fetchRole]);
+
+  useEffect(() => {
+    const deadline = expiryDeadlineRef.current;
+    deadline.generation += 1;
+    const generation = deadline.generation;
+    if (deadline.timer !== null) {
+      clearTimeout(deadline.timer);
+      deadline.timer = null;
+    }
+
+    if (readiness.status !== 'active') return undefined;
+    const expiresAt = readiness.session?.expires_at;
+    if (typeof expiresAt !== 'number' || !Number.isFinite(expiresAt)) return undefined;
+
+    const boundary = {
+      userId: readiness.userId,
+      authEpoch: readiness.authEpoch,
+      session: readiness.session,
+    };
+    const expire = () => {
+      if (expiryDeadlineRef.current.generation !== generation) return;
+      const remaining = expiresAt * 1000 - Date.now();
+      if (remaining > 0) {
+        expiryDeadlineRef.current.timer = setTimeout(expire, Math.min(remaining, 2_147_483_647));
+        return;
+      }
+      expiryDeadlineRef.current.timer = null;
+      expireSessionBoundary(boundary);
+    };
+    expire();
+
+    return () => {
+      if (expiryDeadlineRef.current.generation !== generation) return;
+      expiryDeadlineRef.current.generation += 1;
+      if (expiryDeadlineRef.current.timer !== null) {
+        clearTimeout(expiryDeadlineRef.current.timer);
+        expiryDeadlineRef.current.timer = null;
+      }
+    };
+  }, [expireSessionBoundary, readiness]);
 
   const signIn = useCallback(
     async (email, password) => {
       setError(null);
-      const { data, error: signInError } = await supabaseAuth.signIn(email, password);
-      if (signInError) {
-        setError(signInError);
-        return { data: null, error: signInError };
+      const attempt = signInAttemptRef.current + 1;
+      signInAttemptRef.current = attempt;
+      explicitSignInRef.current = true;
+      const operation = (async () => {
+        const { data, error: signInError } = await supabaseAuth.signIn(email, password);
+        if (attempt !== signInAttemptRef.current) return { data, error: signInError ?? null };
+        if (signInError) {
+          setError(signInError);
+          return { data: null, error: signInError };
+        }
+        if (data?.session) {
+          commitSession(data.session, 'explicitSignIn');
+          await fetchRole(data.session);
+        }
+        return { data, error: null };
+      })();
+      pendingReadinessRef.current = operation;
+      try {
+        return await operation;
+      } finally {
+        if (attempt === signInAttemptRef.current) {
+          explicitSignInRef.current = false;
+          if (pendingReadinessRef.current === operation) pendingReadinessRef.current = null;
+        }
       }
-      // Update eagerly; the onAuthStateChange subscription will also fire.
-      if (data?.session) {
-        setSession(data.session);
-        await fetchRole(data.session);
-      }
-      return { data, error: null };
     },
-    [fetchRole]
+    [commitSession, fetchRole]
   );
+
+  const requireActiveSession = useCallback(async () => {
+    const pending = pendingReadinessRef.current;
+    if (readinessRef.current.status === 'initializing' || explicitSignInRef.current) {
+      try {
+        await pending;
+      } catch {
+        // The normalized readiness result below fails closed.
+      }
+    }
+
+    let snapshot = readinessRef.current;
+    if (snapshot.status === 'active' && supabaseAuth.isSessionExpired(snapshot.session)) {
+      expireSessionBoundary({
+        userId: snapshot.userId,
+        authEpoch: snapshot.authEpoch,
+        session: snapshot.session,
+      });
+      snapshot = readinessRef.current;
+    }
+    if (snapshot.status !== 'active' || !snapshot.userId) {
+      return {
+        session: null,
+        userId: null,
+        authEpoch: snapshot.authEpoch,
+        error: new Error('Authentication required.'),
+      };
+    }
+    return {
+      session: snapshot.session,
+      userId: snapshot.userId,
+      authEpoch: snapshot.authEpoch,
+      error: null,
+    };
+  }, [expireSessionBoundary]);
 
   const signOut = useCallback(async () => {
     const result = await supabaseAuth.signOut();
-    // Clear local auth state regardless of the network result so the UI never
-    // shows a stale authenticated state after logout.
-    setSession(null);
+    commitSession(null, 'signOut');
+    roleRequestRef.current += 1;
     setRole(null);
+    setRoleUserId(null);
     setError(null);
     return result;
-  }, []);
+  }, [commitSession]);
 
-  // Derived legacy identity so legacy-contract consumers keep working when the
-  // Supabase backend is active.
+  const session = readiness.session;
+  const loading = readiness.status === 'initializing';
+  const effectiveRole = roleUserId === readiness.userId ? role : null;
   const currentUser = useMemo(() => {
     const u = session?.user;
-    if (!u) return null;
+    if (!u || readiness.status !== 'active') return null;
     return {
       id: u.id,
       email: u.email ?? null,
       name: u.user_metadata?.name ?? u.email ?? 'User',
-      role: role ?? null,
+      role: effectiveRole,
     };
-  }, [session, role]);
+  }, [effectiveRole, readiness.status, session]);
 
-  // Legacy login() bridged onto signIn() so the shared Login flow / consumers
-  // resolve identically in both modes.
   const login = useCallback(
     async (email, password) => {
       const { error: signInError } = await signIn(email, password);
@@ -392,25 +671,43 @@ function SupabaseAuthProvider({ children }) {
     [signIn]
   );
 
+  const getReadinessSnapshot = useCallback(() => readinessRef.current, []);
+
   const value = useMemo(
     () => ({
-      // Supabase contract
-      user: session?.user ?? null,
-      role,
+      user: readiness.status === 'active' ? (session?.user ?? null) : null,
+      role: effectiveRole,
       session,
       loading,
+      readiness,
+      requireActiveSession,
+      getReadinessSnapshot,
+      invalidateSession,
       error,
       enabled,
       signIn,
       signOut,
-      // Derived legacy contract
       currentUser,
-      isAuthenticated: !!session?.user,
+      isAuthenticated: readiness.status === 'active',
       login,
       logout: signOut,
       getLockStatus: readLockStatus,
     }),
-    [session, role, loading, error, enabled, signIn, signOut, currentUser, login]
+    [
+      readiness,
+      session,
+      effectiveRole,
+      loading,
+      requireActiveSession,
+      getReadinessSnapshot,
+      invalidateSession,
+      error,
+      enabled,
+      signIn,
+      signOut,
+      currentUser,
+      login,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

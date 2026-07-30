@@ -103,7 +103,7 @@ function makeRepository() {
   return createNurseRepository({
     operations: nurseOps,
     supabase: true,
-    readSession: vi.fn(async () => ({
+    requireActiveSession: vi.fn(async () => ({
       session: {
         user: { id: ACTIVE_USER_ID },
         access_token: 'property-test-token',

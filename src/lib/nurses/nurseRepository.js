@@ -1,4 +1,4 @@
-import { getSession, isSessionExpired } from '../auth';
+import { isSessionExpired } from '../auth';
 import { isSupabaseBackend, nurseOps } from '../dataLayer';
 import { DataError, DataErrorCode, mapError } from '../dataLayer/errors';
 import {
@@ -13,6 +13,7 @@ export { NURSE_OPERATION_EVENT_KEYS };
 export const NURSE_REPOSITORY_PAGE_SIZE = 100;
 export const LIST_CONSISTENCY_ERROR = 'LIST_CONSISTENCY';
 const RECOVERABLE_CREATE_CODES = new Set([DataErrorCode.NETWORK, DataErrorCode.UNKNOWN]);
+const CATEGORIZED_DATA_ERROR_CODES = new Set(Object.values(DataErrorCode));
 
 function isPlainObject(value) {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -174,7 +175,13 @@ function safeDurationMs(startedAt, finishedAt) {
 export function createNurseRepository({
   operations = nurseOps,
   supabase = isSupabaseBackend,
-  readSession = getSession,
+  requireActiveSession = async () => ({
+    session: null,
+    userId: null,
+    authEpoch: 0,
+    error: new Error('Authentication required.'),
+  }),
+  invalidateSession = () => false,
   sessionExpired = isSessionExpired,
   emitOperation = emitNurseOperationEvent,
   now = () => globalThis.performance?.now?.() ?? Date.now(),
@@ -213,29 +220,52 @@ export function createNurseRepository({
   }
 
   async function activeUser() {
-    if (!supabase) return { error: null, userId: null };
+    if (!supabase) return { error: null, userId: null, authEpoch: 0 };
 
     let sessionResult;
     try {
-      sessionResult = await readSession();
+      sessionResult = await requireActiveSession();
     } catch (error) {
-      return { error: mapError(error), userId: null };
+      return { error: authenticationError(error), userId: null, authEpoch: 0 };
     }
     if (sessionResult?.error) {
-      return { error: mapError(sessionResult.error), userId: null };
+      return {
+        error: authenticationError(sessionResult.error),
+        userId: null,
+        authEpoch: Number.isInteger(sessionResult.authEpoch) ? sessionResult.authEpoch : 0,
+      };
     }
 
     const session = sessionResult?.session ?? null;
-    const userId = session?.user?.id;
+    const userId = sessionResult?.userId ?? session?.user?.id;
+    const authEpoch = Number.isInteger(sessionResult?.authEpoch) ? sessionResult.authEpoch : 0;
     if (
       !session ||
       sessionExpired(session) ||
       typeof userId !== 'string' ||
       userId.trim().length === 0
     ) {
-      return { error: authenticationError(), userId: null };
+      return { error: authenticationError(), userId: null, authEpoch };
     }
-    return { error: null, userId };
+    return { error: null, userId, authEpoch };
+  }
+
+  async function serverError(error, auth) {
+    const categorized =
+      error &&
+      typeof error === 'object' &&
+      CATEGORIZED_DATA_ERROR_CODES.has(error.code)
+        ? error
+        : mapError(error);
+    if (categorized.code === DataErrorCode.AUTH) {
+      try {
+        await invalidateSession({ userId: auth.userId, authEpoch: auth.authEpoch });
+      } catch {
+        // Invalidating shared readiness is fail-closed and must not replace the
+        // authoritative server error returned to the controller.
+      }
+    }
+    return categorized;
   }
 
   async function authorize() {
@@ -243,12 +273,14 @@ export function createNurseRepository({
     return auth.error ? { status: 'error', error: auth.error } : auth;
   }
 
-  async function readCreateCandidate(id, normalizedDraft, userId) {
+  async function readCreateCandidate(id, normalizedDraft, auth) {
     const response = await operations.get(id);
-    if (response?.error) return { status: 'error', error: response.error };
+    if (response?.error) {
+      return { status: 'error', error: await serverError(response.error, auth) };
+    }
     if (response?.notFound || !response?.data) return { status: 'notFound' };
 
-    const ownerMatches = !supabase || response.data.ownerId === userId;
+    const ownerMatches = !supabase || response.data.ownerId === auth.userId;
     if (ownerMatches && businessValuesEqual(response.data, normalizedDraft)) {
       return { status: 'saved', nurse: response.data };
     }
@@ -271,7 +303,9 @@ export function createNurseRepository({
           page,
           pageSize: NURSE_REPOSITORY_PAGE_SIZE,
         });
-        if (response?.error) return { status: 'error', error: response.error };
+        if (response?.error) {
+          return { status: 'error', error: await serverError(response.error, auth) };
+        }
         if (!Array.isArray(response?.data)) {
           return { status: 'error', error: listConsistencyError() };
         }
@@ -324,7 +358,9 @@ export function createNurseRepository({
       if (auth.status === 'error') return auth;
 
       const response = await operations.get(id);
-      if (response?.error) return { status: 'error', error: response.error };
+      if (response?.error) {
+        return { status: 'error', error: await serverError(response.error, auth) };
+      }
       if (response?.notFound || !response?.data) return { status: 'notFound' };
       return { status: 'ok', nurse: response.data };
     });
@@ -353,7 +389,7 @@ export function createNurseRepository({
         previous?.ambiguous === true || settings.retry === true || settings.retryCount > 0;
 
       if (mustReadBeforeInsert) {
-        const existing = await readCreateCandidate(id, draft, auth.userId);
+        const existing = await readCreateCandidate(id, draft, auth);
         if (existing.status !== 'notFound') return existing;
       }
 
@@ -363,10 +399,10 @@ export function createNurseRepository({
       });
 
       if (response?.error || response?.conflict) {
-        const error = response.error;
+        const error = response.error ? await serverError(response.error, auth) : null;
         const isCollision = response?.conflict || error?.code === DataErrorCode.CONFLICT;
         if (isCollision) {
-          const verified = await readCreateCandidate(id, draft, auth.userId);
+          const verified = await readCreateCandidate(id, draft, auth);
           if (verified.status === 'notFound') {
             createAttempts.set(id, { ambiguous: false, attempts: retryCount + 1 });
             return collisionResult(response?.conflict?.current ?? null);
@@ -407,7 +443,9 @@ export function createNurseRepository({
       if (auth.status === 'error') return auth;
 
       const response = await operations.update(id, patch, baseVersion);
-      if (response?.error) return { status: 'error', error: response.error };
+      if (response?.error) {
+        return { status: 'error', error: await serverError(response.error, auth) };
+      }
       if (response?.notFound) return { status: 'notFound' };
       if (response?.conflict) {
         return { status: 'conflict', current: response.conflict.current ?? null };
@@ -426,7 +464,9 @@ export function createNurseRepository({
       if (auth.status === 'error') return auth;
 
       const response = await operations.remove(id, baseVersion);
-      if (response?.error) return { status: 'error', error: response.error };
+      if (response?.error) {
+        return { status: 'error', error: await serverError(response.error, auth) };
+      }
       if (response?.conflict) {
         return { status: 'conflict', current: response.conflict.current ?? null };
       }

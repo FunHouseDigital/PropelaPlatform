@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DataError } from '../../lib/dataLayer/errors';
+import { getDomain } from '../../lib/dataLayer/domains';
 import { AppProvider, useAppContext } from '../AppContext';
 
 /**
@@ -34,6 +35,24 @@ const h = vi.hoisted(() => ({
   nurseCreate: vi.fn(),
   nurseUpdate: vi.fn(),
   nurseRemove: vi.fn(),
+  authGateway: vi.fn(),
+  invalidateSession: vi.fn(),
+  authStatus: 'active',
+  authUserId: 'user-1',
+  authEpoch: 1,
+}));
+
+vi.mock('../AuthContext', () => ({
+  useAuth: () => ({
+    readiness: { status: h.authStatus, userId: h.authUserId, authEpoch: h.authEpoch },
+    requireActiveSession: (...args) => h.authGateway(...args),
+    getReadinessSnapshot: () => ({
+      status: h.authStatus,
+      userId: h.authUserId,
+      authEpoch: h.authEpoch,
+    }),
+    invalidateSession: (...args) => h.invalidateSession(...args),
+  }),
 }));
 
 vi.mock('../../lib/auth', () => ({
@@ -70,8 +89,8 @@ function Reader({ onReady }) {
   return <div data-testid="reader">ready</div>;
 }
 
-function renderApp() {
-  return render(
+function AppTree() {
+  return (
     <MemoryRouter>
       <AppProvider>
         <Reader
@@ -82,6 +101,10 @@ function renderApp() {
       </AppProvider>
     </MemoryRouter>
   );
+}
+
+function renderApp() {
+  return render(<AppTree />);
 }
 
 /** Render and wait for the initial mount hydration to settle. */
@@ -111,6 +134,19 @@ describe('AppContext Supabase path (flag ON)', () => {
       total: 0,
     }));
     h.saveCollection.mockImplementation(async () => ({ data: null, error: null }));
+    h.authStatus = 'active';
+    h.authUserId = 'user-1';
+    h.authEpoch = 1;
+    h.invalidateSession.mockReturnValue(false);
+    h.authGateway.mockResolvedValue({
+      session: {
+        expires_at: Math.floor(Date.now() / 1000) + 3600,
+        user: { id: 'user-1' },
+      },
+      userId: 'user-1',
+      authEpoch: 1,
+      error: null,
+    });
     h.nurseList.mockImplementation(async () => ({
       data: [],
       error: null,
@@ -122,6 +158,153 @@ describe('AppContext Supabase path (flag ON)', () => {
     h.nurseCreate.mockResolvedValue({ data: null, error: null });
     h.nurseUpdate.mockResolvedValue({ data: null, error: null });
     h.nurseRemove.mockResolvedValue({ deleted: true, error: null });
+  });
+
+  it('does not hydrate protected domains until shared readiness becomes active', async () => {
+    h.authStatus = 'signedOut';
+    h.authUserId = null;
+    const utils = renderApp();
+    await waitFor(() => expect(latest).not.toBeNull());
+
+    expect(h.nurseList).not.toHaveBeenCalled();
+    expect(h.getCollection).not.toHaveBeenCalled();
+
+    h.authStatus = 'active';
+    h.authUserId = 'user-1';
+    await act(async () => {
+      utils.rerender(<AppTree />);
+    });
+
+    await waitFor(() => expect(h.nurseList).toHaveBeenCalledTimes(1));
+    expect(h.getCollection).toHaveBeenCalled();
+
+    h.authEpoch = 2;
+    await act(async () => {
+      utils.rerender(<AppTree />);
+    });
+    expect(h.nurseList).toHaveBeenCalledTimes(1);
+
+    h.authStatus = 'expired';
+    h.authUserId = null;
+    await act(async () => {
+      utils.rerender(<AppTree />);
+    });
+    h.authStatus = 'active';
+    h.authUserId = 'user-1';
+    await act(async () => {
+      utils.rerender(<AppTree />);
+    });
+    expect(h.nurseList).toHaveBeenCalledTimes(1);
+  });
+
+  it('withholds prior-principal nurse rows until the new principal list succeeds', async () => {
+    h.nurseList.mockResolvedValueOnce({
+      data: [{ id: 'principal-a', fullName: 'Principal A', version: 1 }],
+      error: null,
+      page: 1,
+      pageSize: 100,
+      total: 1,
+    });
+    const utils = await renderAndSettle();
+    expect(latest.nurses[0].id).toBe('principal-a');
+
+    const nextList = {};
+    nextList.promise = new Promise((resolve) => {
+      nextList.resolve = resolve;
+    });
+    h.nurseList.mockImplementationOnce(() => nextList.promise);
+    h.authUserId = 'user-2';
+    h.authEpoch = 2;
+    h.authGateway.mockResolvedValue({
+      session: {
+        expires_at: Math.floor(Date.now() / 1000) + 3600,
+        user: { id: 'user-2' },
+      },
+      userId: 'user-2',
+      authEpoch: 2,
+      error: null,
+    });
+
+    await act(async () => {
+      utils.rerender(<AppTree />);
+    });
+    expect(latest.nurses).toEqual([]);
+    expect(latest.nurseSlice.items).toEqual([]);
+
+    nextList.resolve({
+      data: [{ id: 'principal-b', fullName: 'Principal B', version: 1 }],
+      error: null,
+      page: 1,
+      pageSize: 100,
+      total: 1,
+    });
+    await waitFor(() => expect(latest.nurses[0]?.id).toBe('principal-b'));
+  });
+
+  it('principal-gates every protected domain and slice when replacement hydration fails', async () => {
+    h.getCollection.mockImplementation(async (name) => ({
+      data:
+        getDomain(name)?.kind === 'collection'
+          ? [{ id: `principal-a-${name}` }]
+          : { id: `principal-a-${name}` },
+      error: null,
+    }));
+    const utils = await renderAndSettle();
+    await waitFor(() => {
+      expect(new Set(h.getCollection.mock.calls.map(([name]) => name)).size).toBeGreaterThan(40);
+    });
+    const protectedDomains = [...new Set(h.getCollection.mock.calls.map(([name]) => name))];
+    await waitFor(() => {
+      for (const name of protectedDomains) {
+        expect(latest[name]).toEqual(
+          getDomain(name)?.kind === 'collection'
+            ? [{ id: `principal-a-${name}` }]
+            : { id: `principal-a-${name}` }
+        );
+      }
+    });
+
+    const replacementRequests = new Map();
+    h.getCollection.mockImplementation(
+      (name) =>
+        new Promise((resolve) => {
+          replacementRequests.set(name, resolve);
+        })
+    );
+    h.authUserId = 'user-2';
+    h.authEpoch = 2;
+    h.authGateway.mockResolvedValue({
+      session: {
+        expires_at: Math.floor(Date.now() / 1000) + 3600,
+        user: { id: 'user-2' },
+      },
+      userId: 'user-2',
+      authEpoch: 2,
+      error: null,
+    });
+
+    await act(async () => {
+      utils.rerender(<AppTree />);
+    });
+    for (const name of protectedDomains) {
+      expect(latest[name]).toEqual(getDomain(name)?.kind === 'collection' ? [] : null);
+      expect(latest.slices[name].error).toBeNull();
+    }
+
+    await act(async () => {
+      for (const resolve of replacementRequests.values()) {
+        resolve({ data: null, error: new DataError('NETWORK') });
+      }
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      for (const name of protectedDomains) {
+        expect(latest.slices[name].error).toBeInstanceOf(DataError);
+      }
+    });
+    for (const name of protectedDomains) {
+      expect(latest[name]).toEqual(getDomain(name)?.kind === 'collection' ? [] : null);
+    }
   });
 
   it('hydrates nurse state through the record controller and preserves the public array', async () => {
@@ -592,5 +775,40 @@ describe('AppContext Supabase path (flag ON)', () => {
     expect(latest.nurseSlice.listError).toBeInstanceOf(DataError);
     expect(latest.slices.nurses.loading).toBe(false);
     expect(h.getCollection).not.toHaveBeenCalledWith('nurses');
+  });
+
+  it('invalidates the matching readiness epoch after server AUTH and sends no blocked retry', async () => {
+    const utils = await renderAndSettle();
+    h.nurseList.mockClear();
+    h.nurseList.mockResolvedValueOnce({
+      data: [],
+      error: new DataError('AUTH'),
+      page: 1,
+      pageSize: 100,
+      total: 0,
+    });
+    h.invalidateSession.mockReturnValue(true);
+
+    await act(async () => {
+      await latest.refreshNurses();
+    });
+    expect(h.invalidateSession).toHaveBeenCalledWith({ userId: 'user-1', authEpoch: 1 });
+    expect(h.nurseList).toHaveBeenCalledTimes(1);
+
+    h.authStatus = 'expired';
+    h.authUserId = null;
+    h.authGateway.mockResolvedValue({
+      session: null,
+      userId: null,
+      authEpoch: 1,
+      error: new Error('Authentication required.'),
+    });
+    await act(async () => {
+      utils.rerender(<AppTree />);
+    });
+    await act(async () => {
+      await latest.refreshNurses();
+    });
+    expect(h.nurseList).toHaveBeenCalledTimes(1);
   });
 });

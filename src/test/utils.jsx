@@ -14,9 +14,9 @@ function customRender(ui, { route = '/', ...options } = {}) {
   function Wrapper({ children }) {
     return (
       <MemoryRouter initialEntries={[route]}>
-        <AppProvider>
-          <AuthProvider>{children}</AuthProvider>
-        </AppProvider>
+        <AuthProvider>
+          <AppProvider>{children}</AppProvider>
+        </AuthProvider>
       </MemoryRouter>
     );
   }
