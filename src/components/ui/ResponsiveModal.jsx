@@ -2,6 +2,7 @@ import { X } from 'lucide-react';
 import { useEffect, useId, useRef } from 'react';
 
 import useMediaQuery from '../../hooks/useMediaQuery';
+import BodyPortal from './BodyPortal';
 
 const FOCUSABLE_SELECTOR = [
   'button:not([disabled])',
@@ -30,6 +31,7 @@ export default function ResponsiveModal({
   initialFocusRef,
   closeDisabled = false,
   showCloseButton = true,
+  bodyMode = 'default',
 }) {
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const modalRef = useRef(null);
@@ -111,54 +113,61 @@ export default function ResponsiveModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 animate-fade-in"
-        onClick={requestClose}
-        aria-hidden="true"
-      />
-
-      {/* Modal content */}
-      <div
-        ref={modalRef}
-        role={role}
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={ariaDescribedBy}
-        tabIndex={-1}
-        className={
-          isDesktop
-            ? `relative bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} mx-4 animate-fade-in`
-            : 'relative bg-white inset-0 fixed w-full h-full animate-fade-in'
-        }
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 id={titleId} className="text-lg font-semibold text-gray-900">
-            {title}
-          </h2>
-          {showCloseButton && (
-            <button
-              type="button"
-              onClick={requestClose}
-              disabled={closeDisabled}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Close modal"
-            >
-              <X className="h-5 w-5 text-gray-500" />
-            </button>
-          )}
-        </div>
-
-        {/* Body */}
+    <BodyPortal>
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        {/* Backdrop */}
         <div
-          className="p-4 overflow-y-auto"
-          style={!isDesktop ? { maxHeight: 'calc(100vh - 65px)' } : { maxHeight: '70vh' }}
+          className="absolute inset-0 bg-black/50 animate-fade-in"
+          onClick={requestClose}
+          aria-hidden="true"
+        />
+
+        {/* Modal content */}
+        <div
+          ref={modalRef}
+          role={role}
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={ariaDescribedBy}
+          tabIndex={-1}
+          data-modal-frame="true"
+          className={
+            isDesktop
+              ? `responsive-modal-frame relative mx-4 flex min-h-0 w-full ${sizeClasses[size]} flex-col overflow-hidden rounded-lg bg-white shadow-xl animate-fade-in`
+              : 'responsive-modal-frame relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-white animate-fade-in'
+          }
         >
-          {children}
+          {/* Header */}
+          <div className="flex min-w-0 shrink-0 items-center justify-between border-b border-gray-200 p-4">
+            <h2 id={titleId} className="min-w-0 text-lg font-semibold text-gray-900">
+              {title}
+            </h2>
+            {showCloseButton && (
+              <button
+                type="button"
+                onClick={requestClose}
+                disabled={closeDisabled}
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Close modal"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            )}
+          </div>
+
+          {/* Body */}
+          <div
+            data-modal-body={bodyMode}
+            className={
+              bodyMode === 'contained'
+                ? 'min-h-0 flex-1 overflow-hidden'
+                : 'min-h-0 flex-1 overflow-y-auto p-4'
+            }
+          >
+            {children}
+          </div>
         </div>
       </div>
-    </div>
+    </BodyPortal>
   );
 }

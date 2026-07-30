@@ -65,10 +65,11 @@ describe('Layout', () => {
     expect(screen.getByTestId('header')).toBeInTheDocument();
   });
 
-  it('renders main content area', () => {
+  it('renders main content area inside a shrinkable page shell', () => {
     render(<Layout />);
     const main = document.querySelector('main');
     expect(main).toBeInTheDocument();
+    expect(main.parentElement).toHaveClass('min-w-0');
   });
 
   it('does not render MobileBottomNav on desktop', () => {

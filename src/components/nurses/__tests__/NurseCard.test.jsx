@@ -1,3 +1,5 @@
+import fc from 'fast-check';
+
 import { createNurse } from '../../../test/factories/nurseFactory';
 import { fireEvent, render, screen, waitFor, within } from '../../../test/utils';
 import NurseCard from '../NurseCard';
@@ -75,9 +77,12 @@ describe('NurseCard explicit detail edit session', () => {
     const props = makeProps({
       nurseSlice: makeSlice({ detailState: 'loading', draft: null, originalBase: null }),
     });
-    render(<NurseCard {...props} />);
+    const { container } = render(<NurseCard {...props} />);
 
-    expect(screen.getByRole('status')).toHaveTextContent('Loading nurse details');
+    const status = screen.getByRole('status');
+    expect(status).toHaveTextContent('Loading nurse details');
+    expect(document.body.contains(status)).toBe(true);
+    expect(container.contains(status)).toBe(false);
     expect(screen.queryByRole('button', { name: 'Save changes' })).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Full name')).not.toBeInTheDocument();
   });
@@ -205,7 +210,12 @@ describe('NurseCard explicit detail edit session', () => {
     });
     render(<NurseCard {...props} />);
 
-    expect(screen.getByRole('alert')).toHaveTextContent('This nurse changed after you opened it');
+    const conflictAlert = screen.getByRole('alert');
+    const personalSection = screen.getByRole('button', { name: 'Personal Information' });
+    expect(conflictAlert).toHaveTextContent('This nurse changed after you opened it');
+    expect(conflictAlert.closest('[data-nurse-card-scroll-region="true"]')).toBe(
+      personalSection.closest('[data-nurse-card-scroll-region="true"]')
+    );
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Review differences' }));
@@ -359,5 +369,105 @@ describe('NurseCard explicit detail edit session', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Offline');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(errorProps.onRetryDetail).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps score labels, weights, controls, values, and callbacks while allowing narrow rows to wrap', () => {
+    const props = makeProps();
+    render(<NurseCard {...props} />);
+    const scoreFields = [
+      ['Hospital Exp', 3],
+      ['SANC Status', 3],
+      ['Qualifications', 2],
+      ['Specialisation', 1],
+      ['Financial Readiness', 1],
+      ['Motivation', 2],
+      ['Passport', 1],
+    ];
+
+    for (const [label, weight] of scoreFields) {
+      const controls = [1, 2, 3, 4, 5].map((score) =>
+        screen.getByRole('button', { name: `${label} ${score}` })
+      );
+      const row = controls[0].parentElement.parentElement;
+      const controlGroup = controls[0].parentElement;
+
+      expect(row).toHaveClass(
+        'flex',
+        'min-w-0',
+        'flex-wrap',
+        'items-center',
+        'md:flex-nowrap'
+      );
+      expect(row.firstElementChild).toHaveClass(
+        'w-full',
+        'min-w-0',
+        'shrink-0',
+        'md:w-36'
+      );
+      expect(controlGroup).toHaveClass('min-w-0', 'flex-wrap', 'md:flex-nowrap');
+      expect(row).toHaveTextContent(`${label} (x${weight})`);
+      expect(controls).toHaveLength(5);
+      expect(controls.map((control) => control.textContent)).toEqual(['1', '2', '3', '4', '5']);
+    }
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hospital Exp 4' }));
+    expect(props.onUpdateDraft).toHaveBeenCalledTimes(1);
+    const applyScoreUpdate = props.onUpdateDraft.mock.calls[0][0];
+    const updated = applyScoreUpdate(makeNurse());
+    expect(updated.scorecardFields.hospitalExp).toBe(4);
+  });
+
+  it('constrains intrinsic edit-select widths only below the desktop breakpoint', () => {
+    render(<NurseCard {...makeProps()} />);
+
+    expect(screen.getByLabelText('Gender')).toHaveClass(
+      'min-w-0',
+      'max-w-full',
+      'md:max-w-none'
+    );
+  });
+
+  it('preserves footer control order and the single primary action instance', () => {
+    const { container } = render(<NurseCard {...makeProps()} />);
+    const dialog = screen.getByRole('dialog', { name: 'Thandi Nkosi' });
+    const controls = [...dialog.querySelectorAll('button')].map((button) =>
+      button.textContent.trim()
+    );
+    const scrollRegion = dialog.querySelector('[data-nurse-card-scroll-region="true"]');
+    const actionRegion = dialog.querySelector('[data-nurse-card-action-region="true"]');
+
+    expect(document.body.contains(dialog)).toBe(true);
+    expect(container.contains(dialog)).toBe(false);
+    expect(dialog).toHaveClass('nurse-card-frame', 'min-h-0', 'overflow-hidden');
+    expect(scrollRegion).toHaveClass('min-h-0', 'flex-1', 'overflow-y-auto');
+    expect(actionRegion).toHaveClass('shrink-0', 'flex-col', 'md:flex-row');
+    expect(controls.filter((name) => name === 'Save changes')).toHaveLength(1);
+    expect(controls.indexOf('Delete nurse')).toBeLessThan(controls.indexOf('Cancel'));
+    expect(controls.indexOf('Cancel')).toBeLessThan(controls.indexOf('Save changes'));
+  });
+
+  it('preserves action availability without invoking commands across generated permission and pending states', () => {
+    fc.assert(
+      fc.property(fc.boolean(), fc.boolean(), (canEdit, pending) => {
+        const original = makeNurse();
+        const draft = { ...original, city: 'Cape Town' };
+        const props = makeProps({
+          nurseSlice: makeSlice({
+            originalBase: original,
+            draft,
+            saveState: pending ? 'loading' : 'idle',
+          }),
+          permissions: { canEdit, canDelete: true },
+        });
+        const view = render(<NurseCard {...props} />);
+        const action = screen.getByRole('button', { name: pending ? 'Saving...' : 'Save changes' });
+
+        expect(action.disabled).toBe(pending || !canEdit);
+        expect(props.onSave).not.toHaveBeenCalled();
+        expect(props.onRequestDelete).not.toHaveBeenCalled();
+        view.unmount();
+      }),
+      { seed: 20260624, numRuns: 8 }
+    );
   });
 });
